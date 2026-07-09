@@ -8,17 +8,28 @@
 // loudly when a check goes SAT.
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ALLOY_VERSION = "6.2.0";
 const ALLOY_URL = `https://github.com/AlloyTools/org.alloytools.alloy/releases/download/v${ALLOY_VERSION}/org.alloytools.alloy.dist.jar`;
+const ALLOY_SHA256 = "6b8c1cb5bc93bedfc7c61435c4e1ab6e688a242dc702a394628d9a9801edb78d";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const modelsDir = join(repoRoot, "models");
 const alloyDir = join(repoRoot, ".alloy");
-const jarPath = process.env.ALLOY_JAR ?? join(alloyDir, "org.alloytools.alloy.dist.jar");
+const configuredJarPath = process.env.ALLOY_JAR;
+const jarPath = configuredJarPath ?? join(alloyDir, "org.alloytools.alloy.dist.jar");
 
 function hasJava() {
   try {
@@ -30,12 +41,38 @@ function hasJava() {
 }
 
 async function ensureJar() {
-  if (existsSync(jarPath)) return;
+  if (existsSync(jarPath)) {
+    const digest = sha256(readFileSync(jarPath));
+    if (digest !== ALLOY_SHA256) {
+      if (configuredJarPath !== undefined) {
+        throw new Error(`configured Alloy jar checksum mismatch: ${jarPath}`);
+      }
+      console.log(`alloy: replacing cached analyzer with a checksum mismatch: ${jarPath}`);
+      rmSync(jarPath, { force: true });
+    } else {
+      return;
+    }
+  }
+  if (configuredJarPath !== undefined)
+    throw new Error(`configured Alloy jar does not exist: ${jarPath}`);
   console.log(`alloy: downloading analyzer ${ALLOY_VERSION} ...`);
   mkdirSync(alloyDir, { recursive: true });
   const response = await fetch(ALLOY_URL);
   if (!response.ok) throw new Error(`download failed: HTTP ${response.status}`);
-  writeFileSync(jarPath, Buffer.from(await response.arrayBuffer()));
+  const body = Buffer.from(await response.arrayBuffer());
+  const digest = sha256(body);
+  if (digest !== ALLOY_SHA256) throw new Error(`Alloy jar checksum mismatch: ${digest}`);
+  const temporaryPath = `${jarPath}.${String(process.pid)}.tmp`;
+  try {
+    writeFileSync(temporaryPath, body);
+    renameSync(temporaryPath, jarPath);
+  } finally {
+    rmSync(temporaryPath, { force: true });
+  }
+}
+
+function sha256(bytes) {
+  return createHash("sha256").update(bytes).digest("hex");
 }
 
 // Parse `exec` stdout lines like "01. check EpochIndependence   0   1/1   SAT" into { name, verdict }.

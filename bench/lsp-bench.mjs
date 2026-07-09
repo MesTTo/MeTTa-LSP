@@ -234,7 +234,10 @@ function createBrowserLspHarness(workspaceFiles = new Map()) {
           clearTimeout(timeout);
           resolve(value);
         },
-        reject,
+        reject: (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        },
       });
       send({ id, method, params });
     });

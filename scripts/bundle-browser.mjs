@@ -21,9 +21,14 @@ async function bundle(options) {
     logLevel: "warning",
     ...options,
   });
-  for (const input of Object.keys(result.metafile.inputs)) {
+  for (const [input, metadata] of Object.entries(result.metafile.inputs)) {
     if (forbidden.has(input)) {
       throw new Error(`${options.outfile} pulled forbidden browser input ${input}`);
+    }
+    for (const imported of metadata.imports) {
+      if (forbidden.has(imported.path)) {
+        throw new Error(`${options.outfile} pulled forbidden browser import ${imported.path}`);
+      }
     }
   }
 }

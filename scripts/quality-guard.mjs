@@ -53,18 +53,18 @@ function walk(dir, acc) {
 
 const config = JSON.parse(readFileSync(CONFIG_PATH, "utf8"));
 const generated = new Set((config.generated_files ?? []).map((p) => p.replaceAll("\\", "/")));
-const files = walk(ROOT, []);
+const files = walk(ROOT, []).filter((file) => file !== CONFIG_PATH);
 
 let errors = 0;
 let warnings = 0;
 
 for (const rule of config.rules) {
-  const extensions = new Set(rule.extensions ?? []);
+  const extensions = rule.extensions === undefined ? null : new Set(rule.extensions);
   const excludes = (rule.exclude_paths ?? []).map(globToRegExp);
   const flags = [...new Set(`${rule.flags ?? ""}g`.split(""))].join("");
 
   for (const file of files) {
-    if (!extensions.has(extname(file))) continue;
+    if (extensions !== null && !extensions.has(extname(file))) continue;
     const rel = relative(ROOT, file).replaceAll("\\", "/");
     if (generated.has(rel)) continue;
     if (excludes.some((r) => r.test(rel))) continue;

@@ -15,6 +15,7 @@ out/
 # Test / coverage
 coverage/
 .vitest/
+ai-tmp/
 
 # Tooling caches
 .turbo/

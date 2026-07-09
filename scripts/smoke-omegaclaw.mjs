@@ -5,13 +5,13 @@
 // Smoke-test the OmegaClaw installer against throwaway clones. This validates the
 // reversible patch shape without touching a real OmegaClaw checkout.
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const setup = join(dirname(fileURLToPath(import.meta.url)), "setup-omegaclaw.mjs");
+const tempRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "ai-tmp");
 const stockLib = [
   "!(import! &self (library OmegaClaw-Core lib_nal))",
   "!(import! &self (library OmegaClaw-Core lib_pln))",
@@ -35,7 +35,8 @@ function fail(message, dir) {
 }
 
 function makeClone() {
-  const dir = mkdtempSync(join(tmpdir(), "metta-lsp-omega-"));
+  mkdirSync(tempRoot, { recursive: true });
+  const dir = mkdtempSync(join(tempRoot, "omegaclaw-"));
   mkdirSync(join(dir, "src"), { recursive: true });
   writeFileSync(join(dir, "lib_omegaclaw.metta"), stockLib);
   writeFileSync(join(dir, "src", "skills.metta"), stockSkills);
@@ -44,6 +45,14 @@ function makeClone() {
 
 function run(dir, flags = []) {
   return execFileSync("node", [setup, dir, ...flags], { encoding: "utf8" });
+}
+
+function hasPython3() {
+  try {
+    return spawnSync("python3", ["--version"], { stdio: "ignore" }).status === 0;
+  } catch {
+    return false;
+  }
 }
 
 function assertManagedInstall(dir) {
@@ -60,21 +69,25 @@ function assertManagedInstall(dir) {
     fail("getSkills block not idempotent", dir);
   if (py.includes("__METTA_LSP_ROOT__")) fail("bridge root placeholder not replaced", dir);
   if (!existsSync(join(dir, ".metta-lsp-omegaclaw-receipt.json"))) fail("receipt missing", dir);
-  const bridgeProbe = execFileSync(
-    "python3",
-    [
-      "-c",
+  if (hasPython3()) {
+    const bridgeProbe = execFileSync(
+      "python3",
       [
-        "import sys",
-        `sys.path.insert(0, ${JSON.stringify(join(dir, "src"))})`,
-        "import metta_lsp",
-        'print(metta_lsp.cli("capabilities"))',
-      ].join("; "),
-    ],
-    { encoding: "utf8" },
-  );
-  if (!bridgeProbe.includes("lsp_hover"))
-    fail("Python bridge did not reach the MeTTa-LSP CLI", dir);
+        "-c",
+        [
+          "import sys",
+          `sys.path.insert(0, ${JSON.stringify(join(dir, "src"))})`,
+          "import metta_lsp",
+          'print(metta_lsp.cli("capabilities"))',
+        ].join("; "),
+      ],
+      { encoding: "utf8" },
+    );
+    if (!bridgeProbe.includes("lsp_hover"))
+      fail("Python bridge did not reach the MeTTa-LSP CLI", dir);
+  } else {
+    process.stderr.write("smoke-omegaclaw: SKIP Python bridge probe (python3 not on PATH)\n");
+  }
   run(dir, ["--uninstall"]);
   if (readFileSync(join(dir, "lib_omegaclaw.metta"), "utf8") !== stockLib)
     fail("lib not restored", dir);
