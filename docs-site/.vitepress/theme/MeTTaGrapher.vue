@@ -46,6 +46,7 @@ const showExamples = !props.hideExamples;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let grapher: any;
+let disposed = false;
 
 const EXAMPLES: { label: string; code: string; run?: boolean }[] = [
   { label: "Arithmetic", code: "(+ 10 (* 25 2))" },
@@ -118,6 +119,7 @@ let observer: ResizeObserver | undefined;
 onMounted(async () => {
   if (!canvas.value) return;
   const { MeTTaGrapher } = await import("@metta-ts/grapher");
+  if (disposed || !canvas.value) return;
   grapher = new MeTTaGrapher(canvas.value, { source: seedCode() });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (canvas.value as any).grapher = grapher;
@@ -138,7 +140,7 @@ onMounted(async () => {
   // it zero for a frame or two, which would misframe the program, so retry until it is measured. The
   // program is not evaluated on load: results appear on Evaluate or a double-click.
   const fitWhenReady = (tries = 30): void => {
-    if (!grapher) return;
+    if (disposed || !grapher) return;
     const el = canvas.value;
     if (el && el.clientWidth > 0 && el.clientHeight > 0) {
       grapher.tidy();
@@ -167,9 +169,13 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  disposed = true;
   pausePlay();
   observer?.disconnect();
-  if (grapher) grapher.destroy();
+  if (grapher) {
+    grapher.destroy();
+    grapher = undefined;
+  }
 });
 
 defineExpose({ instance: () => grapher });
@@ -302,8 +308,10 @@ async function exportGif(): Promise<void> {
       const link = document.createElement("a");
       link.href = url;
       link.download = graph ? "reduction-graph.gif" : "reduction-blocks.gif";
+      document.body.append(link);
       link.click();
-      URL.revokeObjectURL(url);
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1_000);
     }
   } catch (e) {
     console.error("GIF export failed", e);

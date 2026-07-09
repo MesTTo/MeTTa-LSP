@@ -24,6 +24,7 @@ const showViz = ref(false);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let jar: any;
+let disposed = false;
 
 function seedCode(): string {
   if (props.code) return props.code;
@@ -40,6 +41,7 @@ onMounted(async () => {
   src.value = seed;
   if (!editor.value) return;
   const { CodeJar } = await import("codejar");
+  if (disposed || !editor.value) return;
   jar = CodeJar(editor.value, (el: HTMLElement) => {
     el.innerHTML = highlightMetta(el.textContent ?? "");
   });
@@ -50,6 +52,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  disposed = true;
   if (jar) jar.destroy();
 });
 
@@ -59,6 +62,7 @@ async function run(): Promise<void> {
   groups.value = [];
   try {
     const { runProgram, format } = await import("@metta-ts/core");
+    if (disposed) return;
     const results = runProgram(src.value);
     groups.value = results.map((r) => ({ query: format(r.query), results: r.results.map(format) }));
     ran.value = true;
