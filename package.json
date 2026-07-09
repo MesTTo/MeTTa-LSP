@@ -3,7 +3,7 @@
   "displayName": "MeTTa LSP",
   "description": "A MeTTa language server, VS Code extension, CLI, MCP server, and documentation toolkit built on the pure-TypeScript @metta-ts/core interpreter.",
   "version": "0.11.1",
-  "publisher": "MesTTo",
+  "publisher": "MeTTaMesTTo",
   "license": "Apache-2.0",
   "icon": "icon.png",
   "keywords": [
@@ -746,6 +746,7 @@
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "package": "npm run vscode:prepublish && npm run package:check && vsce package --readme-path EXTENSION.md",
     "package:check": "node scripts/check-vsix-contents.mjs",
+    "deploy:vscode": "vsce publish --packagePath metta-ts-lsp-*.vsix",
     "vscode:prepublish": "npm run compile && node scripts/build-ts-plugin.mjs && node scripts/bundle-client.mjs && node scripts/bundle-browser.mjs && node scripts/bundle-webview.mjs",
     "mcp": "node dist/mcp/server.js",
     "smoke": "npm run compile && node dist/mcp/server.js --workspace examples < examples/mcp-smoke.jsonl",

@@ -71,7 +71,13 @@ settings.
 
 ## Quick Start
 
-Install the VS Code extension from the GitHub release asset:
+Install the VS Code extension from the Marketplace:
+
+```sh
+code --install-extension MeTTaMesTTo.metta-ts-lsp
+```
+
+You can also install a downloaded GitHub release asset:
 
 ```sh
 code --install-extension metta-ts-lsp-0.11.1.vsix
@@ -483,6 +489,18 @@ Build the release artifact:
 ```sh
 npm run package
 ```
+
+Publish future Marketplace updates through GitHub Actions:
+
+```sh
+git tag v0.11.2
+git push origin v0.11.2
+```
+
+The `VS Code Marketplace` workflow builds the VSIX, uploads it to the GitHub
+release for the tag, and publishes the same package to the Visual Studio
+Marketplace. Add a repository secret named `VSCE_PAT` once, using a Marketplace
+PAT with `Manage` scope for the `MeTTaMesTTo` publisher.
 
 Check the Alloy model:
 

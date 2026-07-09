@@ -1,0 +1,87 @@
+# SPDX-FileCopyrightText: 2026 MesTTo
+# SPDX-License-Identifier: Apache-2.0
+
+name: VS Code Marketplace
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vscode-marketplace-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Verify release build
+        run: npm run verify:strict
+
+      - name: Build VSIX
+        run: npm run package
+
+      - name: Verify packaged extension identity
+        run: |
+          node - <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const [vsix] = execFileSync('bash', ['-lc', 'ls metta-ts-lsp-*.vsix'], { encoding: 'utf8' })
+            .trim()
+            .split(/\n+/);
+          if (!vsix) {
+            throw new Error('No metta-ts-lsp VSIX was built');
+          }
+          const manifest = JSON.parse(execFileSync('unzip', ['-p', vsix, 'extension/package.json'], { encoding: 'utf8' }));
+          const expected = 'MeTTaMesTTo.metta-ts-lsp';
+          const actual = `${manifest.publisher}.${manifest.name}`;
+          if (actual !== expected) {
+            throw new Error(`Expected ${expected}, got ${actual}`);
+          }
+          NODE
+
+      - name: Upload VSIX to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" metta-ts-lsp-*.vsix --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" metta-ts-lsp-*.vsix --title "$GITHUB_REF_NAME" --notes "MeTTa LSP $GITHUB_REF_NAME"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Check Marketplace token
+        run: |
+          if [ -z "$VSCE_PAT" ]; then
+            echo "::error::Add the VSCE_PAT repository secret before publishing to the Marketplace."
+            exit 1
+          fi
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Visual Studio Marketplace
+        run: npm run deploy:vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: metta-ts-lsp-${{ github.ref_name }}
+          path: metta-ts-lsp-*.vsix
+          if-no-files-found: error
