@@ -36,9 +36,23 @@ describe("builtins reference generation", () => {
     const page = renderBuiltinReference(defs.map((def) => ({ def, doc: null })));
     for (const def of defs) {
       const slug = anchor(def.name);
-      const heading = slug.length > 0 ? `### \`${def.name}\` {#${slug}}` : `### \`${def.name}\``;
-      expect(page).toContain(heading);
+      expect(page).toContain(`### \`${def.name}\` {#${slug}}`);
     }
+  });
+
+  it("keeps synthetic names with colliding readable slugs distinct", () => {
+    const source = allBuiltinDefinitions()[0];
+    if (source === undefined) throw new Error("builtin catalog is empty");
+    const entries = ["a b", "a-b", "A-b"].map((name) => ({
+      def: { ...source, name },
+      doc: null,
+    }));
+    const page = renderBuiltinReference(entries);
+    for (const { def } of entries) {
+      expect(page).toContain(`### \`${def.name}\` {#${anchor(def.name)}}`);
+    }
+    const ids = [...page.matchAll(/\{#([^}]+)\}/g)].map((match) => match[1]);
+    expect(new Set(ids)).toHaveLength(entries.length);
   });
 
   it("renders unique explicit heading ids for the docs site", () => {

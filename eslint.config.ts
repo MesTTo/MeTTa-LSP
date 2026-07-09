@@ -195,7 +195,7 @@ const rules: Linter.RulesRecord = {
           },
         },
         {
-          // The ergonomic DSL is a thin façade over the analyzer and the unguarded runtime.
+          // The ergonomic DSL is a thin facade over the analyzer and guarded runtime.
           from: { type: "dsl" },
           allow: {
             to: { type: ["language-service-entry", "core-shared", "dsl", "server", "runtime"] },
@@ -280,6 +280,7 @@ export default defineConfig(
       "src/server/builtins.ts",
       "src/server/semanticTokensBuilder.ts",
       "src/server/guardedEvaluationTypes.ts",
+      "src/server/docsLinks.ts",
       "src/server/fileProvider.ts",
       "src/server/shared/**/*.{ts,mts,cts}",
       // The pure, host-independent parts of the grounded-atom bridge: the analyzer depends on these, so they

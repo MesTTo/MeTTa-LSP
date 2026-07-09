@@ -103,7 +103,7 @@ describe("Analyzer hover — rust-analyzer layout and docs link", () => {
     analyzer.updateSettings({ docs: { baseUrl: "https://docs.example/metta" } });
     // Hover the `+` grounded builtin in the body.
     const value = hoverText(analyzer, 0, 16);
-    expect(value).toContain("[Open docs](https://docs.example/metta/reference/builtins)");
+    expect(value).toContain("[Open docs](https://docs.example/metta/reference/builtins#_2b_)");
   });
 
   it("shows no docs link with no base, and never for a user symbol", () => {

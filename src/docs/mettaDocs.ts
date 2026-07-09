@@ -25,7 +25,7 @@ export type MettaDocSymbolKind =
   | "module";
 
 export interface MettaDocIndex {
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 2;
   readonly generatedAt: string;
   readonly sourceFingerprint: string;
   readonly modules: readonly MettaModuleDoc[];
@@ -35,7 +35,6 @@ export interface MettaDocIndex {
 export interface MettaModuleDoc {
   readonly name: string;
   readonly slug: string;
-  readonly sourceUri: string;
   readonly sourcePath: string;
   readonly imports: readonly string[];
   readonly symbols: readonly MettaSymbolDoc[];
@@ -49,7 +48,6 @@ export interface MettaSymbolDoc {
   readonly signature: string;
   readonly doc: MettaDoc | null;
   readonly fallbackDoc: string | null;
-  readonly definitionUri: string;
   readonly sourcePath: string;
   readonly range: Range;
   readonly hostOperation: string | null;
@@ -63,9 +61,7 @@ export interface HostOperationDoc {
   readonly mettaType: string;
   readonly docs: string;
   readonly origin: string;
-  readonly sourceUri: string;
   readonly sourcePath: string;
-  readonly definitionUri: string | null;
   readonly definitionRange: Range | null;
 }
 
@@ -172,8 +168,12 @@ function appendCollapsedSlash(parts: string[]): void {
 
 function relativeUriPath(uri: string, rootUri: string | undefined): string {
   const normalized = normalizeUri(uri);
-  if (rootUri !== undefined && normalized.startsWith(rootUri)) {
-    const rest = stripLeadingPathSeparators(normalized.slice(rootUri.length));
+  if (rootUri !== undefined) {
+    const normalizedRoot = normalizeUri(rootUri);
+    const rootPrefix = normalizedRoot.endsWith("/") ? normalizedRoot : `${normalizedRoot}/`;
+    if (normalized === normalizedRoot) return "";
+    if (!normalized.startsWith(rootPrefix)) return basename(pathFromUri(normalized));
+    const rest = stripLeadingPathSeparators(normalized.slice(rootPrefix.length));
     return decodeURIComponent(rest);
   }
   return basename(pathFromUri(normalized));
@@ -314,9 +314,7 @@ function hostBindingDocs(
       mettaType: binding.signature.mettaArrow,
       docs: binding.signature.documentation ?? "",
       origin: binding.origin,
-      sourceUri: sourcePath,
       sourcePath,
-      definitionUri: definitionUri === null ? null : sourcePath,
       definitionRange: binding.definition?.range ?? null,
     };
   });
@@ -344,7 +342,6 @@ function symbolDocsForModule(
       signature: symbolSignature(primary, symbolKind(primary)),
       doc,
       fallbackDoc: doc === null ? docFallback(defs, primary) : null,
-      definitionUri: sourcePath,
       sourcePath,
       range: primary.range,
       hostOperation: hostByName.get(primary.name)?.slug ?? null,
@@ -371,7 +368,6 @@ function moduleDocs(
     modules.push({
       name,
       slug,
-      sourceUri: sourcePath,
       sourcePath,
       imports: [...new Set(index.imports.map((imp) => imp.rawPath))].sort(),
       symbols: symbolDocsForModule(index, runtime, analyzer, sourceRootUri, hostByName),
@@ -388,7 +384,7 @@ export function buildMettaDocIndex(options: BuildMettaDocIndexOptions): MettaDoc
   const modules = moduleDocs(options.analyzer, runtime, rootUri, sourceRootUri, hostOperations);
   const fingerprintInput = { modules, hostOperations };
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: options.generatedAt ?? GENERATED_AT,
     sourceFingerprint: stableHash(stableStringify(fingerprintInput)),
     modules,
@@ -416,7 +412,12 @@ function hostTypescriptSignature(operation: HostOperationDoc): string {
   return `interface HostOperation {\n  ${JSON.stringify(operation.name)}${operation.tsSignature};\n}`;
 }
 
-function symbolSection(symbol: MettaSymbolDoc): string {
+function relativeHostLink(moduleSlug: string, hostOperation: string): string {
+  const depth = moduleSlug.split("/").filter((part) => part.length > 0).length;
+  return `${"../".repeat(Math.max(1, depth))}host/${hostOperation}`;
+}
+
+function symbolSection(module: MettaModuleDoc, symbol: MettaSymbolDoc): string {
   const parts = [`### \`${symbol.name}\` {#${symbol.anchor}}`, `Kind: \`${symbol.kind}\``];
   if (symbol.signature.length > 0) parts.push(codeFence("metta", symbol.signature));
   const description =
@@ -426,7 +427,9 @@ function symbolSection(symbol: MettaSymbolDoc): string {
   if (description !== null && description.length > 0) parts.push(description);
   if (symbol.doc !== null) parts.push(...docDetailSections(symbol.doc));
   if (symbol.hostOperation !== null)
-    parts.push(`Host operation: [\`${symbol.name}\`](../host/${symbol.hostOperation})`);
+    parts.push(
+      `Host operation: [\`${symbol.name}\`](${relativeHostLink(module.slug, symbol.hostOperation)})`,
+    );
   parts.push(sourceLineBlock(symbol.sourcePath, symbol.range));
   return parts.join("\n\n");
 }
@@ -458,7 +461,10 @@ export function renderMettaModulePage(module: MettaModuleDoc): string {
     for (const kind of SYMBOL_KIND_ORDER) {
       const symbols = module.symbols.filter((symbol) => symbol.kind === kind);
       if (symbols.length === 0) continue;
-      sections.push(`## ${SYMBOL_KIND_TITLES[kind]}`, ...symbols.map(symbolSection));
+      sections.push(
+        `## ${SYMBOL_KIND_TITLES[kind]}`,
+        ...symbols.map((symbol) => symbolSection(module, symbol)),
+      );
     }
   } else {
     sections.push("## Symbols", "This module declares no public symbols.");

@@ -31,30 +31,29 @@ function trimTrailingSlash(url: string): string {
   return url.slice(0, end);
 }
 
-// A heading slug for a builtin: case-preserving, with runs of non-alphanumerics except `_` collapsed to a
-// single hyphen, and a leading hyphen dropped. Preserving case keeps type constructors like `Empty` distinct
-// from functions like `empty`. A trailing hyphen is kept, so names that differ only by trailing punctuation
-// stay distinct anchors (include vs include!, let vs let*). Underscores are preserved so PeTTa-compatible
-// spellings such as with_mutex do not collide with dashed TypeScript-native names such as with-mutex. A
-// leading `@` maps to `at-` first, so a doc constructor stays distinct from a same-named function (@return
-// vs return). Punctuation-only names (operators like `+`) slug to empty and link to the page without an
-// anchor.
+// A stable heading id for a builtin. ASCII letters, digits, and hyphens stay readable. Every other Unicode
+// code point, including the underscore escape marker, is wrapped as `_hex_`. The encoding is reversible, so
+// distinct names cannot collapse to the same id. The same browser-safe id is shared by generated Markdown
+// headings and editor-independent LSP documentation links.
 export function anchor(name: string): string {
-  // Runs already collapse to a single hyphen, so removing one leading hyphen suffices (a single-character
-  // match, so no backtracking).
-  return name
-    .replaceAll("@", "at-")
-    .replaceAll(/[^A-Za-z0-9_]+/g, "-")
-    .replace(/^-/, "");
+  if (name.length === 0) return "_empty_";
+  const parts: string[] = [];
+  for (const character of name) {
+    const codePoint = character.codePointAt(0);
+    if (codePoint === undefined) continue;
+    const isLetter = (codePoint >= 65 && codePoint <= 90) || (codePoint >= 97 && codePoint <= 122);
+    const isDigit = codePoint >= 48 && codePoint <= 57;
+    parts.push(isLetter || isDigit || codePoint === 45 ? character : `_${codePoint.toString(16)}_`);
+  }
+  return parts.join("");
 }
 
 // The docs URL for a builtin symbol, or null when the base is unset. Every builtin links to the reference
-// page; a named builtin also jumps to its anchor.
+// page and jumps to its canonical anchor.
 export function builtinDocsUrl(baseUrl: string, name: string): string | null {
   if (baseUrl.length === 0) return null;
   const page = `${trimTrailingSlash(baseUrl)}/reference/builtins`;
-  const slug = anchor(name);
-  return slug.length > 0 ? `${page}#${slug}` : page;
+  return `${page}#${anchor(name)}`;
 }
 
 // The docs URL for a diagnostic code, or null when the base is unset or the code has no catalog page.

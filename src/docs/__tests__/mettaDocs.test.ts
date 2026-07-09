@@ -136,7 +136,8 @@ describe("MeTTa docs index", () => {
     const index = await fixtureIndex();
     expect(index.modules.map((module) => module.name)).toEqual(["math"]);
     const module = index.modules[0];
-    expect(module?.sourceUri).toBe("math.metta");
+    expect(module?.sourcePath).toBe("math.metta");
+    expect(module).not.toHaveProperty("sourceUri");
     expect(module?.symbols.map((symbol) => symbol.name).sort()).toEqual(["host-add", "square"]);
     const square = module?.symbols.find((symbol) => symbol.name === "square");
     expect(square?.doc?.description).toBe("Squares a number");
@@ -152,10 +153,26 @@ describe("MeTTa docs index", () => {
       slug: "host-add",
       mettaType: "(-> Number Number Number)",
       sourcePath: "host.ts",
-      definitionUri: "host.ts",
     });
+    expect(operation).not.toHaveProperty("definitionUri");
     const symbol = index.modules[0]?.symbols.find((entry) => entry.name === "host-add");
     expect(symbol?.hostOperation).toBe("host-add");
+  });
+
+  it("does not treat a sibling path prefix as being under the source root", async () => {
+    const files = new InMemoryFileProvider("/ws");
+    files.writeFile("/ws/src2/math.metta", "(: square Type)");
+    const analyzer = new Analyzer(files);
+    analyzer.setWorkspaceRoots([pathToUri("/ws/src2")]);
+    await analyzer.scanWorkspace();
+
+    const index = buildMettaDocIndex({
+      analyzer,
+      workspaceRootUri: pathToUri("/ws/src2"),
+      sourceRootUri: pathToUri("/ws/src"),
+    });
+
+    expect(index.modules[0]?.sourcePath).toBe("math.metta");
   });
 
   it("renders module, host, and sidebar pages from the JSON graph", async () => {
@@ -169,7 +186,20 @@ describe("MeTTa docs index", () => {
     expect(sidebar).toContain("/reference/metta/modules/math");
     expect(renderMettaDocsIndexPage(index)).toContain("Source fingerprint:");
     const parsed = JSON.parse(renderMettaDocsJson(index)) as { schemaVersion: number };
-    expect(parsed.schemaVersion).toBe(1);
+    expect(parsed.schemaVersion).toBe(2);
+  });
+
+  it("renders host-operation links relative to nested module pages", async () => {
+    const index = await fixtureIndex();
+    const module = {
+      ...index.modules[0]!,
+      name: "nested/main",
+      slug: "nested/main",
+    };
+
+    expect(renderMettaModulePage(module)).toContain(
+      "Host operation: [`host-add`](../../host/host-add)",
+    );
   });
 
   it("keeps the committed generated docs byte-identical to a fresh render", async () => {

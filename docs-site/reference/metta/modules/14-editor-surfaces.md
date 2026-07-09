@@ -19,7 +19,7 @@ Source: `examples/14-editor-surfaces.metta`
 | [`describe-shape`](#describe-shape) | function | `(describe-shape $x $y)` |
 | [`perimeter`](#perimeter) | function | `(-> Shape Number Number)` |
 | [`scale-square`](#scale-square) | function | `(scale-square $x)` |
-| [`$name`](#name) | constant | `Shape` |
+| [`$name`](#_24_name) | constant | `Shape` |
 
 ## Types
 
@@ -87,7 +87,7 @@ Source: `examples/14-editor-surfaces.metta:35`
 
 ## Constants
 
-### `$name` {#name}
+### `$name` {#_24_name}
 
 Kind: `constant`
 

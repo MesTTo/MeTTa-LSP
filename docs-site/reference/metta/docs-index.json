@@ -1,12 +1,11 @@
 {
-  "schemaVersion": 1,
-  "generatedAt": "2026-07-09T10:42:13.580Z",
-  "sourceFingerprint": "22207-584c2d77",
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-09T18:23:35.565Z",
+  "sourceFingerprint": "18699-2784be75",
   "modules": [
     {
       "name": "01-hovers",
       "slug": "01-hovers",
-      "sourceUri": "examples/01-hovers.metta",
       "sourcePath": "examples/01-hovers.metta",
       "imports": [],
       "symbols": [
@@ -18,7 +17,6 @@
           "signature": "(: factorial (-> Number Number))",
           "doc": null,
           "fallbackDoc": "The factorial of n. One clause guards the base case with `if`: a separate\n(= (factorial 0) 1) would also match (factorial $n) in MeTTa and recurse into\nnegatives forever, so the `if` keeps it to a single path.",
-          "definitionUri": "examples/01-hovers.metta",
           "sourcePath": "examples/01-hovers.metta",
           "range": {
             "start": {
@@ -37,7 +35,6 @@
     {
       "name": "02-running",
       "slug": "02-running",
-      "sourceUri": "examples/02-running.metta",
       "sourcePath": "examples/02-running.metta",
       "imports": [],
       "symbols": [
@@ -49,7 +46,6 @@
           "signature": "(even $x)",
           "doc": null,
           "fallbackDoc": "True when a number is even.",
-          "definitionUri": "examples/02-running.metta",
           "sourcePath": "examples/02-running.metta",
           "range": {
             "start": {
@@ -71,7 +67,6 @@
           "signature": "(: fib (-> Number Number))",
           "doc": null,
           "fallbackDoc": "The nth Fibonacci number. One clause guards the base case with `if`: in MeTTa\nevery matching clause fires, so a separate (= (fib 0) 0) would also match\n(fib $n) and recurse into negatives — the `if` keeps it to a single path.",
-          "definitionUri": "examples/02-running.metta",
           "sourcePath": "examples/02-running.metta",
           "range": {
             "start": {
@@ -90,7 +85,6 @@
     {
       "name": "03-python",
       "slug": "03-python",
-      "sourceUri": "examples/03-python.metta",
       "sourcePath": "examples/03-python.metta",
       "imports": [],
       "symbols": []
@@ -98,7 +92,6 @@
     {
       "name": "04-diagnostics",
       "slug": "04-diagnostics",
-      "sourceUri": "examples/04-diagnostics.metta",
       "sourcePath": "examples/04-diagnostics.metta",
       "imports": [
         "math",
@@ -113,7 +106,6 @@
           "signature": "(: add2 (-> Number Number Number))",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/04-diagnostics.metta",
           "sourcePath": "examples/04-diagnostics.metta",
           "range": {
             "start": {
@@ -135,7 +127,6 @@
           "signature": "(bad-hash $x)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/04-diagnostics.metta",
           "sourcePath": "examples/04-diagnostics.metta",
           "range": {
             "start": {
@@ -157,7 +148,6 @@
           "signature": "(free-var $x)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/04-diagnostics.metta",
           "sourcePath": "examples/04-diagnostics.metta",
           "range": {
             "start": {
@@ -179,7 +169,6 @@
           "signature": "(greet)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/04-diagnostics.metta",
           "sourcePath": "examples/04-diagnostics.metta",
           "range": {
             "start": {
@@ -201,7 +190,6 @@
           "signature": "(trap)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/04-diagnostics.metta",
           "sourcePath": "examples/04-diagnostics.metta",
           "range": {
             "start": {
@@ -223,7 +211,6 @@
           "signature": "(uses-typo $x)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/04-diagnostics.metta",
           "sourcePath": "examples/04-diagnostics.metta",
           "range": {
             "start": {
@@ -245,7 +232,6 @@
           "signature": "(: widget NoSuchType)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/04-diagnostics.metta",
           "sourcePath": "examples/04-diagnostics.metta",
           "range": {
             "start": {
@@ -264,7 +250,6 @@
     {
       "name": "05-lint-and-suppression/demo",
       "slug": "05-lint-and-suppression/demo",
-      "sourceUri": "examples/05-lint-and-suppression/demo.metta",
       "sourcePath": "examples/05-lint-and-suppression/demo.metta",
       "imports": [],
       "symbols": [
@@ -276,7 +261,6 @@
           "signature": "(: BadHelper (-> Number Number))",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/05-lint-and-suppression/demo.metta",
           "sourcePath": "examples/05-lint-and-suppression/demo.metta",
           "range": {
             "start": {
@@ -298,7 +282,6 @@
           "signature": "(helper $x)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/05-lint-and-suppression/demo.metta",
           "sourcePath": "examples/05-lint-and-suppression/demo.metta",
           "range": {
             "start": {
@@ -317,7 +300,6 @@
     {
       "name": "06-type-suggestions",
       "slug": "06-type-suggestions",
-      "sourceUri": "examples/06-type-suggestions.metta",
       "sourcePath": "examples/06-type-suggestions.metta",
       "imports": [],
       "symbols": [
@@ -329,7 +311,6 @@
           "signature": "(double $x)",
           "doc": null,
           "fallbackDoc": "Doubles a number.",
-          "definitionUri": "examples/06-type-suggestions.metta",
           "sourcePath": "examples/06-type-suggestions.metta",
           "range": {
             "start": {
@@ -351,7 +332,6 @@
           "signature": "(scale $x $y)",
           "doc": null,
           "fallbackDoc": "Scales a value by a factor.",
-          "definitionUri": "examples/06-type-suggestions.metta",
           "sourcePath": "examples/06-type-suggestions.metta",
           "range": {
             "start": {
@@ -373,7 +353,6 @@
           "signature": "(: triple (-> Number Number))",
           "doc": null,
           "fallbackDoc": "Triples a number.",
-          "definitionUri": "examples/06-type-suggestions.metta",
           "sourcePath": "examples/06-type-suggestions.metta",
           "range": {
             "start": {
@@ -392,7 +371,6 @@
     {
       "name": "07-pseudocode",
       "slug": "07-pseudocode",
-      "sourceUri": "examples/07-pseudocode.metta",
       "sourcePath": "examples/07-pseudocode.metta",
       "imports": [],
       "symbols": [
@@ -404,7 +382,6 @@
           "signature": "(area $x $y)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/07-pseudocode.metta",
           "sourcePath": "examples/07-pseudocode.metta",
           "range": {
             "start": {
@@ -426,7 +403,6 @@
           "signature": "(clamp $x $y $z)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/07-pseudocode.metta",
           "sourcePath": "examples/07-pseudocode.metta",
           "range": {
             "start": {
@@ -448,7 +424,6 @@
           "signature": "(discount $x $y)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/07-pseudocode.metta",
           "sourcePath": "examples/07-pseudocode.metta",
           "range": {
             "start": {
@@ -467,7 +442,6 @@
     {
       "name": "08-navigation",
       "slug": "08-navigation",
-      "sourceUri": "examples/08-navigation.metta",
       "sourcePath": "examples/08-navigation.metta",
       "imports": [],
       "symbols": [
@@ -479,7 +453,6 @@
           "signature": "(: hypotenuse (-> Number Number Number))",
           "doc": null,
           "fallbackDoc": "The hypotenuse of a right triangle with legs $a and $b.",
-          "definitionUri": "examples/08-navigation.metta",
           "sourcePath": "examples/08-navigation.metta",
           "range": {
             "start": {
@@ -501,7 +474,6 @@
           "signature": "(sqrt-approx $x)",
           "doc": null,
           "fallbackDoc": "A stand-in square root (identity here) to keep the example self-contained.",
-          "definitionUri": "examples/08-navigation.metta",
           "sourcePath": "examples/08-navigation.metta",
           "range": {
             "start": {
@@ -523,7 +495,6 @@
           "signature": "(: square (-> Number Number))",
           "doc": null,
           "fallbackDoc": "The square of a number.",
-          "definitionUri": "examples/08-navigation.metta",
           "sourcePath": "examples/08-navigation.metta",
           "range": {
             "start": {
@@ -545,7 +516,6 @@
           "signature": "(: sum-of-squares (-> Number Number Number))",
           "doc": null,
           "fallbackDoc": "The sum of the squares of two numbers.",
-          "definitionUri": "examples/08-navigation.metta",
           "sourcePath": "examples/08-navigation.metta",
           "range": {
             "start": {
@@ -564,7 +534,6 @@
     {
       "name": "09-formatting",
       "slug": "09-formatting",
-      "sourceUri": "examples/09-formatting.metta",
       "sourcePath": "examples/09-formatting.metta",
       "imports": [],
       "symbols": [
@@ -576,7 +545,6 @@
           "signature": "(long-form $x $y $z $a)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/09-formatting.metta",
           "sourcePath": "examples/09-formatting.metta",
           "range": {
             "start": {
@@ -598,7 +566,6 @@
           "signature": "(: messy (->  Number   Number))",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/09-formatting.metta",
           "sourcePath": "examples/09-formatting.metta",
           "range": {
             "start": {
@@ -617,7 +584,6 @@
     {
       "name": "10-testing",
       "slug": "10-testing",
-      "sourceUri": "examples/10-testing.metta",
       "sourcePath": "examples/10-testing.metta",
       "imports": [],
       "symbols": [
@@ -629,7 +595,6 @@
           "signature": "(: double (-> Number Number))",
           "doc": null,
           "fallbackDoc": "The function under test.",
-          "definitionUri": "examples/10-testing.metta",
           "sourcePath": "examples/10-testing.metta",
           "range": {
             "start": {
@@ -648,7 +613,6 @@
     {
       "name": "11-modules/geometry",
       "slug": "11-modules/geometry",
-      "sourceUri": "examples/11-modules/geometry.metta",
       "sourcePath": "examples/11-modules/geometry.metta",
       "imports": [],
       "symbols": [
@@ -660,7 +624,6 @@
           "signature": "(: circle-area (-> Number Number))",
           "doc": null,
           "fallbackDoc": "The area of a circle, with a deliberately rough pi to keep it integer-friendly.",
-          "definitionUri": "examples/11-modules/geometry.metta",
           "sourcePath": "examples/11-modules/geometry.metta",
           "range": {
             "start": {
@@ -682,7 +645,6 @@
           "signature": "(: square (-> Number Number))",
           "doc": null,
           "fallbackDoc": "The square of a number.",
-          "definitionUri": "examples/11-modules/geometry.metta",
           "sourcePath": "examples/11-modules/geometry.metta",
           "range": {
             "start": {
@@ -701,7 +663,6 @@
     {
       "name": "11-modules/lib/vectors",
       "slug": "11-modules/lib/vectors",
-      "sourceUri": "examples/11-modules/lib/vectors.metta",
       "sourcePath": "examples/11-modules/lib/vectors.metta",
       "imports": [],
       "symbols": [
@@ -713,7 +674,6 @@
           "signature": "(: vec-len-sq (-> Number Number Number))",
           "doc": null,
           "fallbackDoc": "The squared length of a 2D vector — kept squared to stay integer-friendly.",
-          "definitionUri": "examples/11-modules/lib/vectors.metta",
           "sourcePath": "examples/11-modules/lib/vectors.metta",
           "range": {
             "start": {
@@ -732,7 +692,6 @@
     {
       "name": "11-modules/main",
       "slug": "11-modules/main",
-      "sourceUri": "examples/11-modules/main.metta",
       "sourcePath": "examples/11-modules/main.metta",
       "imports": [
         "geometry",
@@ -743,7 +702,6 @@
     {
       "name": "12-completion-and-hints",
       "slug": "12-completion-and-hints",
-      "sourceUri": "examples/12-completion-and-hints.metta",
       "sourcePath": "examples/12-completion-and-hints.metta",
       "imports": [],
       "symbols": [
@@ -755,7 +713,6 @@
           "signature": "(: scale (-> Number Number Number))",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/12-completion-and-hints.metta",
           "sourcePath": "examples/12-completion-and-hints.metta",
           "range": {
             "start": {
@@ -777,7 +734,6 @@
           "signature": "(triple $x)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/12-completion-and-hints.metta",
           "sourcePath": "examples/12-completion-and-hints.metta",
           "range": {
             "start": {
@@ -796,7 +752,6 @@
     {
       "name": "13-trace",
       "slug": "13-trace",
-      "sourceUri": "examples/13-trace.metta",
       "sourcePath": "examples/13-trace.metta",
       "imports": [],
       "symbols": [
@@ -808,7 +763,6 @@
           "signature": "(: sum-to (-> Number Number))",
           "doc": null,
           "fallbackDoc": "Sum the numbers from 1 to n, guarding the recursion with if so it stops at 0.\n(Two rules — a (sum-to 0) base case and a recursive one — would both match 0,\nso the recursion runs away; the guard keeps it single-valued.)",
-          "definitionUri": "examples/13-trace.metta",
           "sourcePath": "examples/13-trace.metta",
           "range": {
             "start": {
@@ -827,7 +781,6 @@
     {
       "name": "14-editor-surfaces",
       "slug": "14-editor-surfaces",
-      "sourceUri": "examples/14-editor-surfaces.metta",
       "sourcePath": "examples/14-editor-surfaces.metta",
       "imports": [
         "math"
@@ -841,7 +794,6 @@
           "signature": "(: Circle Shape)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/14-editor-surfaces.metta",
           "sourcePath": "examples/14-editor-surfaces.metta",
           "range": {
             "start": {
@@ -863,7 +815,6 @@
           "signature": "(: Shape Type)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/14-editor-surfaces.metta",
           "sourcePath": "examples/14-editor-surfaces.metta",
           "range": {
             "start": {
@@ -885,7 +836,6 @@
           "signature": "(: Square Shape)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/14-editor-surfaces.metta",
           "sourcePath": "examples/14-editor-surfaces.metta",
           "range": {
             "start": {
@@ -907,7 +857,6 @@
           "signature": "(describe-shape $x $y)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/14-editor-surfaces.metta",
           "sourcePath": "examples/14-editor-surfaces.metta",
           "range": {
             "start": {
@@ -929,7 +878,6 @@
           "signature": "(: perimeter (-> Shape Number Number))",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/14-editor-surfaces.metta",
           "sourcePath": "examples/14-editor-surfaces.metta",
           "range": {
             "start": {
@@ -951,7 +899,6 @@
           "signature": "(scale-square $x)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/14-editor-surfaces.metta",
           "sourcePath": "examples/14-editor-surfaces.metta",
           "range": {
             "start": {
@@ -967,13 +914,12 @@
         },
         {
           "name": "$name",
-          "anchor": "name",
+          "anchor": "_24_name",
           "kind": "constant",
           "type": "Shape",
           "signature": "(: $name Shape)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/14-editor-surfaces.metta",
           "sourcePath": "examples/14-editor-surfaces.metta",
           "range": {
             "start": {
@@ -992,7 +938,6 @@
     {
       "name": "15-guarded-and-agent-surfaces",
       "slug": "15-guarded-and-agent-surfaces",
-      "sourceUri": "examples/15-guarded-and-agent-surfaces.metta",
       "sourcePath": "examples/15-guarded-and-agent-surfaces.metta",
       "imports": [],
       "symbols": [
@@ -1004,7 +949,6 @@
           "signature": "(agent-visible $x)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/15-guarded-and-agent-surfaces.metta",
           "sourcePath": "examples/15-guarded-and-agent-surfaces.metta",
           "range": {
             "start": {
@@ -1026,7 +970,6 @@
           "signature": "(: double (-> Number Number))",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/15-guarded-and-agent-surfaces.metta",
           "sourcePath": "examples/15-guarded-and-agent-surfaces.metta",
           "range": {
             "start": {
@@ -1048,7 +991,6 @@
           "signature": "(: guarded-sum (-> Number Number))",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/15-guarded-and-agent-surfaces.metta",
           "sourcePath": "examples/15-guarded-and-agent-surfaces.metta",
           "range": {
             "start": {
@@ -1067,7 +1009,6 @@
     {
       "name": "16-debugging",
       "slug": "16-debugging",
-      "sourceUri": "examples/16-debugging.metta",
       "sourcePath": "examples/16-debugging.metta",
       "imports": [],
       "symbols": [
@@ -1079,7 +1020,6 @@
           "signature": "(: countdown (-> Number Number))",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/16-debugging.metta",
           "sourcePath": "examples/16-debugging.metta",
           "range": {
             "start": {
@@ -1101,7 +1041,6 @@
           "signature": "(: stop-at-two (-> Number Atom))",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/16-debugging.metta",
           "sourcePath": "examples/16-debugging.metta",
           "range": {
             "start": {
@@ -1120,7 +1059,6 @@
     {
       "name": "17-prolog-diagnostics/main",
       "slug": "17-prolog-diagnostics/main",
-      "sourceUri": "examples/17-prolog-diagnostics/main.metta",
       "sourcePath": "examples/17-prolog-diagnostics/main.metta",
       "imports": [
         "bad-facts.pl",
@@ -1131,7 +1069,6 @@
     {
       "name": "18-host-bridge/main",
       "slug": "18-host-bridge/main",
-      "sourceUri": "examples/18-host-bridge/main.metta",
       "sourcePath": "examples/18-host-bridge/main.metta",
       "imports": [],
       "symbols": [
@@ -1143,7 +1080,6 @@
           "signature": "(bad-host-call)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/18-host-bridge/main.metta",
           "sourcePath": "examples/18-host-bridge/main.metta",
           "range": {
             "start": {
@@ -1165,7 +1101,6 @@
           "signature": "(biggest-global)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/18-host-bridge/main.metta",
           "sourcePath": "examples/18-host-bridge/main.metta",
           "range": {
             "start": {
@@ -1187,7 +1122,6 @@
           "signature": "(winner $x $y)",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/18-host-bridge/main.metta",
           "sourcePath": "examples/18-host-bridge/main.metta",
           "range": {
             "start": {
@@ -1206,7 +1140,6 @@
     {
       "name": "math",
       "slug": "math",
-      "sourceUri": "examples/math.metta",
       "sourcePath": "examples/math.metta",
       "imports": [],
       "symbols": [
@@ -1218,7 +1151,6 @@
           "signature": "(: double (-> Number Number))",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/math.metta",
           "sourcePath": "examples/math.metta",
           "range": {
             "start": {
@@ -1240,7 +1172,6 @@
           "signature": "(: inc (-> Number Number))",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/math.metta",
           "sourcePath": "examples/math.metta",
           "range": {
             "start": {
@@ -1262,7 +1193,6 @@
           "signature": "(: main (-> Number Number))",
           "doc": null,
           "fallbackDoc": null,
-          "definitionUri": "examples/math.metta",
           "sourcePath": "examples/math.metta",
           "range": {
             "start": {
@@ -1288,9 +1218,7 @@
       "mettaType": "(-> Number Number Number)",
       "docs": "Larger of two numbers, registered as the MeTTa operation `my-max`.",
       "origin": "host.ts",
-      "sourceUri": "examples/18-host-bridge/host.ts",
       "sourcePath": "examples/18-host-bridge/host.ts",
-      "definitionUri": "examples/18-host-bridge/host.ts",
       "definitionRange": {
         "start": {
           "line": 3,

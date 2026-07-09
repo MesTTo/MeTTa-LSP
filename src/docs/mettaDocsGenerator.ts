@@ -142,21 +142,17 @@ export async function generateMettaDocs(
   const bindings = hostBindings(hostRoots);
   const workspaceRootUri =
     moduleRoots.length === 1 ? pathToUri(moduleRoots[0] as string) : pathToUri(options.repoRoot);
-  const draftIndex = buildMettaDocIndex({
+  const builtIndex = buildMettaDocIndex({
     analyzer,
     runtime,
     workspaceRootUri,
     sourceRootUri: pathToUri(options.repoRoot),
     hostBindings: bindings,
   });
-  const index = buildMettaDocIndex({
-    analyzer,
-    runtime,
-    workspaceRootUri,
-    sourceRootUri: pathToUri(options.repoRoot),
-    hostBindings: bindings,
-    generatedAt: generatedAtFor(options.docsRoot, draftIndex.sourceFingerprint),
-  });
+  const index: MettaDocIndex = {
+    ...builtIndex,
+    generatedAt: generatedAtFor(options.docsRoot, builtIndex.sourceFingerprint),
+  };
   writeGeneratedDocs(options.docsRoot, options.sidebarPath, index);
   const symbolCount = index.modules.reduce((sum, module) => sum + module.symbols.length, 0);
   return {

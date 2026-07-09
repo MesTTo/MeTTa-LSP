@@ -29,8 +29,8 @@ const GROUPS: readonly { readonly kind: string; readonly title: string }[] = [
 const INTRO = `# Builtins reference
 
 Every builtin the language server knows: special forms, type constructors, and grounded functions.
-Hovering a builtin in your editor links here to its entry. Punctuation operators (\`+\`, \`->\`) share the
-top of each section; named builtins have their own anchor.
+Hovering a builtin in your editor links here to its entry. Every builtin, including punctuation operators
+such as \`+\` and \`->\`, has its own anchor.
 
 <img src="/assets/animations/divider-candy.svg" alt="" class="candy-divider" />`;
 
@@ -47,12 +47,12 @@ function signatureFence(def: DefinitionRecord): string | null {
   return null;
 }
 
-// Operators (punctuation names that slug to an empty anchor) sort before named builtins within a section, and
-// named builtins sort alphabetically — a stable, deterministic order independent of catalog insertion order.
+// Punctuation operators sort before named builtins within a section, then entries sort alphabetically. The
+// order is deterministic and independent of catalog insertion order.
 function orderEntries(entries: readonly BuiltinEntry[]): BuiltinEntry[] {
   return [...entries].sort((a, b) => {
-    const aNamed = anchor(a.def.name).length === 0 ? 0 : 1;
-    const bNamed = anchor(b.def.name).length === 0 ? 0 : 1;
+    const aNamed = /[A-Za-z0-9_]/.test(a.def.name) ? 1 : 0;
+    const bNamed = /[A-Za-z0-9_]/.test(b.def.name) ? 1 : 0;
     if (aNamed !== bNamed) return aNamed - bNamed;
     return a.def.name.localeCompare(b.def.name);
   });
@@ -60,9 +60,7 @@ function orderEntries(entries: readonly BuiltinEntry[]): BuiltinEntry[] {
 
 function renderEntry({ def, doc }: BuiltinEntry): string {
   const slug = anchor(def.name);
-  const parts: string[] = [
-    slug.length > 0 ? `### \`${def.name}\` {#${slug}}` : `### \`${def.name}\``,
-  ];
+  const parts: string[] = [`### \`${def.name}\` {#${slug}}`];
 
   const fence = signatureFence(def);
   if (fence !== null) parts.push(`\`\`\`metta\n${fence}\n\`\`\``);

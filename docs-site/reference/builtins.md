@@ -4,14 +4,14 @@
 # Builtins reference
 
 Every builtin the language server knows: special forms, type constructors, and grounded functions.
-Hovering a builtin in your editor links here to its entry. Punctuation operators (`+`, `->`) share the
-top of each section; named builtins have their own anchor.
+Hovering a builtin in your editor links here to its entry. Every builtin, including punctuation operators
+such as `+` and `->`, has its own anchor.
 
 <img src="/assets/animations/divider-candy.svg" alt="" class="candy-divider" />
 
 ## Special forms and macros
 
-### `:`
+### `:` {#_3a_}
 
 ```metta
 (: symbol type) -> type-declaration
@@ -19,7 +19,7 @@ top of each section; named builtins have their own anchor.
 
 Attach a MeTTa type declaration to a symbol.
 
-### `!`
+### `!` {#_21_}
 
 ```metta
 (! expression) -> result
@@ -27,7 +27,7 @@ Attach a MeTTa type declaration to a symbol.
 
 Evaluate a top-level MeTTa query. The language server indexes bang forms but never executes them.
 
-### `=`
+### `=` {#_3d_}
 
 ```metta
 (-> $t $t %Undefined%)
@@ -41,7 +41,7 @@ Defines a reduction rule for expressions
 
 **Returns** `%Undefined%` — Not reduced itself unless custom equalities over equalities are added
 
-### `bind!` {#bind-}
+### `bind!` {#bind_21_}
 
 Registers a token replaced by an atom during parsing of the rest of the program
 
@@ -95,7 +95,7 @@ Replaces itself by one of the arguments depending on the condition
 
 **Returns** `$t` — Second or third argument
 
-### `import!` {#import-}
+### `import!` {#import_21_}
 
 Imports a module by relative path, binding it to a token; &self imports into the current space
 
@@ -118,7 +118,7 @@ Includes a MeTTa script into the current space, like import! with &self
 
 **Returns** `%Undefined%` — Unit atom
 
-### `include!` {#include-}
+### `include!` {#include_21_}
 
 ```metta
 (include! "path/to/file.metta") -> Unit
@@ -141,7 +141,7 @@ Unifies the first two arguments and evaluates the third under the resulting bind
 
 **Returns** `%Undefined%` — The third argument, or Empty
 
-### `let*` {#let-}
+### `let*` {#let_2a_}
 
 ```metta
 (-> Expression Atom %Undefined%)
@@ -155,7 +155,7 @@ Sequentially unifies a list of pairs, then evaluates a body
 
 **Returns** `%Undefined%` — The body, or Empty
 
-### `pragma!` {#pragma-}
+### `pragma!` {#pragma_21_}
 
 Changes the value of a global key, such as type-check, interpreter, or max-stack-depth
 
@@ -178,7 +178,7 @@ Prevents an atom from being reduced
 
 **Returns** `Atom` — Quoted atom
 
-### `register-module!` {#register-module-}
+### `register-module!` {#register-module_21_}
 
 Loads a module into the runner from a file system path
 
@@ -202,7 +202,7 @@ Unquotes a quoted atom
 
 ## Type constructors
 
-### `->`
+### `->` {#-_3e_}
 
 ```metta
 (-> A B) -> FunctionType
@@ -210,7 +210,7 @@ Unquotes a quoted atom
 
 Function type constructor. The last argument is the return type; preceding arguments are parameters.
 
-### `%Undefined%` {#Undefined-}
+### `%Undefined%` {#_25_Undefined_25_}
 
 ```metta
 (: %Undefined% Type)
@@ -218,7 +218,7 @@ Function type constructor. The last argument is the return type; preceding argum
 
 Standard MeTTa type %Undefined%.
 
-### `%void%` {#void-}
+### `%void%` {#_25_void_25_}
 
 ```metta
 (: %void% Type)
@@ -474,7 +474,7 @@ Standard MeTTa type Variable.
 
 ## Functions and operators
 
-### `-`
+### `-` {#-}
 
 ```metta
 (-> Number Number Number)
@@ -488,7 +488,7 @@ Subtracts second argument from first one
 
 **Returns** `Number` — Difference
 
-### `*`
+### `*` {#_2a_}
 
 ```metta
 (-> Number Number Number)
@@ -502,7 +502,7 @@ Multiplies two numbers
 
 **Returns** `Number` — Product
 
-### `/`
+### `/` {#_2f_}
 
 ```metta
 (-> Number Number Number)
@@ -516,7 +516,7 @@ Divides first argument by second one
 
 **Returns** `Number` — Fraction
 
-### `%`
+### `%` {#_25_}
 
 ```metta
 (-> Number Number Number)
@@ -530,7 +530,7 @@ Modulo operator. Returns the remainder of dividing the first argument by the sec
 
 **Returns** `Number` — Remainder
 
-### `+`
+### `+` {#_2b_}
 
 ```metta
 (-> Number Number Number)
@@ -544,7 +544,7 @@ Sums two numbers
 
 **Returns** `Number` — Sum
 
-### `<`
+### `<` {#_3c_}
 
 ```metta
 (-> Number Number Bool)
@@ -558,7 +558,7 @@ Less than. Checks whether the first argument is less than the second
 
 **Returns** `Bool` — True if the first argument is less than the second, False otherwise
 
-### `<=`
+### `<=` {#_3c__3d_}
 
 ```metta
 (-> Number Number Bool)
@@ -572,7 +572,7 @@ Less than or equal. Checks whether the first argument is less than or equal to t
 
 **Returns** `Bool` — True if the first argument is less than or equal to the second, False otherwise
 
-### `==`
+### `==` {#_3d__3d_}
 
 ```metta
 (-> $t $t Bool)
@@ -586,7 +586,7 @@ Checks equality of two arguments of the same type
 
 **Returns** `Bool` — True if the two arguments are equal, False otherwise
 
-### `>`
+### `>` {#_3e_}
 
 ```metta
 (-> Number Number Bool)
@@ -600,7 +600,7 @@ Greater than. Checks whether the first argument is greater than the second
 
 **Returns** `Bool` — True if the first argument is greater than the second, False otherwise
 
-### `>=`
+### `>=` {#_3e__3d_}
 
 ```metta
 (-> Number Number Bool)
@@ -614,7 +614,7 @@ Greater than or equal. Checks whether the first argument is greater than or equa
 
 **Returns** `Bool` — True if the first argument is greater than or equal to the second, False otherwise
 
-### `@desc` {#at-desc}
+### `@desc` {#_40_desc}
 
 ```metta
 (-> String DocDescription)
@@ -622,7 +622,7 @@ Greater than or equal. Checks whether the first argument is greater than or equa
 
 Wraps documentation text
 
-### `@doc` {#at-doc}
+### `@doc` {#_40_doc}
 
 ```metta
 (-> Atom DocDescription DocInformal)
@@ -630,7 +630,7 @@ Wraps documentation text
 
 Stores informal documentation for a symbol
 
-### `@doc-formal` {#at-doc-formal}
+### `@doc-formal` {#_40_doc-formal}
 
 ```metta
 (-> DocItem DocKindFunction DocType DocDescription DocParameters DocReturn DocFormal)
@@ -638,7 +638,7 @@ Stores informal documentation for a symbol
 
 Represents documentation after get-doc has attached kinds, types, params, and return info
 
-### `@item` {#at-item}
+### `@item` {#_40_item}
 
 ```metta
 (-> Atom DocItem)
@@ -646,7 +646,7 @@ Represents documentation after get-doc has attached kinds, types, params, and re
 
 Wraps the documented item name
 
-### `@kind` {#at-kind}
+### `@kind` {#_40_kind}
 
 ```metta
 (-> Atom DocKindFunction)
@@ -654,7 +654,7 @@ Wraps the documented item name
 
 Wraps the documented item kind
 
-### `@param` {#at-param}
+### `@param` {#_40_param}
 
 ```metta
 (-> String DocParameterInformal)
@@ -662,7 +662,7 @@ Wraps the documented item kind
 
 Wraps a parameter description
 
-### `@params` {#at-params}
+### `@params` {#_40_params}
 
 ```metta
 (-> Expression DocParameters)
@@ -670,7 +670,7 @@ Wraps a parameter description
 
 Wraps the informal parameter list
 
-### `@return` {#at-return}
+### `@return` {#_40_return}
 
 ```metta
 (-> String DocReturnInformal)
@@ -678,7 +678,7 @@ Wraps the informal parameter list
 
 Wraps a return description
 
-### `@type` {#at-type}
+### `@type` {#_40_type}
 
 ```metta
 (-> Type DocType)
@@ -976,7 +976,7 @@ Returns the arctangent of the input value
 
 **Returns** `Number` — Result of the arctangent function
 
-### `atom_concat` {#atom_concat}
+### `atom_concat` {#atom_5f_concat}
 
 ### `atom-subst` {#atom-subst}
 
@@ -1078,7 +1078,7 @@ Returns the smallest integer greater than or equal to the input value
 
 **Returns** `Number` — Integer greater than or equal to the input
 
-### `change-state!` {#change-state-}
+### `change-state!` {#change-state_21_}
 
 ```metta
 (-> (StateMonad $t) $t (StateMonad $t))
@@ -1460,7 +1460,7 @@ Returns the type notation of an atom relative to a specified space
 
 **Returns** `%Undefined%` — Type notation, or %Undefined% if the atom has no type in the space
 
-### `git-module!` {#git-module-}
+### `git-module!` {#git-module_21_}
 
 ```metta
 (-> Atom (->))
@@ -1473,7 +1473,7 @@ Returns an error because git modules are not supported in @metta-ts
 
 **Returns** `(->)` — Unsupported-module error
 
-### `help-space!` {#help-space-}
+### `help-space!` {#help-space_21_}
 
 ```metta
 (-> SpaceType (->))
@@ -1486,7 +1486,7 @@ Prints documentation for every atom in a space
 
 **Returns** `(->)` — Unit atom
 
-### `help!` {#help-}
+### `help!` {#help_21_}
 
 ```metta
 (-> Atom %Undefined%)
@@ -1559,7 +1559,7 @@ Checks whether the first argument is an error and returns the second if so, the 
 
 ### `implies` {#implies}
 
-### `import_prolog_function` {#import_prolog_function}
+### `import_prolog_function` {#import_5f_prolog_5f_function}
 
 ```metta
 (import_prolog_function Atom) -> Bool
@@ -1567,7 +1567,7 @@ Checks whether the first argument is an error and returns the second if so, the 
 
 Inspect a Prolog predicate's arities and install MeTTa function wrappers for its result argument.
 
-### `import_prolog_functions_from_file` {#import_prolog_functions_from_file}
+### `import_prolog_functions_from_file` {#import_5f_prolog_5f_functions_5f_from_5f_file}
 
 ```metta
 (import_prolog_functions_from_file Atom Expression) -> Bool
@@ -1744,7 +1744,7 @@ Returns the number of atoms in an expression
 
 **Returns** `Number` — Number of atoms
 
-### `list_to_set` {#list_to_set}
+### `list_to_set` {#list_5f_to_5f_set}
 
 ```metta
 (-> %Undefined% Expression)
@@ -1944,7 +1944,7 @@ Returns the minimum value in an expression of numbers
 
 **Returns** `Number` — Minimum value, or an error if the expression is non-numeric or empty
 
-### `mod-space!` {#mod-space-}
+### `mod-space!` {#mod-space_21_}
 
 ```metta
 (-> Atom SpaceType)
@@ -2124,7 +2124,7 @@ Returns the base raised to the given power
 
 Mark a MeTTa expression as a Prolog predicate term for callPredicate-style interop.
 
-### `print-mods!` {#print-mods-}
+### `print-mods!` {#print-mods_21_}
 
 ```metta
 (-> (->))
@@ -2134,7 +2134,7 @@ Prints all modules with their corresponding spaces
 
 **Returns** `(->)` — Unit atom
 
-### `print!` {#print-}
+### `print!` {#print_21_}
 
 ```metta
 (-> %Undefined% (->))
@@ -2147,7 +2147,7 @@ Prints text to the console without adding a newline
 
 **Returns** `(->)` — Unit atom
 
-### `println!` {#println-}
+### `println!` {#println_21_}
 
 ```metta
 (-> %Undefined% (->))
@@ -2610,7 +2610,7 @@ Returns the tangent of the input value in radians
 
 **Returns** `Number` — Result of the tangent function
 
-### `trace!` {#trace-}
+### `trace!` {#trace_21_}
 
 ```metta
 (-> %Undefined% Atom %Undefined%)
@@ -2703,7 +2703,7 @@ Returns only the unique values from a nondeterministic input
 
 **Returns** `%Undefined%` — Unique values
 
-### `with_mutex` {#with_mutex}
+### `with_mutex` {#with_5f_mutex}
 
 ```metta
 (-> Atom Atom %Undefined%)

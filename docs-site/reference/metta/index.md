@@ -5,7 +5,7 @@
 
 This reference is generated from MeTTa definitions, `@doc` atoms, `;;` doc comments, and TypeScript grounded-operation signatures.
 
-Source fingerprint: `22207-584c2d77`
+Source fingerprint: `18699-2784be75`
 
 ## Modules
 
