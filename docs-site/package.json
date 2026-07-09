@@ -1,0 +1,22 @@
+{
+  "name": "@metta-lsp/docs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Documentation and reference site for the MeTTa language server.",
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "dependencies": {
+    "@metta-ts/core": "^1.1.2",
+    "@metta-ts/grapher": "^1.1.2",
+    "codejar": "^4.2.0",
+    "gifenc": "^1.0.3"
+  },
+  "devDependencies": {
+    "@shikijs/themes": "^2.5.0",
+    "vitepress": "^1.6.3"
+  }
+}

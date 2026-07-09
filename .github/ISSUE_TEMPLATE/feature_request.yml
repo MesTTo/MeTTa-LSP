@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: 2026 MesTTo
+# SPDX-License-Identifier: Apache-2.0
+
+name: Feature request
+description: Propose a new capability or behavior change.
+title: "[Feature]: "
+labels:
+  - enhancement
+  - triage
+body:
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - VS Code extension
+        - Stdio LSP client
+        - CLI
+        - MCP server
+        - Docs site
+        - TypeScript plugin
+        - Debug adapter
+        - Language analysis
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What workflow is blocked or awkward today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the behavior you want. Include a MeTTa example when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Mention existing commands, settings, or editor workflows you tried.
+    validations:
+      required: false
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: I included a concrete example or workflow.
+          required: true
+        - label: I checked whether an existing command, setting, or MCP tool already covers this.
+          required: true

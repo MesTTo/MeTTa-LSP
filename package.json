@@ -1,0 +1,837 @@
+{
+  "name": "metta-ts-lsp",
+  "displayName": "MeTTa LSP",
+  "description": "A MeTTa language server, VS Code extension, CLI, MCP server, and documentation toolkit built on the pure-TypeScript @metta-ts/core interpreter.",
+  "version": "0.11.1",
+  "publisher": "MesTTo",
+  "license": "Apache-2.0",
+  "icon": "icon.png",
+  "keywords": [
+    "metta",
+    "hyperon",
+    "language server",
+    "lsp",
+    "mcp",
+    "vscode",
+    "vscode-extension",
+    "syntax highlighting",
+    "diagnostics",
+    "developer tools"
+  ],
+  "bugs": {
+    "url": "https://github.com/MesTTo/MeTTa-LSP/issues"
+  },
+  "homepage": "https://github.com/MesTTo/MeTTa-LSP#readme",
+  "galleryBanner": {
+    "color": "#111827",
+    "theme": "dark"
+  },
+  "qna": "marketplace",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MesTTo/MeTTa-LSP"
+  },
+  "engines": {
+    "vscode": "^1.90.0",
+    "node": ">=20.19.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters",
+    "Snippets"
+  ],
+  "activationEvents": [
+    "onLanguage:metta",
+    "onCommand:metta.restartServer",
+    "onCommand:metta.showIndexStats",
+    "onCommand:metta.showSideEffectPolicy",
+    "onCommand:metta.organizeImports",
+    "onCommand:metta.evaluateGuarded",
+    "onCommand:metta.visualise",
+    "onCommand:metta.explainForm",
+    "onCommand:metta.runChecks",
+    "onCommand:metta.run",
+    "onCommand:metta.trace",
+    "onCommand:metta.settings"
+  ],
+  "main": "./dist/client/extension.cjs",
+  "exports": {
+    ".": "./dist/client/extension.cjs",
+    "./dsl": "./dist/dsl/index.js",
+    "./package.json": "./package.json"
+  },
+  "contributes": {
+    "typescriptServerPlugins": [
+      {
+        "name": "metta-ts-typescript-plugin",
+        "enableForWorkspaceTypeScriptVersions": true
+      }
+    ],
+    "languages": [
+      {
+        "id": "metta",
+        "aliases": [
+          "MeTTa",
+          "metta"
+        ],
+        "extensions": [
+          ".metta"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/metta-file.png",
+          "dark": "./icons/metta-file.png"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "metta",
+        "scopeName": "source.metta",
+        "path": "./syntaxes/metta.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "metta",
+        "path": "./snippets/metta.json"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "metta",
+        "label": "MeTTa Reduction",
+        "program": "./dist/debug/mettaDebugAdapter.js",
+        "runtime": "node",
+        "languages": [
+          "metta"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program",
+              "query"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "The MeTTa file whose definitions to load.",
+                "default": "${file}"
+              },
+              "query": {
+                "type": "string",
+                "description": "The query atom to reduce step by step."
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "metta",
+            "request": "launch",
+            "name": "MeTTa: reduce query",
+            "program": "${file}",
+            "query": ""
+          }
+        ]
+      }
+    ],
+    "semanticTokenTypes": [
+      {
+        "id": "mettaControlFlow",
+        "superType": "keyword",
+        "description": "MeTTa control-flow and branching forms such as if, case, collapse, and superpose."
+      },
+      {
+        "id": "mettaBinding",
+        "superType": "keyword",
+        "description": "MeTTa binding and sequencing forms such as let, let*, chain, function, and return."
+      },
+      {
+        "id": "mettaPattern",
+        "superType": "keyword",
+        "description": "MeTTa pattern-matching forms such as match and unify."
+      },
+      {
+        "id": "mettaModule",
+        "superType": "keyword",
+        "description": "MeTTa module and configuration forms such as import!, include, include!, and pragma!."
+      },
+      {
+        "id": "mettaTypeOperator",
+        "superType": "keyword",
+        "description": "MeTTa type and declaration forms such as : and ->."
+      },
+      {
+        "id": "mettaEvaluation",
+        "superType": "keyword",
+        "description": "MeTTa evaluation forms such as !, =, eval, evalc, metta, and interpret-tuple."
+      },
+      {
+        "id": "mettaQuote",
+        "superType": "keyword",
+        "description": "MeTTa quote-control forms such as quote, unquote, and noeval."
+      },
+      {
+        "id": "mettaEffect",
+        "superType": "function",
+        "description": "MeTTa state, space, IO, random, and host-bridge operations such as add-atom, println!, random-int, and py-call."
+      },
+      {
+        "id": "mettaArithmeticOperator",
+        "superType": "operator",
+        "description": "MeTTa arithmetic operators such as +, -, *, /, and %."
+      },
+      {
+        "id": "mettaComparisonOperator",
+        "superType": "operator",
+        "description": "MeTTa comparison operators such as <, <=, >, >=, and ==."
+      },
+      {
+        "id": "mettaLogicalOperator",
+        "superType": "operator",
+        "description": "MeTTa logical operators such as and, or, not, and xor."
+      },
+      {
+        "id": "mettaMathFunction",
+        "superType": "function",
+        "description": "MeTTa math functions such as sqrt, pow-math, sin-math, min, and max."
+      },
+      {
+        "id": "mettaCollectionFunction",
+        "superType": "function",
+        "description": "MeTTa expression, list, and set functions such as cons-atom, car-atom, append, map-atom, union, and length."
+      },
+      {
+        "id": "mettaPredicateFunction",
+        "superType": "function",
+        "description": "MeTTa predicate functions such as is-var, is-ground, is-member, noreduce-eq, and isnan-math."
+      },
+      {
+        "id": "mettaAssertion",
+        "superType": "function",
+        "description": "MeTTa test assertion forms such as assert, assertEqual, and assertAlphaEqualToResult."
+      }
+    ],
+    "semanticTokenModifiers": [
+      {
+        "id": "declaration",
+        "description": "Declaration site"
+      },
+      {
+        "id": "definition",
+        "description": "Definition site"
+      },
+      {
+        "id": "readonly",
+        "description": "Built-in or immutable symbol"
+      },
+      {
+        "id": "defaultLibrary",
+        "description": "Known standard-library symbol"
+      },
+      {
+        "id": "returnType",
+        "description": "Return-position type term in an arrow signature"
+      },
+      {
+        "id": "undefined",
+        "description": "Unresolved symbol"
+      },
+      {
+        "id": "deprecated",
+        "description": "Deprecated symbol"
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "metta",
+        "scopes": {
+          "mettaControlFlow": [
+            "keyword.control.conditional.metta",
+            "keyword.control.metta"
+          ],
+          "mettaBinding": [
+            "storage.type.metta",
+            "keyword.control.metta"
+          ],
+          "mettaPattern": [
+            "keyword.control.pattern.metta",
+            "keyword.control.metta"
+          ],
+          "mettaModule": [
+            "keyword.control.import.metta",
+            "keyword.control.metta"
+          ],
+          "mettaTypeOperator": [
+            "keyword.operator.type.metta",
+            "keyword.control.metta"
+          ],
+          "mettaEvaluation": [
+            "keyword.control.evaluation.metta",
+            "keyword.control.metta"
+          ],
+          "mettaQuote": [
+            "keyword.operator.quote.metta",
+            "keyword.control.metta"
+          ],
+          "mettaEffect": [
+            "support.function.effect.metta",
+            "support.function.metta"
+          ],
+          "mettaArithmeticOperator": [
+            "keyword.operator.arithmetic.metta",
+            "keyword.operator.metta"
+          ],
+          "mettaComparisonOperator": [
+            "keyword.operator.comparison.metta",
+            "keyword.operator.metta"
+          ],
+          "mettaLogicalOperator": [
+            "keyword.operator.logical.metta",
+            "keyword.operator.metta"
+          ],
+          "mettaMathFunction": [
+            "support.function.math.metta",
+            "support.function.metta"
+          ],
+          "mettaCollectionFunction": [
+            "support.function.collection.metta",
+            "support.function.metta"
+          ],
+          "mettaPredicateFunction": [
+            "support.function.predicate.metta",
+            "support.function.metta"
+          ],
+          "mettaAssertion": [
+            "support.function.assertion.metta",
+            "support.function.metta"
+          ]
+        }
+      }
+    ],
+    "configurationDefaults": {
+      "[metta]": {
+        "editor.semanticHighlighting.enabled": true,
+        "editor.bracketPairColorization.enabled": true,
+        "editor.wordBasedSuggestions": "off",
+        "editor.formatOnType": true
+      }
+    },
+    "configuration": {
+      "title": "MeTTa",
+      "properties": {
+        "metta.server.trace": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Controls LSP message tracing."
+        },
+        "metta.logLevel": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace"
+          ],
+          "enumDescriptions": [
+            "Only errors.",
+            "Errors and warnings.",
+            "Errors, warnings, and lifecycle events (default).",
+            "Adds per-document validate timing and internal events.",
+            "Most verbose: fine-grained tracing."
+          ],
+          "default": "info",
+          "description": "Verbosity of the language server's own log in the 'MeTTa Language Server' output channel."
+        },
+        "metta.workspace.maxFiles": {
+          "type": "number",
+          "default": 4000,
+          "minimum": 1,
+          "description": "Maximum number of .metta files indexed per workspace."
+        },
+        "metta.workspace.exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules/**",
+            "**/.git/**",
+            "**/dist/**",
+            "**/out/**",
+            "**/.venv/**",
+            "**/__pycache__/**"
+          ],
+          "description": "Glob-like path fragments excluded from workspace indexing."
+        },
+        "metta.diagnostics.syntax": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report parser and delimiter diagnostics."
+        },
+        "metta.diagnostics.duplicateDefinitions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Warn on duplicate top-level definitions with the same name and arity."
+        },
+        "metta.diagnostics.duplicateDefinitionsMode": {
+          "type": "string",
+          "enum": [
+            "local",
+            "global"
+          ],
+          "default": "local",
+          "description": "Whether duplicate definition diagnostics are local to the file or workspace-wide."
+        },
+        "metta.diagnostics.undefinedFunctions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report unresolved function and operator calls."
+        },
+        "metta.diagnostics.undefinedTypes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report unresolved type names inside (: ...) declarations."
+        },
+        "metta.diagnostics.undefinedVariables": {
+          "type": "boolean",
+          "default": false,
+          "description": "Report likely free variables in function bodies. Disabled by default because many MeTTa programs intentionally use logic variables."
+        },
+        "metta.diagnostics.unboundSpaces": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report unresolved named spaces and bindings such as &kb."
+        },
+        "metta.diagnostics.arity": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report argument-count mismatches for known signatures and indexed definitions."
+        },
+        "metta.diagnostics.typeMismatch": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report simple literal type mismatches against declared signatures."
+        },
+        "metta.diagnostics.lint": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run the syntactic linter (built-in rules plus project rules from lint.metta) as diagnostics with quick-fix rewrites."
+        },
+        "metta.diagnostics.prolog": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report parser diagnostics from Prolog files referenced by Prolog bridge forms such as prolog-consult, import_prolog_functions_from_file, and .pl import! paths. The check reads Prolog terms but does not consult or execute the file."
+        },
+        "metta.diagnostics.semanticLint": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run the semantic linter for recursive-type and inconsistent-arity checks. Off by default because it is an extra background pass; the CLI runs it on demand regardless."
+        },
+        "metta.diagnostics.bridge": {
+          "type": "boolean",
+          "default": true,
+          "description": "Cross-language host bridge diagnostics: check literal call arguments and (: name ..) declarations against the TypeScript host signature of a grounded atom. Inert unless the workspace has TypeScript host code."
+        },
+        "metta.hover.userDefinitionComments": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include adjacent preceding doc comments (`;;` or explicit doc tags) in hover for user definitions."
+        },
+        "metta.completion.autoImports": {
+          "type": "boolean",
+          "default": true,
+          "description": "Offer completions that insert import! forms for symbols defined in other workspace files."
+        },
+        "metta.completion.includeSnippets": {
+          "type": "boolean",
+          "default": true,
+          "description": "Offer snippet completions for common MeTTa forms and bridge operations."
+        },
+        "metta.runtime.engine": {
+          "type": "string",
+          "enum": [
+            "metta-ts-core",
+            "metta-ts-node",
+            "off"
+          ],
+          "default": "metta-ts-core",
+          "description": "Runtime family for explicit guarded evaluation/adapters. Analysis features do not evaluate code."
+        },
+        "metta.runtime.mettaTsCli": {
+          "type": "string",
+          "default": "metta-ts",
+          "description": "CLI executable reserved for explicit external runtime adapters; not called by LSP/MCP analysis."
+        },
+        "metta.runtime.nodePath": {
+          "type": "string",
+          "default": "node",
+          "description": "Node executable reserved for explicit external runtime adapters; not called by LSP/MCP analysis."
+        },
+        "metta.runtime.allowSideEffects": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enables explicit guarded evaluation requests. External effects remain controlled by metta.runtime.guard.* settings."
+        },
+        "metta.prolog.executable": {
+          "type": "string",
+          "default": "swipl",
+          "description": "SWI-Prolog executable used only for parser diagnostics on referenced .pl files."
+        },
+        "metta.prolog.timeoutMs": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 100,
+          "description": "Wall-clock timeout in milliseconds for one Prolog parser diagnostic run."
+        },
+        "metta.run.fuel": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "description": "Step budget for the unguarded Run (play button, run code lens). 0 means effectively unlimited, so MeTTa's pragma! governs; a positive value is an explicit cap."
+        },
+        "metta.run.timeoutMs": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "description": "Safety-net timeout in milliseconds for the unguarded Run before its worker is terminated. 0 uses the default (120000)."
+        },
+        "metta.docs.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Base URL of the MeTTa docs site. Hover 'Open docs' links and diagnostic docs links resolve against it (e.g. https://your-user.github.io/MeTTa-LSP). Leave empty to turn docs links off."
+        },
+        "metta.inlayHints.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show inlay hints for parameter names and return types at call sites."
+        },
+        "metta.pseudocode.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Pseudocode mode: show each top-level form's mixfix reading (e.g. fact(5), $x + 1) as a code lens above it."
+        },
+        "metta.runtime.guard.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable explicit guarded evaluation requests. Analysis operations remain read-only."
+        },
+        "metta.runtime.guard.engine": {
+          "type": "string",
+          "enum": [
+            "metta-ts-core",
+            "off"
+          ],
+          "default": "metta-ts-core",
+          "description": "Engine for explicit guarded evaluation. The bundled implementation currently executes metta-ts-core locally."
+        },
+        "metta.runtime.guard.fuel": {
+          "type": "number",
+          "default": 20000,
+          "minimum": 1,
+          "description": "Maximum @metta-ts/core evaluator fuel for a guarded evaluation."
+        },
+        "metta.runtime.guard.timeoutMs": {
+          "type": "number",
+          "default": 1500,
+          "minimum": 50,
+          "description": "Wall-clock timeout for the isolated evaluation worker."
+        },
+        "metta.runtime.guard.maxSourceBytes": {
+          "type": "number",
+          "default": 65536,
+          "minimum": 1,
+          "description": "Maximum UTF-8 bytes of source accepted by guarded evaluation."
+        },
+        "metta.runtime.guard.maxResults": {
+          "type": "number",
+          "default": 128,
+          "minimum": 1,
+          "description": "Maximum query result sets returned by guarded evaluation."
+        },
+        "metta.runtime.guard.maxResultChars": {
+          "type": "number",
+          "default": 32768,
+          "minimum": 1,
+          "description": "Maximum formatted result characters returned by guarded evaluation."
+        },
+        "metta.runtime.guard.maxOutputChars": {
+          "type": "number",
+          "default": 16384,
+          "minimum": 0,
+          "description": "Maximum captured print/trace output characters returned by guarded evaluation."
+        },
+        "metta.runtime.guard.maxStackDepth": {
+          "type": "number",
+          "default": 512,
+          "minimum": 16,
+          "description": "Maximum evaluator stack depth for guarded evaluation."
+        },
+        "metta.runtime.guard.tabling": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable @metta-ts/core tabling during guarded evaluation."
+        },
+        "metta.runtime.guard.experimental.hashCons": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable @metta-ts/core hash-consing during guarded evaluation."
+        },
+        "metta.runtime.guard.experimental.trail": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable @metta-ts/core trail unification during guarded evaluation."
+        },
+        "metta.runtime.guard.experimental.flatAtomspace": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable experimental flat atomspace mode during guarded evaluation."
+        },
+        "metta.format.width": {
+          "type": "number",
+          "default": 80,
+          "minimum": 1,
+          "description": "Target print width for the formatter. A project lint.metta (format-width N) overrides this."
+        },
+        "metta.format.indent": {
+          "type": "number",
+          "default": 2,
+          "minimum": 0,
+          "description": "Block indent step for the formatter. A project lint.metta (format-indent N) overrides this."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "metta.restartServer",
+        "title": "MeTTa: Restart Language Server"
+      },
+      {
+        "command": "metta.showIndexStats",
+        "title": "MeTTa: Show Index Stats"
+      },
+      {
+        "command": "metta.showSideEffectPolicy",
+        "title": "MeTTa: Show Side-Effect Policy"
+      },
+      {
+        "command": "metta.organizeImports",
+        "title": "MeTTa: Organize Imports"
+      },
+      {
+        "command": "metta.run",
+        "title": "MeTTa: Run",
+        "icon": "$(play)"
+      },
+      {
+        "command": "metta.trace",
+        "title": "MeTTa: Trace",
+        "icon": "$(debug-step-over)"
+      },
+      {
+        "command": "metta.showReferences",
+        "title": "MeTTa: Show References"
+      },
+      {
+        "command": "metta.evaluateGuarded",
+        "title": "MeTTa: Evaluate (Guarded Runtime)"
+      },
+      {
+        "command": "metta.runChecks",
+        "title": "MeTTa: Run Static Checks"
+      },
+      {
+        "command": "metta.explainForm",
+        "title": "MeTTa: Explain Current Form"
+      },
+      {
+        "command": "metta.visualise",
+        "title": "MeTTa: Visualise Reduction",
+        "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "metta.settings",
+        "title": "MeTTa: Settings",
+        "icon": "$(settings-gear)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "metta.run",
+          "when": "resourceLangId == metta",
+          "group": "navigation@1"
+        },
+        {
+          "command": "metta.visualise",
+          "when": "resourceLangId == metta",
+          "group": "navigation@3"
+        },
+        {
+          "command": "metta.trace",
+          "when": "resourceLangId == metta",
+          "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "metta.restartServer",
+          "when": "editorLangId == metta"
+        },
+        {
+          "command": "metta.showIndexStats",
+          "when": "editorLangId == metta"
+        },
+        {
+          "command": "metta.showSideEffectPolicy",
+          "when": "editorLangId == metta"
+        },
+        {
+          "command": "metta.organizeImports",
+          "when": "editorLangId == metta"
+        },
+        {
+          "command": "metta.evaluateGuarded",
+          "when": "editorLangId == metta"
+        },
+        {
+          "command": "metta.run",
+          "when": "editorLangId == metta"
+        },
+        {
+          "command": "metta.trace",
+          "when": "editorLangId == metta"
+        },
+        {
+          "command": "metta.settings",
+          "when": "editorLangId == metta"
+        },
+        {
+          "command": "metta.showReferences",
+          "when": "false"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "metta.run",
+          "when": "resourceLangId == metta",
+          "group": "navigation"
+        },
+        {
+          "command": "metta.trace",
+          "when": "resourceLangId == metta",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p tsconfig.build.json",
+    "cli": "node dist/cli/cli.js",
+    "docs:builtins": "npm run compile && node scripts/generate-builtin-reference.mjs",
+    "docs:metta": "npm run compile && node scripts/generate-metta-docs.mjs",
+    "bench:lsp": "npm run compile && node scripts/bundle-browser.mjs && node bench/lsp-bench.mjs",
+    "bench:lsp:profile": "npm run compile && node --cpu-prof --cpu-prof-dir=bench bench/lsp-bench.mjs --only=large",
+    "watch": "tsc -p tsconfig.build.json -w",
+    "lint": "eslint --concurrency=auto --cache --max-warnings 0 .",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "package": "npm run vscode:prepublish && npm run package:check && vsce package --readme-path EXTENSION.md",
+    "package:check": "node scripts/check-vsix-contents.mjs",
+    "vscode:prepublish": "npm run compile && node scripts/build-ts-plugin.mjs && node scripts/bundle-client.mjs && node scripts/bundle-browser.mjs && node scripts/bundle-webview.mjs",
+    "mcp": "node dist/mcp/server.js",
+    "smoke": "npm run compile && node dist/mcp/server.js --workspace examples < examples/mcp-smoke.jsonl",
+    "smoke:tool": "npm run compile && node dist/mcp/server.js --workspace . < examples/mcp-tool-smoke.jsonl",
+    "smoke:parser": "npm run compile && node scripts/smoke-parser.mjs",
+    "smoke:capabilities": "npm run compile && node scripts/smoke-capabilities.mjs",
+    "smoke:all": "npm run compile && node scripts/smoke-parser.mjs && node scripts/smoke-no-stdout.mjs && node scripts/smoke-setup-mcp.mjs && node scripts/smoke-omegaclaw.mjs && node scripts/smoke-capabilities.mjs && node scripts/smoke-lint-config.mjs && node scripts/build-ts-plugin.mjs && node scripts/smoke-ts-plugin.mjs && node dist/mcp/server.js --workspace examples < examples/mcp-smoke.jsonl && node dist/mcp/server.js --workspace . < examples/mcp-tool-smoke.jsonl && node scripts/smoke-dap.mjs && node scripts/smoke-guarded-safety.mjs && node scripts/smoke-py.mjs && node scripts/smoke-dsl.mjs",
+    "lint:ci": "eslint --concurrency=auto --cache --max-warnings 0 . && eslint --config eslint.ci.config.ts --max-warnings 0 .",
+    "smoke:lint-config": "node scripts/smoke-lint-config.mjs",
+    "build:ts-plugin": "npm run compile && node scripts/build-ts-plugin.mjs",
+    "smoke:ts-plugin": "node scripts/build-ts-plugin.mjs && node scripts/smoke-ts-plugin.mjs",
+    "verify": "npm run smoke:all",
+    "lint:config": "node scripts/smoke-lint-config.mjs",
+    "typecheck": "tsc --noEmit",
+    "format": "biome format --write .",
+    "biome": "biome check .",
+    "biome:fix": "biome check --write .",
+    "knip": "knip",
+    "jscpd": "jscpd .",
+    "quality-guard": "node scripts/quality-guard.mjs",
+    "alloy": "node scripts/check-alloy.mjs",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage --passWithNoTests",
+    "verify:strict": "npm run compile && npm run typecheck && npm run biome && npm run lint && npm run quality-guard && npm run knip && npm run jscpd && npm run test && npm run smoke:all",
+    "smoke:py": "npm run compile && node scripts/smoke-py.mjs",
+    "smoke:dsl": "npm run compile && node scripts/smoke-dsl.mjs",
+    "setup:mcp": "node scripts/setup-mcp.mjs",
+    "setup:omegaclaw": "node scripts/setup-omegaclaw.mjs"
+  },
+  "dependencies": {
+    "@metta-ts/core": "^1.1.2",
+    "@vscode/debugadapter": "^1.68.0",
+    "@vscode/debugprotocol": "^1.68.0",
+    "metta-ts-typescript-plugin": "file:./typescript-plugin",
+    "neverthrow": "8.2.0",
+    "pathe": "^2.0.3",
+    "typescript": "6.0.3",
+    "vscode-languageclient": "10.1.0",
+    "vscode-languageserver": "10.1.0",
+    "vscode-languageserver-protocol": "^3.18.0",
+    "vscode-languageserver-textdocument": "1.0.12",
+    "vscode-languageserver-types": "^3.18.0",
+    "vscode-uri": "^3.1.0"
+  },
+  "optionalDependencies": {
+    "@metta-ts/browser": "^1.1.2",
+    "@metta-ts/grapher": "^1.1.2",
+    "@metta-ts/hyperon": "^1.1.2",
+    "@metta-ts/node": "^1.1.2",
+    "@metta-ts/prolog": "^1.1.2",
+    "@metta-ts/py": "^1.1.2",
+    "pythonia": "^1.2.6"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.1",
+    "@eslint/js": "10.0.1",
+    "@ninoseki/eslint-plugin-neverthrow": "0.2.0",
+    "@types/node": "^22.15.0",
+    "@types/vscode": "^1.90.0",
+    "@vitest/coverage-v8": "4.1.0",
+    "@vitest/eslint-plugin": "1.6.21",
+    "@vscode/vsce": "^3.3.2",
+    "esbuild": "^0.28.1",
+    "eslint": "10.6.0",
+    "eslint-import-resolver-typescript": "4.4.5",
+    "eslint-plugin-boundaries": "6.0.2",
+    "eslint-plugin-import-x": "4.17.1",
+    "eslint-plugin-n": "18.2.1",
+    "eslint-plugin-regexp": "3.1.1",
+    "eslint-plugin-sonarjs": "4.1.0",
+    "eslint-plugin-unicorn": "70.0.0",
+    "fast-check": "4.8.0",
+    "gifenc": "^1.0.3",
+    "jiti": "2.7.0",
+    "jscpd": "^4",
+    "knip": "^5",
+    "typescript-eslint": "8.62.1",
+    "typescript-template-language-service-decorator": "^2.3.2",
+    "vitest": "4.1.0"
+  },
+  "bin": {
+    "metta-lsp-mcp": "./dist/mcp/server.js",
+    "metta-language-server": "./dist/server/server.js",
+    "metta-lsp": "./dist/cli/cli.js",
+    "metta-debug-adapter": "./dist/debug/mettaDebugAdapter.js"
+  },
+  "browser": "./dist/client/browserExtension.js"
+}

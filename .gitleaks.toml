@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2026 MesTTo
+# SPDX-License-Identifier: Apache-2.0
+#
+# gitleaks config: extend the built-in ruleset, allowlist generated/vendored paths.
+title = "MeTTa-LSP gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for generated, vendored, and lockfile paths"
+paths = [
+  '''node_modules/''',
+  '''dist/''',
+  '''out/''',
+  '''package-lock\.json''',
+  '''pnpm-lock\.yaml''',
+]

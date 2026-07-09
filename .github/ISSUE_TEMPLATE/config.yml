@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 MesTTo
+# SPDX-License-Identifier: Apache-2.0
+
+blank_issues_enabled: false
+contact_links:
+  - name: MeTTa LSP documentation
+    url: https://mestto.github.io/MeTTa-LSP/
+    about: Read setup, feature, CLI, and editor-client documentation before opening a support issue.
+  - name: Security report
+    url: https://github.com/MesTTo/MeTTa-LSP/security/advisories/new
+    about: Report security-sensitive issues privately. Do not include exploit details in a public issue.

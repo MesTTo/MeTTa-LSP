@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2026 MesTTo
+# SPDX-License-Identifier: Apache-2.0
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+out/
+*.tsbuildinfo
+*.vsix
+
+# Test / coverage
+coverage/
+.vitest/
+
+# Tooling caches
+.turbo/
+.eslintcache
+.cache/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Alloy analyzer jar (downloaded on demand by scripts/check-alloy.mjs) and its scratch output
+.alloy/
+
+# docs-site build artifacts
+docs-site/.vitepress/cache/

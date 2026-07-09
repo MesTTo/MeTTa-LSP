@@ -1,0 +1,53 @@
+{
+  "Function definition": {
+    "prefix": "def",
+    "body": [
+      "(= (${1:name} ${2:\\$x})",
+      "  ${3:body})"
+    ],
+    "description": "Define a MeTTa rewrite rule"
+  },
+  "Type signature": {
+    "prefix": "sig",
+    "body": "(: ${1:name} (-> ${2:Input} ${3:Output}))",
+    "description": "Declare a MeTTa type signature"
+  },
+  "Bang query": {
+    "prefix": "bang",
+    "body": "!(${1:query})",
+    "description": "Evaluate a MeTTa query explicitly in a runtime; the language server itself does not execute it"
+  },
+  "Import file": {
+    "prefix": "import",
+    "body": "(import! &self \"${1:path/to/file.metta}\")",
+    "description": "Import another MeTTa file into &self"
+  },
+  "New space binding": {
+    "prefix": "space",
+    "body": "(bind! &${1:space} (new-space))",
+    "description": "Bind a new AtomSpace"
+  },
+  "Match": {
+    "prefix": "match",
+    "body": "(match ${1:&self} ${2:pattern} ${3:template})",
+    "description": "Match a pattern in a space"
+  },
+  "Let": {
+    "prefix": "let",
+    "body": "(let ${1:\\$x} ${2:value} ${3:body})",
+    "description": "Let binding"
+  },
+  "Case": {
+    "prefix": "case",
+    "body": [
+      "(case ${1:expr}",
+      "  (${2:pattern} ${3:body}))"
+    ],
+    "description": "Case expression"
+  },
+  "Assert equal": {
+    "prefix": "test",
+    "body": "!(assertEqual ${1:actual} ${2:expected})",
+    "description": "MeTTa assertion query"
+  }
+}

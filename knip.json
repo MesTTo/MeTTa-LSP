@@ -1,0 +1,25 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/server/browserServer.ts",
+    "src/language-service/index.ts",
+    "src/debug/mettaDebugAdapter.ts",
+    "scripts/**/*.mjs",
+    "src/client/webview/visualiseMain.ts",
+    "src/dsl/index.ts"
+  ],
+  "project": ["src/**/*.ts", "scripts/**/*.mjs"],
+  "ignore": ["src/runtime/mettaTs.ts"],
+  "ignoreDependencies": ["metta-ts-typescript-plugin", "@metta-ts/core"],
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "exports": "off",
+    "nsExports": "off",
+    "types": "off",
+    "nsTypes": "off"
+  },
+  "vitest": {
+    "config": ["vitest.config.ts"],
+    "entry": ["src/**/*.{test,spec}.ts", "test/**/*.{test,spec}.ts"]
+  }
+}

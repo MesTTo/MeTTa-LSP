@@ -1,0 +1,6 @@
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}
+{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}
+{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"lsp_diagnostics","arguments":{"uri":"examples/math.metta"}}}
+{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"lsp_document_symbols","arguments":{"uri":"examples/math.metta"}}}
+{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"lsp_evaluate","arguments":{"text":"(+ 1 2)"}}}
+{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"lsp_evaluate","arguments":{"text":"(println! \"guarded\")"}}}

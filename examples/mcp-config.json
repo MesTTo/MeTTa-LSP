@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "metta": {
+      "command": "metta-lsp-mcp",
+      "args": ["--workspace", "."]
+    }
+  }
+}

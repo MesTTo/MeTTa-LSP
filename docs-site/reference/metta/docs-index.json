@@ -1,0 +1,1306 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-09T10:42:13.580Z",
+  "sourceFingerprint": "22207-584c2d77",
+  "modules": [
+    {
+      "name": "01-hovers",
+      "slug": "01-hovers",
+      "sourceUri": "examples/01-hovers.metta",
+      "sourcePath": "examples/01-hovers.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "factorial",
+          "anchor": "factorial",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: factorial (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": "The factorial of n. One clause guards the base case with `if`: a separate\n(= (factorial 0) 1) would also match (factorial $n) in MeTTa and recurse into\nnegatives forever, so the `if` keeps it to a single path.",
+          "definitionUri": "examples/01-hovers.metta",
+          "sourcePath": "examples/01-hovers.metta",
+          "range": {
+            "start": {
+              "line": 22,
+              "character": 0
+            },
+            "end": {
+              "line": 22,
+              "character": 62
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "02-running",
+      "slug": "02-running",
+      "sourceUri": "examples/02-running.metta",
+      "sourcePath": "examples/02-running.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "even",
+          "anchor": "even",
+          "kind": "function",
+          "type": "(even $x)",
+          "signature": "(even $x)",
+          "doc": null,
+          "fallbackDoc": "True when a number is even.",
+          "definitionUri": "examples/02-running.metta",
+          "sourcePath": "examples/02-running.metta",
+          "range": {
+            "start": {
+              "line": 24,
+              "character": 0
+            },
+            "end": {
+              "line": 24,
+              "character": 29
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "fib",
+          "anchor": "fib",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: fib (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": "The nth Fibonacci number. One clause guards the base case with `if`: in MeTTa\nevery matching clause fires, so a separate (= (fib 0) 0) would also match\n(fib $n) and recurse into negatives — the `if` keeps it to a single path.",
+          "definitionUri": "examples/02-running.metta",
+          "sourcePath": "examples/02-running.metta",
+          "range": {
+            "start": {
+              "line": 18,
+              "character": 0
+            },
+            "end": {
+              "line": 18,
+              "character": 63
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "03-python",
+      "slug": "03-python",
+      "sourceUri": "examples/03-python.metta",
+      "sourcePath": "examples/03-python.metta",
+      "imports": [],
+      "symbols": []
+    },
+    {
+      "name": "04-diagnostics",
+      "slug": "04-diagnostics",
+      "sourceUri": "examples/04-diagnostics.metta",
+      "sourcePath": "examples/04-diagnostics.metta",
+      "imports": [
+        "math",
+        "no-such-module"
+      ],
+      "symbols": [
+        {
+          "name": "add2",
+          "anchor": "add2",
+          "kind": "function",
+          "type": "(-> Number Number Number)",
+          "signature": "(: add2 (-> Number Number Number))",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/04-diagnostics.metta",
+          "sourcePath": "examples/04-diagnostics.metta",
+          "range": {
+            "start": {
+              "line": 21,
+              "character": 0
+            },
+            "end": {
+              "line": 21,
+              "character": 26
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "bad-hash",
+          "anchor": "bad-hash",
+          "kind": "function",
+          "type": "(bad-hash $x)",
+          "signature": "(bad-hash $x)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/04-diagnostics.metta",
+          "sourcePath": "examples/04-diagnostics.metta",
+          "range": {
+            "start": {
+              "line": 43,
+              "character": 0
+            },
+            "end": {
+              "line": 43,
+              "character": 24
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "free-var",
+          "anchor": "free-var",
+          "kind": "function",
+          "type": "(free-var $x)",
+          "signature": "(free-var $x)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/04-diagnostics.metta",
+          "sourcePath": "examples/04-diagnostics.metta",
+          "range": {
+            "start": {
+              "line": 55,
+              "character": 0
+            },
+            "end": {
+              "line": 55,
+              "character": 20
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "greet",
+          "anchor": "greet",
+          "kind": "function",
+          "type": "(greet)",
+          "signature": "(greet)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/04-diagnostics.metta",
+          "sourcePath": "examples/04-diagnostics.metta",
+          "range": {
+            "start": {
+              "line": 28,
+              "character": 0
+            },
+            "end": {
+              "line": 28,
+              "character": 16
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "trap",
+          "anchor": "trap",
+          "kind": "function",
+          "type": "(trap)",
+          "signature": "(trap)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/04-diagnostics.metta",
+          "sourcePath": "examples/04-diagnostics.metta",
+          "range": {
+            "start": {
+              "line": 48,
+              "character": 0
+            },
+            "end": {
+              "line": 50,
+              "character": 1
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "uses-typo",
+          "anchor": "uses-typo",
+          "kind": "function",
+          "type": "(uses-typo $x)",
+          "signature": "(uses-typo $x)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/04-diagnostics.metta",
+          "sourcePath": "examples/04-diagnostics.metta",
+          "range": {
+            "start": {
+              "line": 14,
+              "character": 0
+            },
+            "end": {
+              "line": 14,
+              "character": 33
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "widget",
+          "anchor": "widget",
+          "kind": "constant",
+          "type": "NoSuchType",
+          "signature": "(: widget NoSuchType)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/04-diagnostics.metta",
+          "sourcePath": "examples/04-diagnostics.metta",
+          "range": {
+            "start": {
+              "line": 17,
+              "character": 0
+            },
+            "end": {
+              "line": 17,
+              "character": 21
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "05-lint-and-suppression/demo",
+      "slug": "05-lint-and-suppression/demo",
+      "sourceUri": "examples/05-lint-and-suppression/demo.metta",
+      "sourcePath": "examples/05-lint-and-suppression/demo.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "BadHelper",
+          "anchor": "BadHelper",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: BadHelper (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/05-lint-and-suppression/demo.metta",
+          "sourcePath": "examples/05-lint-and-suppression/demo.metta",
+          "range": {
+            "start": {
+              "line": 22,
+              "character": 0
+            },
+            "end": {
+              "line": 22,
+              "character": 21
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "helper",
+          "anchor": "helper",
+          "kind": "function",
+          "type": "(helper $x)",
+          "signature": "(helper $x)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/05-lint-and-suppression/demo.metta",
+          "sourcePath": "examples/05-lint-and-suppression/demo.metta",
+          "range": {
+            "start": {
+              "line": 28,
+              "character": 0
+            },
+            "end": {
+              "line": 28,
+              "character": 24
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "06-type-suggestions",
+      "slug": "06-type-suggestions",
+      "sourceUri": "examples/06-type-suggestions.metta",
+      "sourcePath": "examples/06-type-suggestions.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "double",
+          "anchor": "double",
+          "kind": "function",
+          "type": "(double $x)",
+          "signature": "(double $x)",
+          "doc": null,
+          "fallbackDoc": "Doubles a number.",
+          "definitionUri": "examples/06-type-suggestions.metta",
+          "sourcePath": "examples/06-type-suggestions.metta",
+          "range": {
+            "start": {
+              "line": 16,
+              "character": 0
+            },
+            "end": {
+              "line": 16,
+              "character": 24
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "scale",
+          "anchor": "scale",
+          "kind": "function",
+          "type": "(scale $x $y)",
+          "signature": "(scale $x $y)",
+          "doc": null,
+          "fallbackDoc": "Scales a value by a factor.",
+          "definitionUri": "examples/06-type-suggestions.metta",
+          "sourcePath": "examples/06-type-suggestions.metta",
+          "range": {
+            "start": {
+              "line": 19,
+              "character": 0
+            },
+            "end": {
+              "line": 19,
+              "character": 45
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "triple",
+          "anchor": "triple",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: triple (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": "Triples a number.",
+          "definitionUri": "examples/06-type-suggestions.metta",
+          "sourcePath": "examples/06-type-suggestions.metta",
+          "range": {
+            "start": {
+              "line": 23,
+              "character": 0
+            },
+            "end": {
+              "line": 23,
+              "character": 24
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "07-pseudocode",
+      "slug": "07-pseudocode",
+      "sourceUri": "examples/07-pseudocode.metta",
+      "sourcePath": "examples/07-pseudocode.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "area",
+          "anchor": "area",
+          "kind": "function",
+          "type": "(area $x $y)",
+          "signature": "(area $x $y)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/07-pseudocode.metta",
+          "sourcePath": "examples/07-pseudocode.metta",
+          "range": {
+            "start": {
+              "line": 10,
+              "character": 0
+            },
+            "end": {
+              "line": 10,
+              "character": 26
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "clamp",
+          "anchor": "clamp",
+          "kind": "function",
+          "type": "(clamp $x $y $z)",
+          "signature": "(clamp $x $y $z)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/07-pseudocode.metta",
+          "sourcePath": "examples/07-pseudocode.metta",
+          "range": {
+            "start": {
+              "line": 14,
+              "character": 0
+            },
+            "end": {
+              "line": 14,
+              "character": 65
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "discount",
+          "anchor": "discount",
+          "kind": "function",
+          "type": "(discount $x $y)",
+          "signature": "(discount $x $y)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/07-pseudocode.metta",
+          "sourcePath": "examples/07-pseudocode.metta",
+          "range": {
+            "start": {
+              "line": 12,
+              "character": 0
+            },
+            "end": {
+              "line": 12,
+              "character": 55
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "08-navigation",
+      "slug": "08-navigation",
+      "sourceUri": "examples/08-navigation.metta",
+      "sourcePath": "examples/08-navigation.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "hypotenuse",
+          "anchor": "hypotenuse",
+          "kind": "function",
+          "type": "(-> Number Number Number)",
+          "signature": "(: hypotenuse (-> Number Number Number))",
+          "doc": null,
+          "fallbackDoc": "The hypotenuse of a right triangle with legs $a and $b.",
+          "definitionUri": "examples/08-navigation.metta",
+          "sourcePath": "examples/08-navigation.metta",
+          "range": {
+            "start": {
+              "line": 27,
+              "character": 0
+            },
+            "end": {
+              "line": 27,
+              "character": 59
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "sqrt-approx",
+          "anchor": "sqrt-approx",
+          "kind": "function",
+          "type": "(sqrt-approx $x)",
+          "signature": "(sqrt-approx $x)",
+          "doc": null,
+          "fallbackDoc": "A stand-in square root (identity here) to keep the example self-contained.",
+          "definitionUri": "examples/08-navigation.metta",
+          "sourcePath": "examples/08-navigation.metta",
+          "range": {
+            "start": {
+              "line": 30,
+              "character": 0
+            },
+            "end": {
+              "line": 30,
+              "character": 23
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "square",
+          "anchor": "square",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: square (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": "The square of a number.",
+          "definitionUri": "examples/08-navigation.metta",
+          "sourcePath": "examples/08-navigation.metta",
+          "range": {
+            "start": {
+              "line": 12,
+              "character": 0
+            },
+            "end": {
+              "line": 12,
+              "character": 25
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "sum-of-squares",
+          "anchor": "sum-of-squares",
+          "kind": "function",
+          "type": "(-> Number Number Number)",
+          "signature": "(: sum-of-squares (-> Number Number Number))",
+          "doc": null,
+          "fallbackDoc": "The sum of the squares of two numbers.",
+          "definitionUri": "examples/08-navigation.metta",
+          "sourcePath": "examples/08-navigation.metta",
+          "range": {
+            "start": {
+              "line": 16,
+              "character": 0
+            },
+            "end": {
+              "line": 16,
+              "character": 54
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "09-formatting",
+      "slug": "09-formatting",
+      "sourceUri": "examples/09-formatting.metta",
+      "sourcePath": "examples/09-formatting.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "long-form",
+          "anchor": "long-form",
+          "kind": "function",
+          "type": "(long-form $x $y $z $a)",
+          "signature": "(long-form $x $y $z $a)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/09-formatting.metta",
+          "sourcePath": "examples/09-formatting.metta",
+          "range": {
+            "start": {
+              "line": 13,
+              "character": 0
+            },
+            "end": {
+              "line": 14,
+              "character": 55
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "messy",
+          "anchor": "messy",
+          "kind": "function",
+          "type": "(->  Number   Number)",
+          "signature": "(: messy (->  Number   Number))",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/09-formatting.metta",
+          "sourcePath": "examples/09-formatting.metta",
+          "range": {
+            "start": {
+              "line": 10,
+              "character": 0
+            },
+            "end": {
+              "line": 10,
+              "character": 24
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "10-testing",
+      "slug": "10-testing",
+      "sourceUri": "examples/10-testing.metta",
+      "sourcePath": "examples/10-testing.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "double",
+          "anchor": "double",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: double (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": "The function under test.",
+          "definitionUri": "examples/10-testing.metta",
+          "sourcePath": "examples/10-testing.metta",
+          "range": {
+            "start": {
+              "line": 11,
+              "character": 0
+            },
+            "end": {
+              "line": 11,
+              "character": 24
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "11-modules/geometry",
+      "slug": "11-modules/geometry",
+      "sourceUri": "examples/11-modules/geometry.metta",
+      "sourcePath": "examples/11-modules/geometry.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "circle-area",
+          "anchor": "circle-area",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: circle-area (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": "The area of a circle, with a deliberately rough pi to keep it integer-friendly.",
+          "definitionUri": "examples/11-modules/geometry.metta",
+          "sourcePath": "examples/11-modules/geometry.metta",
+          "range": {
+            "start": {
+              "line": 14,
+              "character": 0
+            },
+            "end": {
+              "line": 14,
+              "character": 38
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "square",
+          "anchor": "square",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: square (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": "The square of a number.",
+          "definitionUri": "examples/11-modules/geometry.metta",
+          "sourcePath": "examples/11-modules/geometry.metta",
+          "range": {
+            "start": {
+              "line": 10,
+              "character": 0
+            },
+            "end": {
+              "line": 10,
+              "character": 25
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "11-modules/lib/vectors",
+      "slug": "11-modules/lib/vectors",
+      "sourceUri": "examples/11-modules/lib/vectors.metta",
+      "sourcePath": "examples/11-modules/lib/vectors.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "vec-len-sq",
+          "anchor": "vec-len-sq",
+          "kind": "function",
+          "type": "(-> Number Number Number)",
+          "signature": "(: vec-len-sq (-> Number Number Number))",
+          "doc": null,
+          "fallbackDoc": "The squared length of a 2D vector — kept squared to stay integer-friendly.",
+          "definitionUri": "examples/11-modules/lib/vectors.metta",
+          "sourcePath": "examples/11-modules/lib/vectors.metta",
+          "range": {
+            "start": {
+              "line": 11,
+              "character": 0
+            },
+            "end": {
+              "line": 11,
+              "character": 46
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "11-modules/main",
+      "slug": "11-modules/main",
+      "sourceUri": "examples/11-modules/main.metta",
+      "sourcePath": "examples/11-modules/main.metta",
+      "imports": [
+        "geometry",
+        "vectors"
+      ],
+      "symbols": []
+    },
+    {
+      "name": "12-completion-and-hints",
+      "slug": "12-completion-and-hints",
+      "sourceUri": "examples/12-completion-and-hints.metta",
+      "sourcePath": "examples/12-completion-and-hints.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "scale",
+          "anchor": "scale",
+          "kind": "function",
+          "type": "(-> Number Number Number)",
+          "signature": "(: scale (-> Number Number Number))",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/12-completion-and-hints.metta",
+          "sourcePath": "examples/12-completion-and-hints.metta",
+          "range": {
+            "start": {
+              "line": 10,
+              "character": 0
+            },
+            "end": {
+              "line": 10,
+              "character": 37
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "triple",
+          "anchor": "triple",
+          "kind": "function",
+          "type": "(triple $x)",
+          "signature": "(triple $x)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/12-completion-and-hints.metta",
+          "sourcePath": "examples/12-completion-and-hints.metta",
+          "range": {
+            "start": {
+              "line": 21,
+              "character": 0
+            },
+            "end": {
+              "line": 21,
+              "character": 28
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "13-trace",
+      "slug": "13-trace",
+      "sourceUri": "examples/13-trace.metta",
+      "sourcePath": "examples/13-trace.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "sum-to",
+          "anchor": "sum-to",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: sum-to (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": "Sum the numbers from 1 to n, guarding the recursion with if so it stops at 0.\n(Two rules — a (sum-to 0) base case and a recursive one — would both match 0,\nso the recursion runs away; the guard keeps it single-valued.)",
+          "definitionUri": "examples/13-trace.metta",
+          "sourcePath": "examples/13-trace.metta",
+          "range": {
+            "start": {
+              "line": 12,
+              "character": 0
+            },
+            "end": {
+              "line": 12,
+              "character": 57
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "14-editor-surfaces",
+      "slug": "14-editor-surfaces",
+      "sourceUri": "examples/14-editor-surfaces.metta",
+      "sourcePath": "examples/14-editor-surfaces.metta",
+      "imports": [
+        "math"
+      ],
+      "symbols": [
+        {
+          "name": "Circle",
+          "anchor": "Circle",
+          "kind": "type",
+          "type": "Shape",
+          "signature": "(: Circle Shape)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/14-editor-surfaces.metta",
+          "sourcePath": "examples/14-editor-surfaces.metta",
+          "range": {
+            "start": {
+              "line": 22,
+              "character": 0
+            },
+            "end": {
+              "line": 22,
+              "character": 16
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "Shape",
+          "anchor": "Shape",
+          "kind": "type",
+          "type": "Type",
+          "signature": "(: Shape Type)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/14-editor-surfaces.metta",
+          "sourcePath": "examples/14-editor-surfaces.metta",
+          "range": {
+            "start": {
+              "line": 20,
+              "character": 0
+            },
+            "end": {
+              "line": 20,
+              "character": 14
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "Square",
+          "anchor": "Square",
+          "kind": "type",
+          "type": "Shape",
+          "signature": "(: Square Shape)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/14-editor-surfaces.metta",
+          "sourcePath": "examples/14-editor-surfaces.metta",
+          "range": {
+            "start": {
+              "line": 21,
+              "character": 0
+            },
+            "end": {
+              "line": 21,
+              "character": 16
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "describe-shape",
+          "anchor": "describe-shape",
+          "kind": "function",
+          "type": "(describe-shape $x $y)",
+          "signature": "(describe-shape $x $y)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/14-editor-surfaces.metta",
+          "sourcePath": "examples/14-editor-surfaces.metta",
+          "range": {
+            "start": {
+              "line": 39,
+              "character": 0
+            },
+            "end": {
+              "line": 43,
+              "character": 21
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "perimeter",
+          "anchor": "perimeter",
+          "kind": "function",
+          "type": "(-> Shape Number Number)",
+          "signature": "(: perimeter (-> Shape Number Number))",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/14-editor-surfaces.metta",
+          "sourcePath": "examples/14-editor-surfaces.metta",
+          "range": {
+            "start": {
+              "line": 29,
+              "character": 0
+            },
+            "end": {
+              "line": 29,
+              "character": 40
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "scale-square",
+          "anchor": "scale-square",
+          "kind": "function",
+          "type": "(scale-square $x)",
+          "signature": "(scale-square $x)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/14-editor-surfaces.metta",
+          "sourcePath": "examples/14-editor-surfaces.metta",
+          "range": {
+            "start": {
+              "line": 34,
+              "character": 0
+            },
+            "end": {
+              "line": 35,
+              "character": 39
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "$name",
+          "anchor": "name",
+          "kind": "constant",
+          "type": "Shape",
+          "signature": "(: $name Shape)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/14-editor-surfaces.metta",
+          "sourcePath": "examples/14-editor-surfaces.metta",
+          "range": {
+            "start": {
+              "line": 51,
+              "character": 14
+            },
+            "end": {
+              "line": 51,
+              "character": 29
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "15-guarded-and-agent-surfaces",
+      "slug": "15-guarded-and-agent-surfaces",
+      "sourceUri": "examples/15-guarded-and-agent-surfaces.metta",
+      "sourcePath": "examples/15-guarded-and-agent-surfaces.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "agent-visible",
+          "anchor": "agent-visible",
+          "kind": "function",
+          "type": "(agent-visible $x)",
+          "signature": "(agent-visible $x)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/15-guarded-and-agent-surfaces.metta",
+          "sourcePath": "examples/15-guarded-and-agent-surfaces.metta",
+          "range": {
+            "start": {
+              "line": 36,
+              "character": 0
+            },
+            "end": {
+              "line": 36,
+              "character": 34
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "double",
+          "anchor": "double",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: double (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/15-guarded-and-agent-surfaces.metta",
+          "sourcePath": "examples/15-guarded-and-agent-surfaces.metta",
+          "range": {
+            "start": {
+              "line": 24,
+              "character": 0
+            },
+            "end": {
+              "line": 24,
+              "character": 24
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "guarded-sum",
+          "anchor": "guarded-sum",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: guarded-sum (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/15-guarded-and-agent-surfaces.metta",
+          "sourcePath": "examples/15-guarded-and-agent-surfaces.metta",
+          "range": {
+            "start": {
+              "line": 27,
+              "character": 0
+            },
+            "end": {
+              "line": 28,
+              "character": 50
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "16-debugging",
+      "slug": "16-debugging",
+      "sourceUri": "examples/16-debugging.metta",
+      "sourcePath": "examples/16-debugging.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "countdown",
+          "anchor": "countdown",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: countdown (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/16-debugging.metta",
+          "sourcePath": "examples/16-debugging.metta",
+          "range": {
+            "start": {
+              "line": 17,
+              "character": 0
+            },
+            "end": {
+              "line": 18,
+              "character": 41
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "stop-at-two",
+          "anchor": "stop-at-two",
+          "kind": "function",
+          "type": "(-> Number Atom)",
+          "signature": "(: stop-at-two (-> Number Atom))",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/16-debugging.metta",
+          "sourcePath": "examples/16-debugging.metta",
+          "range": {
+            "start": {
+              "line": 21,
+              "character": 0
+            },
+            "end": {
+              "line": 24,
+              "character": 49
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "17-prolog-diagnostics/main",
+      "slug": "17-prolog-diagnostics/main",
+      "sourceUri": "examples/17-prolog-diagnostics/main.metta",
+      "sourcePath": "examples/17-prolog-diagnostics/main.metta",
+      "imports": [
+        "bad-facts.pl",
+        "facts.pl"
+      ],
+      "symbols": []
+    },
+    {
+      "name": "18-host-bridge/main",
+      "slug": "18-host-bridge/main",
+      "sourceUri": "examples/18-host-bridge/main.metta",
+      "sourcePath": "examples/18-host-bridge/main.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "bad-host-call",
+          "anchor": "bad-host-call",
+          "kind": "function",
+          "type": "(bad-host-call)",
+          "signature": "(bad-host-call)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/18-host-bridge/main.metta",
+          "sourcePath": "examples/18-host-bridge/main.metta",
+          "range": {
+            "start": {
+              "line": 16,
+              "character": 0
+            },
+            "end": {
+              "line": 16,
+              "character": 34
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "biggest-global",
+          "anchor": "biggest-global",
+          "kind": "function",
+          "type": "(biggest-global)",
+          "signature": "(biggest-global)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/18-host-bridge/main.metta",
+          "sourcePath": "examples/18-host-bridge/main.metta",
+          "range": {
+            "start": {
+              "line": 18,
+              "character": 0
+            },
+            "end": {
+              "line": 18,
+              "character": 41
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "winner",
+          "anchor": "winner",
+          "kind": "function",
+          "type": "(winner $x $y)",
+          "signature": "(winner $x $y)",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/18-host-bridge/main.metta",
+          "sourcePath": "examples/18-host-bridge/main.metta",
+          "range": {
+            "start": {
+              "line": 14,
+              "character": 0
+            },
+            "end": {
+              "line": 14,
+              "character": 33
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    },
+    {
+      "name": "math",
+      "slug": "math",
+      "sourceUri": "examples/math.metta",
+      "sourcePath": "examples/math.metta",
+      "imports": [],
+      "symbols": [
+        {
+          "name": "double",
+          "anchor": "double",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: double (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/math.metta",
+          "sourcePath": "examples/math.metta",
+          "range": {
+            "start": {
+              "line": 6,
+              "character": 0
+            },
+            "end": {
+              "line": 7,
+              "character": 12
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "inc",
+          "anchor": "inc",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: inc (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/math.metta",
+          "sourcePath": "examples/math.metta",
+          "range": {
+            "start": {
+              "line": 2,
+              "character": 0
+            },
+            "end": {
+              "line": 3,
+              "character": 11
+            }
+          },
+          "hostOperation": null
+        },
+        {
+          "name": "main",
+          "anchor": "main",
+          "kind": "function",
+          "type": "(-> Number Number)",
+          "signature": "(: main (-> Number Number))",
+          "doc": null,
+          "fallbackDoc": null,
+          "definitionUri": "examples/math.metta",
+          "sourcePath": "examples/math.metta",
+          "range": {
+            "start": {
+              "line": 10,
+              "character": 0
+            },
+            "end": {
+              "line": 11,
+              "character": 20
+            }
+          },
+          "hostOperation": null
+        }
+      ]
+    }
+  ],
+  "hostOperations": [
+    {
+      "name": "my-max",
+      "slug": "my-max",
+      "hostKind": "operation",
+      "tsSignature": "(a: number, b: number): number",
+      "mettaType": "(-> Number Number Number)",
+      "docs": "Larger of two numbers, registered as the MeTTa operation `my-max`.",
+      "origin": "host.ts",
+      "sourceUri": "examples/18-host-bridge/host.ts",
+      "sourcePath": "examples/18-host-bridge/host.ts",
+      "definitionUri": "examples/18-host-bridge/host.ts",
+      "definitionRange": {
+        "start": {
+          "line": 3,
+          "character": 16
+        },
+        "end": {
+          "line": 3,
+          "character": 21
+        }
+      }
+    }
+  ]
+}

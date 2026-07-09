@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 MesTTo
+# SPDX-License-Identifier: Apache-2.0
+
+name: Documentation issue
+description: Report unclear, stale, missing, or incorrect documentation.
+title: "[Docs]: "
+labels:
+  - documentation
+  - triage
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page or file
+      placeholder: "README.md, EXTENSION.md, docs-site/lsp/editors.md, or a docs-site URL"
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: What is wrong or missing?
+    validations:
+      required: true
+  - type: textarea
+    id: suggested
+    attributes:
+      label: Suggested wording or example
+    validations:
+      required: false

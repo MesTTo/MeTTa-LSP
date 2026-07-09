@@ -1,0 +1,24 @@
+{
+  "name": "metta-ts-typescript-plugin",
+  "version": "0.1.0",
+  "description": "TypeScript language-service plugin: MeTTa language intelligence inside @metta-ts/edsl tagged templates (m`...` / mAll`...`), in any editor that runs the TypeScript server.",
+  "author": "MesTTo",
+  "license": "Apache-2.0",
+  "keywords": [
+    "typescript",
+    "typescript-plugin",
+    "tsserver-plugin",
+    "metta",
+    "metta-ts",
+    "edsl",
+    "language-service"
+  ],
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  }
+}

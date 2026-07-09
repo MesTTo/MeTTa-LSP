@@ -1,0 +1,89 @@
+# SPDX-FileCopyrightText: 2026 MesTTo
+# SPDX-License-Identifier: Apache-2.0
+
+name: Bug report
+description: Report a reproducible problem in the extension, language server, CLI, MCP server, or docs.
+title: "[Bug]: "
+labels:
+  - bug
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search existing issues first. A small `.metta` file or exact command usually makes the problem fixable.
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      description: Where did the problem show up?
+      options:
+        - VS Code extension
+        - Stdio LSP client
+        - CLI
+        - MCP server
+        - Docs site
+        - TypeScript plugin
+        - Debug adapter
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Extension, npm package, or commit SHA.
+      placeholder: "0.11.1"
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What happened?
+      description: Include the exact error, wrong output, or slow behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Use the smallest file and command that still reproduces the issue.
+      value: |
+        1. Open or create this file:
+           ```metta
+           ; paste the minimal program here
+           ```
+        2. Run this command or editor action:
+           ```sh
+           metta-lsp check path/to/file.metta
+           ```
+        3. Observe:
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste relevant output channel, CLI, MCP, or stack trace text.
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include anything that affects runtime behavior.
+      value: |
+        - OS:
+        - VS Code:
+        - Node:
+        - Install method:
+        - Workspace root:
+    validations:
+      required: true

@@ -1,0 +1,79 @@
+/*
+ * SPDX-FileCopyrightText: 2026 MesTTo
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Home identity for the language server. Runtime pages mention @metta-ts directly, but the site chrome
+ * stays MeTTa LSP. */
+:root {
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(120deg, #0b8f9d 8%, #0186db 58%, #ff9f2f);
+  --vp-c-brand-1: #0b8f9d;
+  --vp-c-brand-2: #0186db;
+  --vp-c-brand-3: #ff9f2f;
+  --metta-code-accent: #ff9f2f;
+}
+
+/* The hero illustration is the visual editor playing a generate-and-test search. Show it a little larger
+ * than the theme default, rounded, and drop the default gradient behind it since the GIF is its own
+ * picture. */
+.VPHero .image-src {
+  max-width: 540px;
+  max-height: none;
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+  box-shadow: 0 18px 42px rgb(8 50 104 / 18%);
+}
+.VPHero .image-bg {
+  display: none;
+}
+
+/* mettadevpack candycane dividers: a marching striped gradient rule between sections. */
+.candy-divider {
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin: 28px 0;
+  border: 0;
+}
+
+.VPNavBarTitle .logo {
+  border-radius: 4px;
+}
+
+.vp-doc div[class*="language-"] {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  box-shadow: 0 1px 0 rgb(8 50 104 / 7%);
+}
+
+.dark .vp-doc div[class*="language-"] {
+  box-shadow: 0 1px 0 rgb(255 255 255 / 4%);
+}
+
+.vp-doc :not(pre) > code {
+  color: var(--vp-c-brand-1);
+  background: color-mix(in srgb, var(--vp-c-brand-1) 9%, transparent);
+}
+
+.vp-doc table {
+  display: table;
+  width: 100%;
+}
+
+.vp-doc th {
+  color: var(--vp-c-text-1);
+  background: var(--vp-c-bg-soft);
+}
+
+.vp-doc tr:nth-child(2n) {
+  background: color-mix(in srgb, var(--vp-c-brand-1) 4%, transparent);
+}
+
+.vp-doc .custom-block.tip {
+  border-color: color-mix(in srgb, var(--vp-c-brand-1) 45%, var(--vp-c-divider));
+}
+
+.vp-doc .custom-block.warning {
+  border-color: color-mix(in srgb, var(--metta-code-accent) 45%, var(--vp-c-divider));
+}

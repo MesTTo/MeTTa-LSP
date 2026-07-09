@@ -1,0 +1,25 @@
+<svg width="1200" height="6" viewBox="0 0 1200 6" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .stripe { animation: march 2.5s linear infinite; }
+    @keyframes march {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-20px); }
+    }
+  </style>
+  <defs>
+    <linearGradient id="cb" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#083268"/>
+      <stop offset="25%" stop-color="#0186DB"/>
+      <stop offset="50%" stop-color="#F3AD00"/>
+      <stop offset="75%" stop-color="#0186DB"/>
+      <stop offset="100%" stop-color="#083268"/>
+    </linearGradient>
+    <pattern id="cs" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M-2,2 l4,-4 M0,20 l20,-20 M18,22 l4,-4" stroke="white" stroke-opacity="0.15" stroke-width="7"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="6" fill="url(#cb)"/>
+  <g class="stripe">
+    <rect width="2400" height="6" fill="url(#cs)"/>
+  </g>
+</svg>

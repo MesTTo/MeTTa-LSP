@@ -1,0 +1,585 @@
+export type CapabilitySurface = "lsp" | "mcp" | "cli" | "vscode" | "agent";
+export type CapabilityCategory =
+  | "core"
+  | "important"
+  | "advanced"
+  | "runtime"
+  | "agent"
+  | "governance";
+
+export interface CapabilityDescriptor {
+  readonly id: string;
+  readonly title: string;
+  readonly category: CapabilityCategory;
+  readonly lspMethods: readonly string[];
+  readonly mcpTools: readonly string[];
+  readonly cliCommands: readonly string[];
+  readonly surfaces: readonly CapabilitySurface[];
+  readonly needsRuntime: boolean;
+  readonly guardedRuntime: boolean;
+  readonly readOnly: boolean;
+  readonly stability: "stable" | "preview" | "experimental";
+}
+
+export const CAPABILITIES = [
+  {
+    id: "lsp",
+    title: "status and capability ledger",
+    category: "governance",
+    lspMethods: ["metta/lsp"],
+    mcpTools: ["lsp", "lsp_capabilities"],
+    cliCommands: ["capabilities"],
+    surfaces: ["lsp", "mcp", "cli", "agent"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_tool",
+    title: "agent-facing operation-dispatched LSP tool",
+    category: "agent",
+    lspMethods: ["metta/lspTool"],
+    mcpTools: ["lsp", "lsp_tool"],
+    cliCommands: ["lsp"],
+    surfaces: ["lsp", "mcp", "cli", "agent"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_diagnostics",
+    title: "push and pull diagnostics",
+    category: "core",
+    lspMethods: [
+      "textDocument/publishDiagnostics",
+      "textDocument/diagnostic",
+      "workspace/diagnostic",
+    ],
+    mcpTools: ["lsp_diagnostics"],
+    cliCommands: ["check"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_completion",
+    title: "completion and completion resolve",
+    category: "core",
+    lspMethods: ["textDocument/completion", "completionItem/resolve"],
+    mcpTools: ["lsp_completion"],
+    cliCommands: ["complete"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_hover",
+    title: "hover",
+    category: "core",
+    lspMethods: ["textDocument/hover"],
+    mcpTools: ["lsp_hover"],
+    cliCommands: ["hover"],
+    surfaces: ["lsp", "mcp", "cli", "vscode", "agent"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_signature_help",
+    title: "signature help",
+    category: "core",
+    lspMethods: ["textDocument/signatureHelp"],
+    mcpTools: ["lsp_signature_help"],
+    cliCommands: [],
+    surfaces: ["lsp", "mcp", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_definition",
+    title: "go to definition",
+    category: "core",
+    lspMethods: ["textDocument/definition"],
+    mcpTools: ["lsp_definition"],
+    cliCommands: ["def"],
+    surfaces: ["lsp", "mcp", "cli", "vscode", "agent"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_host_type",
+    title: "cross-language host type",
+    category: "advanced",
+    lspMethods: ["textDocument/hover", "textDocument/definition"],
+    mcpTools: ["lsp_host_type"],
+    cliCommands: ["host-type"],
+    surfaces: ["lsp", "mcp", "cli", "vscode", "agent"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "experimental",
+  },
+  {
+    id: "lsp_references",
+    title: "find references",
+    category: "core",
+    lspMethods: ["textDocument/references"],
+    mcpTools: ["lsp_references"],
+    cliCommands: ["refs"],
+    surfaces: ["lsp", "mcp", "cli", "vscode", "agent"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_document_symbols",
+    title: "document symbols",
+    category: "core",
+    lspMethods: ["textDocument/documentSymbol"],
+    mcpTools: ["lsp_document_symbols"],
+    cliCommands: ["symbols"],
+    surfaces: ["lsp", "mcp", "cli", "vscode", "agent"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_workspace_symbols",
+    title: "workspace symbols",
+    category: "core",
+    lspMethods: ["workspace/symbol"],
+    mcpTools: ["lsp_workspace_symbols"],
+    cliCommands: ["workspace-symbols"],
+    surfaces: ["lsp", "mcp", "cli", "vscode", "agent"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_format",
+    title: "document formatting",
+    category: "core",
+    lspMethods: ["textDocument/formatting"],
+    mcpTools: ["lsp_format"],
+    cliCommands: ["fmt"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_format_range",
+    title: "range formatting",
+    category: "core",
+    lspMethods: ["textDocument/rangeFormatting"],
+    mcpTools: ["lsp_format_range"],
+    cliCommands: ["fmt-range"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_rename",
+    title: "prepare rename and rename",
+    category: "core",
+    lspMethods: ["textDocument/prepareRename", "textDocument/rename"],
+    mcpTools: ["lsp_rename"],
+    cliCommands: ["rename-preview"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_semantic_tokens",
+    title: "semantic tokens",
+    category: "important",
+    lspMethods: ["textDocument/semanticTokens/full", "textDocument/semanticTokens/range"],
+    mcpTools: ["lsp_semantic_tokens"],
+    cliCommands: ["semantic-tokens"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_folding_ranges",
+    title: "folding ranges",
+    category: "important",
+    lspMethods: ["textDocument/foldingRange"],
+    mcpTools: ["lsp_folding_ranges"],
+    cliCommands: ["folds"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_inlay_hints",
+    title: "inlay hints",
+    category: "important",
+    lspMethods: ["textDocument/inlayHint"],
+    mcpTools: ["lsp_inlay_hints"],
+    cliCommands: ["inlay-hints"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_code_actions",
+    title: "code actions and quick fixes",
+    category: "important",
+    lspMethods: ["textDocument/codeAction"],
+    mcpTools: ["lsp_code_actions"],
+    cliCommands: ["fixes"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_lint",
+    title: "syntactic lint (Semgrep-for-MeTTa)",
+    category: "important",
+    lspMethods: ["textDocument/diagnostic"],
+    mcpTools: ["lsp_lint"],
+    cliCommands: ["lint"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "preview",
+  },
+  {
+    id: "lsp_organize_imports",
+    title: "organize imports",
+    category: "important",
+    lspMethods: ["workspace/executeCommand:metta.lsp.organizeImports"],
+    mcpTools: ["lsp_organize_imports"],
+    cliCommands: ["organize-imports"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_implementation",
+    title: "implementation provider",
+    category: "important",
+    lspMethods: ["textDocument/implementation"],
+    mcpTools: ["lsp_implementation"],
+    cliCommands: ["impl"],
+    surfaces: ["lsp", "mcp", "cli", "vscode", "agent"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_type_definition",
+    title: "type definition provider",
+    category: "important",
+    lspMethods: ["textDocument/typeDefinition"],
+    mcpTools: ["lsp_type_definition"],
+    cliCommands: ["type-def"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "preview",
+  },
+  {
+    id: "lsp_declaration",
+    title: "declaration provider",
+    category: "important",
+    lspMethods: ["textDocument/declaration"],
+    mcpTools: ["lsp_declaration"],
+    cliCommands: ["declaration"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "preview",
+  },
+  {
+    id: "lsp_document_highlight",
+    title: "document highlights",
+    category: "important",
+    lspMethods: ["textDocument/documentHighlight"],
+    mcpTools: ["lsp_document_highlight"],
+    cliCommands: ["highlights"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_will_rename",
+    title: "update imports on file rename",
+    category: "important",
+    lspMethods: ["workspace/willRenameFiles"],
+    mcpTools: [],
+    cliCommands: [],
+    surfaces: ["lsp", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: false,
+    stability: "stable",
+  },
+  {
+    id: "lsp_linked_editing",
+    title: "linked editing of variables",
+    category: "important",
+    lspMethods: ["textDocument/linkedEditingRange"],
+    mcpTools: ["lsp_linked_editing"],
+    cliCommands: [],
+    surfaces: ["lsp", "mcp", "vscode", "agent"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_document_links",
+    title: "document links for imports",
+    category: "important",
+    lspMethods: ["textDocument/documentLink"],
+    mcpTools: ["lsp_document_links"],
+    cliCommands: ["links"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_selection_ranges",
+    title: "selection ranges",
+    category: "important",
+    lspMethods: ["textDocument/selectionRange"],
+    mcpTools: ["lsp_selection_ranges"],
+    cliCommands: ["selection-ranges"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_call_hierarchy",
+    title: "call hierarchy",
+    category: "advanced",
+    lspMethods: [
+      "textDocument/prepareCallHierarchy",
+      "callHierarchy/incomingCalls",
+      "callHierarchy/outgoingCalls",
+    ],
+    mcpTools: ["lsp_call_hierarchy"],
+    cliCommands: ["call-hierarchy"],
+    surfaces: ["lsp", "mcp", "cli", "vscode", "agent"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_evaluate",
+    title: "guarded explicit evaluation",
+    category: "runtime",
+    lspMethods: ["metta/evaluateGuarded"],
+    mcpTools: ["lsp_evaluate"],
+    cliCommands: ["run"],
+    surfaces: ["lsp", "mcp", "cli", "vscode"],
+    needsRuntime: true,
+    guardedRuntime: true,
+    readOnly: false,
+    stability: "stable",
+  },
+  {
+    id: "lsp_guarded_evaluate",
+    title: "guarded explicit evaluation alias",
+    category: "runtime",
+    lspMethods: ["metta/evaluateGuarded"],
+    mcpTools: ["lsp_guarded_evaluate"],
+    cliCommands: [],
+    surfaces: ["mcp"],
+    needsRuntime: true,
+    guardedRuntime: true,
+    readOnly: false,
+    stability: "stable",
+  },
+  {
+    id: "lsp_run_tests",
+    title: "MeTTa test runner (assert forms)",
+    category: "runtime",
+    lspMethods: [],
+    mcpTools: ["lsp_run_tests"],
+    cliCommands: ["test"],
+    surfaces: ["mcp", "cli"],
+    needsRuntime: true,
+    guardedRuntime: true,
+    readOnly: true,
+    stability: "preview",
+  },
+  {
+    id: "lsp_reduce_trace",
+    title: "reduction trace",
+    category: "runtime",
+    lspMethods: [],
+    mcpTools: ["lsp_reduce_trace"],
+    cliCommands: ["trace"],
+    surfaces: ["mcp", "cli", "agent"],
+    needsRuntime: true,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "preview",
+  },
+  {
+    id: "lsp_visualise",
+    title: "reduction visualisation",
+    category: "runtime",
+    lspMethods: ["metta/visualise"],
+    mcpTools: [],
+    cliCommands: ["visualise"],
+    surfaces: ["lsp", "cli", "vscode"],
+    needsRuntime: true,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "preview",
+  },
+  {
+    id: "lsp_code_lens",
+    title: "code lens (evaluate and reference counts)",
+    category: "important",
+    lspMethods: ["textDocument/codeLens"],
+    mcpTools: ["lsp_code_lens"],
+    cliCommands: [],
+    surfaces: ["lsp", "mcp", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_format_on_type",
+    title: "on-type formatting",
+    category: "important",
+    lspMethods: ["textDocument/onTypeFormatting"],
+    mcpTools: [],
+    cliCommands: [],
+    surfaces: ["lsp", "vscode"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "stable",
+  },
+  {
+    id: "lsp_explain",
+    title: "mixfix notation at position",
+    category: "advanced",
+    lspMethods: ["metta/explainForm"],
+    mcpTools: ["lsp_explain", "lsp_explain_form"],
+    cliCommands: ["explain"],
+    surfaces: ["mcp", "cli", "vscode", "agent"],
+    needsRuntime: false,
+    guardedRuntime: false,
+    readOnly: true,
+    stability: "preview",
+  },
+] as const satisfies readonly CapabilityDescriptor[];
+
+export type CapabilityId = (typeof CAPABILITIES)[number]["id"];
+export const CAPABILITY_IDS = CAPABILITIES.map((capability) => capability.id);
+
+export function capabilitiesForSurface(surface: CapabilitySurface): CapabilityDescriptor[] {
+  return [...CAPABILITIES].filter((capability) =>
+    (capability.surfaces as readonly CapabilitySurface[]).includes(surface),
+  );
+}
+
+export function capabilitySummary(): {
+  total: number;
+  stable: number;
+  preview: number;
+  experimental: number;
+  runtime: number;
+  surfaces: Record<CapabilitySurface, number>;
+} {
+  const capabilities: readonly CapabilityDescriptor[] = CAPABILITIES;
+  const zero: Record<CapabilitySurface, number> = {
+    lsp: 0,
+    mcp: 0,
+    cli: 0,
+    vscode: 0,
+    agent: 0,
+  };
+  const surfaces: Record<CapabilitySurface, number> = { ...zero };
+  for (const capability of capabilities) {
+    for (const surface of capability.surfaces) {
+      surfaces[surface] += 1;
+    }
+  }
+  return {
+    total: capabilities.length,
+    stable: capabilities.filter((capability) => capability.stability === "stable").length,
+    preview: capabilities.filter((capability) => capability.stability === "preview").length,
+    experimental: capabilities.filter((capability) => capability.stability === "experimental")
+      .length,
+    runtime: capabilities.filter((capability) => capability.needsRuntime).length,
+    surfaces,
+  };
+}
+
+export function assertCapabilityParity(
+  surface: CapabilitySurface,
+  registeredIds: readonly string[],
+): void {
+  const expected = new Set(capabilitiesForSurface(surface).map((capability) => capability.id));
+  const actual = new Set(registeredIds);
+  const missing = [...expected].filter((id) => !actual.has(id));
+  if (missing.length > 0)
+    throw new Error(`${surface} capability drift: missing ${missing.join(", ")}`);
+}
+
+export function driftReport(registeredMcpTools: readonly string[]): {
+  readonly ok: boolean;
+  readonly missingMcpTools: readonly string[];
+  readonly extraMcpTools: readonly string[];
+  readonly registeredMcpTools: readonly string[];
+} {
+  const expected = new Set<string>(CAPABILITIES.flatMap((capability) => [...capability.mcpTools]));
+  const registered = new Set<string>(registeredMcpTools);
+  const missing = [...expected].filter((tool) => !registered.has(tool)).sort();
+  const extra = [...registered].filter((tool) => !expected.has(tool)).sort();
+  return {
+    ok: missing.length === 0,
+    missingMcpTools: missing,
+    extraMcpTools: extra,
+    registeredMcpTools: [...registered].sort(),
+  };
+}

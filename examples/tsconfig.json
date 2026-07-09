@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ESNext", "DOM"],
+    "strict": true,
+    "noEmit": true,
+    "plugins": [{ "name": "metta-ts-typescript-plugin" }]
+  },
+  "include": ["18-host-bridge/**/*.ts", "19-typescript-plugin/**/*.ts"]
+}

@@ -1,0 +1,58 @@
+{
+  "$comment": "Pre-edit quality gate for MeTTa-LSP. Adopts the quality-guard rule format; the no-wave-jargon and no-todo-unscoped rules are intentionally excluded by decision. Enforced in CI via scripts/quality-guard.mjs and mirrored by ESLint (no-console, no-explicit-any/no-unsafe, ban-ts-comment, no-empty).",
+  "generated_files": ["src/types/vscode-languageclient-browser.d.ts"],
+  "rules": [
+    {
+      "id": "no-as-any",
+      "pattern": "\\bas\\s+any\\b",
+      "message": "`as any` forbidden.",
+      "fix_hint": "Use a type guard, a generic constraint, or `unknown` + narrowing",
+      "extensions": [".ts", ".tsx"],
+      "severity": "error",
+      "exclude_paths": ["**/*.test.ts", "**/*.spec.ts", "**/test/**"]
+    },
+    {
+      "id": "no-ts-ignore",
+      "pattern": "@ts-ignore",
+      "message": "`@ts-ignore` forbidden.",
+      "fix_hint": "Fix the type error directly",
+      "extensions": [".ts", ".tsx"],
+      "severity": "error"
+    },
+    {
+      "id": "no-ts-expect-error-bare",
+      "pattern": "@ts-expect-error(?!.*//)",
+      "message": "`@ts-expect-error` needs an explanation.",
+      "fix_hint": "@ts-expect-error // reason: <why>",
+      "extensions": [".ts", ".tsx"],
+      "severity": "error"
+    },
+    {
+      "id": "no-console-log",
+      "pattern": "\\bconsole\\.log\\s*\\(",
+      "message": "`console.log()` in server/library code corrupts the stdio JSON-RPC stream.",
+      "fix_hint": "connection.console.log(...) or write to stderr",
+      "extensions": [".ts", ".tsx"],
+      "severity": "error",
+      "exclude_paths": ["**/*.test.ts", "**/*.spec.ts", "**/test/**", "**/scripts/**", "src/cli/**"]
+    },
+    {
+      "id": "no-empty-catch",
+      "pattern": "catch\\s*\\([^)]*\\)\\s*\\{\\s*\\}",
+      "message": "Empty catch block.",
+      "fix_hint": "Handle the error or add // reason: why it is swallowed",
+      "extensions": [".ts", ".tsx"],
+      "severity": "error"
+    },
+    {
+      "id": "no-print-python",
+      "pattern": "^\\s*print\\s*\\(",
+      "flags": "m",
+      "message": "`print()` in library code.",
+      "fix_hint": "Use the project logger",
+      "extensions": [".py"],
+      "severity": "error",
+      "exclude_paths": ["**/tests/**", "**/scripts/**", "**/conftest.py"]
+    }
+  ]
+}
