@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // The ergonomic DSL: one-shot functions and a reusable document handle over the analyzer. Positions may
-// be an LSP position or a plain offset; run() evaluates unguarded; over() wraps an existing analyzer so
-// the CLI shares this surface.
+// be an LSP position or a plain offset; run() evaluates through the guarded runtime; over() wraps an existing
+// analyzer so the CLI shares this surface.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Analyzer } from "../../server/analyzer.js";
 import { InMemoryFileProvider } from "../../server/fileProvider.js";
 import {
@@ -36,11 +36,11 @@ describe("one-shot functions", () => {
     expect(format("(=   (f   $x)   $x)")).toContain("(= (f $x) $x)");
   });
 
-  it("run returns the unguarded result contract", async () => {
+  it("run returns the guarded result contract", async () => {
     // The evaluation itself runs in the isolated worker, which vitest cannot resolve from .ts source, so
-    // this pins only the contract (guarded=false); scripts/smoke-dsl.mjs proves run() → 42 against dist.
+    // this pins only the contract (guarded=true); scripts/smoke-dsl.mjs proves run() → 42 against dist.
     const result = await run("!(+ 1 2)");
-    expect(result.guarded).toBe(false);
+    expect(result.guarded).toBe(true);
   });
 
   it("lists document symbols and renders pseudocode", () => {
@@ -80,5 +80,19 @@ describe("MettaDoc.over shares an existing analyzer", () => {
     expect(doc.analyzer).toBe(analyzer);
     expect(doc.source).toBe(src);
     expect(doc.lint().some((finding) => finding.ruleId === "constant-if-true")).toBe(true);
+  });
+
+  it("restores pseudocode settings when code-lens generation throws", () => {
+    const files = new InMemoryFileProvider("/ws");
+    const uri = "file:///ws/a.metta";
+    files.writeFile("/ws/a.metta", "!(+ 1 2)");
+    const analyzer = new Analyzer(files);
+    analyzer.updateDocument(uri, "!(+ 1 2)", 1, true);
+    vi.spyOn(analyzer, "codeLenses").mockImplementation(() => {
+      throw new Error("lens failure");
+    });
+
+    expect(() => MettaDoc.over(analyzer, uri).pseudocode()).toThrow("lens failure");
+    expect(analyzer.getSettings().pseudocode.enabled).toBe(false);
   });
 });

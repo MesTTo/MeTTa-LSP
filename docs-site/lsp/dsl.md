@@ -12,11 +12,13 @@ import { lint, diagnostics, format, run } from "metta-ts-lsp/dsl";
 lint("(= (f $x) (if True 1 2))");          // → [{ ruleId: "constant-if-true", ... }]
 diagnostics("(car-atomm (1 2))");           // → [{ code: "symbol.possibleTypo", ... }]
 format("(=   (f   $x)   $x)");              // → "(= (f $x) $x)"
-await run("(= (double $x) (* $x 2))\n!(double 21)"); // → results including "42"
+await run("(= (double $x) (* $x 2))\n!(double 21)"); // → guarded results including "42"
 ```
 
 Every language-server feature has a one-shot function: `lint`, `diagnostics`, `format`, `hover`,
 `definition`, `references`, `symbols`, `completions`, `codeActions`, `explain`, `pseudocode`, and `run`.
+`run` uses the guarded evaluator: host interop is not enabled, imports are supplied from the analyzer's
+in-memory map, and runtime caps still apply.
 
 ## A reusable document
 

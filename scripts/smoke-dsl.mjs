@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 MesTTo
 // SPDX-License-Identifier: Apache-2.0
 //
-// Prove the ergonomic DSL against the compiled dist, where the unguarded run's worker resolves: lint,
+// Prove the ergonomic DSL against the compiled dist, where the guarded worker resolves: lint,
 // diagnostics, format, and an actual evaluation through run(). Part of verify:strict.
 
 import { diagnostics, format, lint, replace, run, search } from "../dist/dsl/index.js";
@@ -31,7 +31,7 @@ if (rewritten !== "(= (a $x) $x)") fail(`replace produced: ${rewritten}`);
 
 const result = await run("(= (double $x) (* $x 2))\n!(double 21)");
 const values = result.queries.flatMap((q) => q.results);
-if (result.guarded !== false) fail(`expected guarded=false, got ${result.guarded}`);
+if (result.guarded !== true) fail(`expected guarded=true, got ${result.guarded}`);
 if (!values.includes("42")) fail(`run did not evaluate to 42: ${JSON.stringify(values)}`);
 
 console.log(

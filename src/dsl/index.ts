@@ -8,7 +8,7 @@
 //   lint("(= (f $x) (if True 1 2))");         // → the lint findings
 //   diagnostics("(fatc 5)");                   // → the diagnostics
 //   format("(=   (f $x)   $x)");               // → the formatted source
-//   await run("(= (f $x) (* $x 2))\n!(f 21)"); // → the evaluation results
+//   await run("(= (f $x) (* $x 2))\n!(f 21)"); // → guarded evaluation results
 //
 // Or hold one document and query it repeatedly without re-parsing:
 //
@@ -37,10 +37,13 @@ import {
   structuralReplace,
   structuralSearch,
 } from "../language-service/index.js";
-import { evaluateUnguarded, type UnguardedRunOptions } from "../runtime/guardedEvaluation.js";
+import { evaluateGuarded } from "../runtime/guardedEvaluation.js";
 import { Analyzer, type SuppressedDiagnostic } from "../server/analyzer.js";
 import { InMemoryFileProvider } from "../server/fileProvider.js";
-import type { GuardedEvaluationResult } from "../server/guardedEvaluationTypes.js";
+import type {
+  GuardedEvaluationPolicy,
+  GuardedEvaluationResult,
+} from "../server/guardedEvaluationTypes.js";
 import { computeLineOffsets, positionAt } from "../server/parser.js";
 
 const ROOT = "inmemory://metta-dsl";
@@ -159,26 +162,27 @@ export class MettaDoc {
   pseudocode(): string[] {
     const enabled = this.analyzer.getSettings().pseudocode.enabled;
     this.analyzer.updateSettings({ pseudocode: { enabled: true } });
-    const lenses = this.analyzer.codeLenses(this.uri);
-    this.analyzer.updateSettings({ pseudocode: { enabled } });
+    let lenses: ReturnType<Analyzer["codeLenses"]>;
+    try {
+      lenses = this.analyzer.codeLenses(this.uri);
+    } finally {
+      this.analyzer.updateSettings({ pseudocode: { enabled } });
+    }
     return lenses
       .map((lens) => lens.command?.title)
       .filter((title): title is string => title !== undefined && title.startsWith("≡ "))
       .map((title) => title.replace(/^≡ /, ""));
   }
 
-  /** Evaluate the document unguarded (its bang forms and trailing calls), returning the results. */
-  run(options: UnguardedRunOptions = {}): Promise<GuardedEvaluationResult> {
-    return evaluateUnguarded(
-      {
-        source: this.analyzer.evaluationSource(this.uri),
-        uri: this.uri,
-        imports: this.analyzer.importSourceMap(this.uri),
-        importPaths: this.analyzer.importPathMap(this.uri),
-        wrapBareExpression: false,
-      },
-      options,
-    );
+  /** Evaluate the document with the guarded runtime caps and no host interop. */
+  run(policy: Partial<GuardedEvaluationPolicy> = {}): Promise<GuardedEvaluationResult> {
+    return evaluateGuarded({
+      source: this.analyzer.evaluationSource(this.uri),
+      uri: this.uri,
+      policy,
+      imports: this.analyzer.importSourceMap(this.uri),
+      wrapBareExpression: false,
+    });
   }
 }
 
@@ -232,7 +236,7 @@ export function pseudocode(source: string): string[] {
 }
 export function run(
   source: string,
-  options?: UnguardedRunOptions,
+  policy?: Partial<GuardedEvaluationPolicy>,
 ): Promise<GuardedEvaluationResult> {
-  return MettaDoc.of(source).run(options);
+  return MettaDoc.of(source).run(policy);
 }

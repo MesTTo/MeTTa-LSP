@@ -25,6 +25,7 @@ import { Analyzer } from "../server/analyzer.js";
 import { HostTypeService } from "../server/bridge/hostTypeService.js";
 import { CAPABILITIES, CAPABILITY_IDS, capabilitySummary } from "../server/capabilities.js";
 import { NodePrologDiagnosticProvider } from "../server/nodePrologDiagnostics.js";
+import { flagValue, positionalArgs } from "./args.js";
 import { startRepl } from "./repl.js";
 
 const HELP = `metta-lsp <command> [args]\n\nCommands:\n  capabilities\n  check <file> [--json] [--show-suppressed]\n  symbols <file> [--json]\n  hover <file> <line> <character> [--json]\n  def <file> <line> <character> [--json]\n  host-type <file> <line> <character> [--json]\n  explain <file> <line> <character> [--json]\n  refs <file> <line> <character> [--json]\n  fmt <file> [--check]\n  lint <file> [--json] [--fix]\n  search <file> "<pattern>" [--json]\n  replace <file> "<pattern>" "<template>" [--write]\n  test <file> [--json] [--tap] [--junit]\n  run <file> [--unguarded]\n  trace <file> "<query>" [--json] [--max N]\n  visualise <file> "<query>" [--out file.html] [--block]\n  doc [root] [--json] [--build] [--serve] [--open] [--port N] [--base PATH]\n  repl [file]\n  lsp --stdio\n  mcp --stdio\n\nMost commands take --json for machine-readable output.`;
@@ -55,7 +56,8 @@ function asPosition(line?: string, character?: string) {
 }
 
 function makeAnalyzer(file?: string) {
-  const root = file ? path.dirname(path.resolve(file)) : process.cwd();
+  const resolvedFile = file === undefined ? undefined : path.resolve(file);
+  const root = resolvedFile === undefined ? process.cwd() : path.dirname(resolvedFile);
   // The host bridge builds its TypeScript service lazily, so injecting it costs nothing on commands (fmt,
   // lint) that never reach a grounded-atom hover or definition.
   const analyzer = new Analyzer(
@@ -65,34 +67,19 @@ function makeAnalyzer(file?: string) {
     new NodePrologDiagnosticProvider(),
   );
   analyzer.setWorkspaceRoots([pathToUri(root)]);
-  if (file) analyzer.updateDocument(pathToUri(file), fs.readFileSync(file, "utf8"), null, true);
+  if (resolvedFile !== undefined)
+    analyzer.updateDocument(
+      pathToUri(resolvedFile),
+      fs.readFileSync(resolvedFile, "utf8"),
+      null,
+      true,
+    );
   return analyzer;
 }
 
 function print(value: unknown, json: boolean): void {
   if (json) console.log(JSON.stringify(value, null, 2));
   else console.log(typeof value === "string" ? value : JSON.stringify(value, null, 2));
-}
-
-const VALUE_FLAGS = new Set(["--base", "--host-roots", "--module-roots", "--port"]);
-
-function flagValue(args: readonly string[], flag: string): string | undefined {
-  const index = args.indexOf(flag);
-  return index >= 0 ? args[index + 1] : undefined;
-}
-
-function positionalArgs(args: readonly string[]): string[] {
-  const positionals: string[] = [];
-  for (let index = 0; index < args.length; index++) {
-    const arg = args[index];
-    if (arg === undefined) continue;
-    if (arg.startsWith("--")) {
-      if (VALUE_FLAGS.has(arg)) index += 1;
-      continue;
-    }
-    positionals.push(arg);
-  }
-  return positionals;
 }
 
 function cliPackageRoot(): string {
@@ -221,19 +208,19 @@ async function main(): Promise<void> {
     return;
   }
   if (command === "repl") {
-    await startRepl(args.find((arg) => !arg.startsWith("--")));
+    await startRepl(positionalArgs(args)[0]);
     return;
   }
   if (command === "doc" || command === "docs") {
     await runDocsCommand(args, json);
     return;
   }
-  const file = args.find((arg) => !arg.startsWith("--"));
+  const operands = positionalArgs(args);
+  const file = operands[0];
   if (!file) usage();
   // Structural search and replace treat code as data: they match a MeTTa pattern over the file's forms and
   // rewrite with a template that substitutes the captures. No analyzer, workspace, or evaluation is needed.
   if (command === "search" || command === "replace") {
-    const operands = args.filter((arg) => !arg.startsWith("--"));
     const pattern = operands[1];
     const source = fs.readFileSync(file, "utf8");
     if (command === "search") {
@@ -279,22 +266,25 @@ async function main(): Promise<void> {
       print({ documentSymbols: doc.symbols() }, json);
       return;
     case "hover":
-      print({ hover: doc.hover(asPosition(args[1], args[2])) }, json);
+      print({ hover: doc.hover(asPosition(operands[1], operands[2])) }, json);
       return;
     case "def":
-      print({ definition: doc.definition(asPosition(args[1], args[2])) }, json);
+      print({ definition: doc.definition(asPosition(operands[1], operands[2])) }, json);
       return;
     case "host-type":
-      print({ hostType: analyzer.hostTypeAt(uri, asPosition(args[1], args[2])) ?? null }, json);
+      print(
+        { hostType: analyzer.hostTypeAt(uri, asPosition(operands[1], operands[2])) ?? null },
+        json,
+      );
       return;
     case "explain": {
-      const explanation = analyzer.explainForm(uri, asPosition(args[1], args[2]));
+      const explanation = analyzer.explainForm(uri, asPosition(operands[1], operands[2]));
       if (json) print({ explanation }, true);
       else console.log(explanation?.text ?? "no form at that position");
       return;
     }
     case "refs":
-      print({ references: doc.references(asPosition(args[1], args[2])) }, json);
+      print({ references: doc.references(asPosition(operands[1], operands[2])) }, json);
       return;
     case "fmt": {
       const edits = analyzer.formatDocument(uri);
@@ -412,10 +402,9 @@ async function main(): Promise<void> {
       return;
     }
     case "trace": {
-      const query = args.filter((arg) => !arg.startsWith("--"))[1];
+      const query = operands[1];
       if (query === undefined) usage();
-      const maxIndex = args.indexOf("--max");
-      const maxSteps = maxIndex >= 0 ? Math.max(1, Number(args[maxIndex + 1] ?? "100")) : 100;
+      const maxSteps = Math.max(1, Number(flagValue(args, "--max") ?? "100"));
       try {
         const result = await traceReduction(
           fs.readFileSync(file, "utf8"),
@@ -437,10 +426,9 @@ async function main(): Promise<void> {
       return;
     }
     case "visualise": {
-      const query = args.filter((arg) => !arg.startsWith("--"))[1];
+      const query = operands[1];
       if (query === undefined) usage();
-      const outIndex = args.indexOf("--out");
-      const out = outIndex >= 0 ? args[outIndex + 1] : undefined;
+      const out = flagValue(args, "--out");
       try {
         const result = await reductionFrames(fs.readFileSync(file, "utf8"), query, {
           block: args.includes("--block"),

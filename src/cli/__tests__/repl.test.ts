@@ -41,6 +41,11 @@ describe("handleReplLine", () => {
     expect(handleReplLine(runner, ":nope").output).toContain("unknown command");
   });
 
+  it("reports malformed meta-command input without throwing", () => {
+    expect(() => handleReplLine(runner, ":type (")).not.toThrow();
+    expect(handleReplLine(runner, ":type (").output).toContain("error:");
+  });
+
   it("ignores a blank line", () => {
     expect(handleReplLine(runner, "   ")).toEqual({ output: "", quit: false });
   });

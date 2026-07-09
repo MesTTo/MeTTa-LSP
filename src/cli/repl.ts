@@ -59,8 +59,8 @@ function handleMeta(runner: MeTTa, line: string): ReplResult {
 export function handleReplLine(runner: MeTTa, line: string): ReplResult {
   const trimmed = line.trim();
   if (trimmed.length === 0) return { output: "", quit: false };
-  if (trimmed.startsWith(":")) return handleMeta(runner, trimmed);
   try {
+    if (trimmed.startsWith(":")) return handleMeta(runner, trimmed);
     return { output: formatResults(runner.run(trimmed)), quit: false };
   } catch (error) {
     return {
