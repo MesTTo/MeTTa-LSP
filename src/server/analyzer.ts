@@ -40,6 +40,7 @@ import {
   buildSuppressions,
   CoreRuntime,
   coreBuiltinTypes,
+  createWorkspaceExcludeMatcher,
   pathToUri as defaultPathToUri,
   uriToPath as defaultUriToPath,
   type FileId,
@@ -151,7 +152,6 @@ import {
   symbolKindForDefinition,
   type Token,
   type TypeSignature,
-  type WorkspaceSettings,
   type WorkspaceSymbolOptions,
 } from "./types.js";
 
@@ -474,24 +474,6 @@ function isPrologPath(rawPath: string): boolean {
   return stripQuotes(rawPath).toLowerCase().endsWith(".pl");
 }
 
-function isIgnoredPath(candidate: string, settings: WorkspaceSettings): boolean {
-  const normalized = path.normalize(candidate);
-  return settings.exclude.some((fragment) => {
-    const clean = stripSlashes(fragment.replaceAll("**", "").replaceAll("*", ""));
-    return clean.length > 0 && normalized.includes(clean);
-  });
-}
-
-// Strip leading and trailing "/" in linear time. A slash-run regex such as /^\/+|\/+$/ backtracks
-// quadratically on a rejecting suffix.
-function stripSlashes(value: string): string {
-  let start = 0;
-  let end = value.length;
-  while (start < end && value[start] === "/") start++;
-  while (end > start && value[end - 1] === "/") end--;
-  return value.slice(start, end);
-}
-
 // Stable ordering for LSP locations: by uri, then by range. Extracted so the call sites do not repeat
 // `a.uri.localeCompare(b.uri) || compareRange(...)`, whose leading `||` puts a number in boolean position.
 function compareLocations(a: Location, b: Location): number {
@@ -653,6 +635,16 @@ function collectVariables(node: AstNode, out: AstNode[] = []): AstNode[] {
 
 function fullLineText(text: string, line: number): string {
   return lineText(text, line);
+}
+
+function lineHasSingleImportForm(text: string): boolean {
+  const parsed = parseMeTTa("metta://organize-imports-line", text);
+  const children = semanticChildren(parsed.root);
+  if (children.length === 0 || children.length > 2) return false;
+  const hasBang = children[0]?.kind === "symbol" && children[0].text === "!";
+  const form = hasBang ? children[1] : children[0];
+  if (form === undefined || form.kind !== "list") return false;
+  return isImportHead(headSymbol(form));
 }
 
 function namedChildText(node: AstNode | undefined): string | null {
@@ -1441,6 +1433,7 @@ export class Analyzer {
 
   public async scanWorkspace(): Promise<void> {
     const settings = this.settings.workspace;
+    const isIgnoredPath = createWorkspaceExcludeMatcher(settings.exclude);
     let indexed = 0;
     for (const rootUri of this.workspaceRoots) {
       const rootPath = this.uriToPath(rootUri) ?? rootUri;
@@ -1448,7 +1441,7 @@ export class Analyzer {
       const stack = [rootPath];
       while (stack.length > 0 && indexed < settings.maxFiles) {
         const current = stack.pop();
-        if (!current || isIgnoredPath(current, settings)) continue;
+        if (!current || isIgnoredPath(path.normalize(current))) continue;
         const stat = this.files.stat(current);
         if (!stat || stat.isSymbolicLink) continue;
         if (stat.isDirectory) {
@@ -3754,17 +3747,30 @@ export class Analyzer {
   public organizeImports(uri: string): TextEdit[] {
     const index = this.ensureIndexed(uri);
     if (!index || index.imports.length === 0) return [];
-    const unique = new Map<string, ImportRecord>();
+    const importsByLine = new Map<number, ImportRecord[]>();
     for (const imp of index.imports) {
-      const key = `${imp.targetSpace ?? "&self"}:${imp.rawPath}`;
-      if (!unique.has(key)) unique.set(key, imp);
+      const line = imp.range.start.line;
+      const entries = importsByLine.get(line) ?? [];
+      entries.push(imp);
+      importsByLine.set(line, entries);
     }
-    const sortedLines = `${[...unique.values()]
-      .sort((a, b) => a.rawPath.localeCompare(b.rawPath))
+    if ([...importsByLine.values()].some((imports) => imports.length !== 1)) return [];
+    const startLine = Math.min(...importsByLine.keys());
+    const endLine = Math.max(...importsByLine.keys());
+    for (let line = startLine; line <= endLine; line++) {
+      const imports = importsByLine.get(line);
+      if (imports === undefined || !lineHasSingleImportForm(fullLineText(index.text, line)))
+        return [];
+    }
+    const sortedLines = `${[...index.imports]
+      .sort((a, b) => {
+        const byPath = a.rawPath.localeCompare(b.rawPath);
+        return byPath !== 0
+          ? byPath
+          : (a.targetSpace ?? "&self").localeCompare(b.targetSpace ?? "&self");
+      })
       .map((imp) => imp.lineText.trim())
       .join("\n")}\n`;
-    const startLine = Math.min(...index.imports.map((imp) => imp.range.start.line));
-    const endLine = Math.max(...index.imports.map((imp) => imp.range.end.line));
     const range = lineRange(index.text, startLine, endLine);
     const current = index.text.slice(
       offsetAt(range.start, index.parsed.lineOffsets),

@@ -9,5 +9,6 @@ export * from "./engine/uri.js";
 export * from "./interfaces.js";
 export * from "./lint/index.js";
 export * from "./mixfix.js";
+export * from "./pathFilters.js";
 export * from "./search.js";
 export * from "./testRunner.js";
