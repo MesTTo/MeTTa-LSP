@@ -67,6 +67,8 @@ describe("guarded evaluation — the capability boundary is the guard", () => {
       "pythonia",
       "node:fs",
       "node:child_process",
+      "node:module",
+      "node:vm",
       "node:net",
       "node:http",
       "node:https",
@@ -116,7 +118,10 @@ describe("guarded evaluation — the capability boundary is the guard", () => {
     expect(unguardedSource).toContain('import("@metta-ts/prolog/swi-node")');
     expect(unguardedSource).toContain("composeHostInterops");
     expect(unguardedSource).toContain("runSourceAsync");
-    expect(unguardedSource).toContain("host?.dispose?.()");
+    expect(unguardedSource).toContain("await host.dispose?.()");
+    expect(unguardedSource).toContain("cancelActiveRun = async () =>");
+    expect(unguardedSource).toContain("await runFinished");
+    expect(unguardedSource).toContain("serveNodeWorker(run, {");
     const forbidden = [
       'import("@metta-ts/node")',
       "@metta-ts/hyperon",

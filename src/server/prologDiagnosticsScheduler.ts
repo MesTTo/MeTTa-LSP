@@ -31,6 +31,7 @@ export interface PrologDiagnosticsSchedulerOptions {
 interface ScheduledState extends DebouncedDiagnosticState {
   readonly generation: number;
   readonly timer?: ReturnType<typeof setTimeout>;
+  readonly abortController?: AbortController;
 }
 
 const DEFAULT_DEBOUNCE_MS = 150;
@@ -59,10 +60,11 @@ async function providerDiagnostics(
   provider: PrologDiagnosticProvider,
   filePath: string,
   settings: PrologDiagnosticSettings,
+  signal?: AbortSignal,
 ): Promise<readonly PrologSourceDiagnostic[]> {
   try {
     if (provider.diagnosticsForFileAsync !== undefined)
-      return await provider.diagnosticsForFileAsync(filePath, settings);
+      return await provider.diagnosticsForFileAsync(filePath, settings, signal);
     return provider.diagnosticsForFile(filePath, settings);
   } catch (error) {
     return [providerFailureDiagnostic(error)];
@@ -73,12 +75,13 @@ export async function collectPrologBridgeDiagnostics(
   analyzer: Analyzer,
   provider: PrologDiagnosticProvider,
   input: PrologDiagnosticsInput,
+  signal?: AbortSignal,
 ): Promise<Diagnostic[]> {
   const settings = analyzer.getSettings().prolog;
   const byPath = new Map<string, Promise<readonly PrologSourceDiagnostic[]>>();
   for (const ref of input.references) {
     if (!byPath.has(ref.filePath))
-      byPath.set(ref.filePath, providerDiagnostics(provider, ref.filePath, settings));
+      byPath.set(ref.filePath, providerDiagnostics(provider, ref.filePath, settings, signal));
   }
   const diagnostics: Diagnostic[] = [];
   for (const ref of input.references) {
@@ -122,6 +125,7 @@ export class PrologDiagnosticsScheduler {
   }
 
   public cancel(uri: string): void {
+    this.states.get(uri)?.abortController?.abort();
     clearDebouncedState(this.states, uri);
   }
 
@@ -136,11 +140,14 @@ export class PrologDiagnosticsScheduler {
       1_000,
       this.analyzer.getSettings().prolog.timeoutMs * input.references.length + 250,
     );
+    const abortController = new AbortController();
     const timer = setTimeout(() => {
+      abortController.abort();
       this.finishWithDiagnostics(input, generation, this.timeoutDiagnostics(input, timeoutMs));
     }, timeoutMs);
     unrefTimer(timer);
-    this.run(input)
+    this.states.set(input.uri, { generation, timer, abortController });
+    this.run(input, abortController.signal)
       .then((diagnostics) => {
         clearTimeout(timer);
         this.finishWithDiagnostics(input, generation, diagnostics);
@@ -156,8 +163,8 @@ export class PrologDiagnosticsScheduler {
       });
   }
 
-  private async run(input: PrologDiagnosticsInput): Promise<Diagnostic[]> {
-    return collectPrologBridgeDiagnostics(this.analyzer, this.provider, input);
+  private async run(input: PrologDiagnosticsInput, signal: AbortSignal): Promise<Diagnostic[]> {
+    return collectPrologBridgeDiagnostics(this.analyzer, this.provider, input, signal);
   }
 
   private sameInput(

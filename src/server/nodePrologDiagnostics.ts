@@ -14,6 +14,10 @@ import type {
   PrologSourceDiagnostic,
 } from "./prologDiagnostics.js";
 
+function isAborted(signal: AbortSignal | undefined): boolean {
+  return signal?.aborted === true;
+}
+
 const READ_ONLY_GOAL =
   "current_prolog_flag(argv,[File])," +
   "setup_call_cleanup(open(File,read,S)," +
@@ -43,12 +47,14 @@ export class NodePrologDiagnosticProvider implements PrologDiagnosticProvider {
   public async diagnosticsForFileAsync(
     filePath: string,
     settings: PrologDiagnosticSettings,
+    signal?: AbortSignal,
   ): Promise<readonly PrologSourceDiagnostic[]> {
+    if (isAborted(signal)) return [];
     const { executable, key } = this.cacheKey(filePath, settings);
     const cached = this.cached(filePath, key);
     if (cached !== null) return cached;
-    const diagnostics = await this.checkFileAsync(filePath, executable, settings.timeoutMs);
-    this.cacheResult(filePath, key, diagnostics);
+    const diagnostics = await this.checkFileAsync(filePath, executable, settings.timeoutMs, signal);
+    if (!isAborted(signal)) this.cacheResult(filePath, key, diagnostics);
     return diagnostics;
   }
 
@@ -122,6 +128,7 @@ export class NodePrologDiagnosticProvider implements PrologDiagnosticProvider {
     filePath: string,
     executable: string,
     timeoutMs: number,
+    signal?: AbortSignal,
   ): Promise<readonly PrologSourceDiagnostic[]> {
     return new Promise((resolve) => {
       const timeout = Math.max(100, timeoutMs);
@@ -141,12 +148,17 @@ export class NodePrologDiagnosticProvider implements PrologDiagnosticProvider {
       let stdout = "";
       let stderr = "";
       let settled = false;
-      const finish = (diagnostics: readonly PrologSourceDiagnostic[]): void => {
+      function finish(diagnostics: readonly PrologSourceDiagnostic[]): void {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
+        signal?.removeEventListener("abort", abort);
         resolve(diagnostics);
-      };
+      }
+      function abort(): void {
+        child.kill();
+        finish([]);
+      }
       const timer = setTimeout(() => {
         child.kill();
         finish([
@@ -156,6 +168,11 @@ export class NodePrologDiagnosticProvider implements PrologDiagnosticProvider {
           ),
         ]);
       }, timeout);
+      if (isAborted(signal)) {
+        abort();
+        return;
+      }
+      signal?.addEventListener("abort", abort, { once: true });
       child.stdout?.setEncoding("utf8");
       child.stderr?.setEncoding("utf8");
       child.stdout?.on("data", (chunk: string) => {

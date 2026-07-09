@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { DiagnosticSeverity } from "vscode-languageserver-types";
@@ -78,8 +77,23 @@ describe("parseSwiDiagnostics", () => {
     expect(diagnostics[0]?.code).toBe("prolog.backend");
   });
 
+  it("does not spawn or cache diagnostics for an already-cancelled request", async () => {
+    const provider = new NodePrologDiagnosticProvider();
+    const controller = new AbortController();
+    controller.abort();
+    const settings = { executable: "bad\0exe", timeoutMs: 100 };
+
+    await expect(
+      provider.diagnosticsForFileAsync("/tmp/facts.pl", settings, controller.signal),
+    ).resolves.toStrictEqual([]);
+    const next = await provider.diagnosticsForFileAsync("/tmp/facts.pl", settings);
+    expect(next[0]?.code).toBe("prolog.backend");
+  });
+
   it.runIf(hasSwipl)("applies op/3 directives before reading later terms", () => {
-    const dir = mkdtempSync(join(tmpdir(), "metta-lsp-prolog-"));
+    const tempRoot = join(process.cwd(), "ai-tmp");
+    mkdirSync(tempRoot, { recursive: true });
+    const dir = mkdtempSync(join(tempRoot, "prolog-"));
     const file = join(dir, "facts.pl");
     try {
       writeFileSync(file, ":- op(500, xfy, ==>).\na ==> b.\n");

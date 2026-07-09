@@ -25,5 +25,6 @@ export interface PrologDiagnosticProvider {
   diagnosticsForFileAsync?(
     filePath: string,
     settings: PrologDiagnosticSettings,
+    signal?: AbortSignal,
   ): Promise<readonly PrologSourceDiagnostic[]>;
 }

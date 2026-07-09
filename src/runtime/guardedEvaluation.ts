@@ -26,10 +26,43 @@ import {
   sourceUsesProlog,
   sourceUsesPython,
 } from "./guardedEvaluationShared.js";
+import { CANCEL_WORKER_MESSAGE, isWorkerCancelledMessage } from "./nodeWorkerPort.js";
 import { resolveRuntimeWorkerUrl } from "./workerUrl.js";
+
+const UNGUARDED_CLEANUP_GRACE_MS = 1_000;
 
 function sourceHash(source: string): string {
   return createHash("sha256").update(source).digest("hex");
+}
+
+function requestWorkerCleanup(worker: Worker): Promise<void> {
+  return new Promise((resolve) => {
+    let finished = false;
+    const finish = (): void => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      worker.off("message", onMessage);
+      worker.off("exit", finish);
+      resolve();
+    };
+    const onMessage = (message: unknown): void => {
+      if (isWorkerCancelledMessage(message)) finish();
+    };
+    const timer = setTimeout(finish, UNGUARDED_CLEANUP_GRACE_MS);
+    worker.on("message", onMessage);
+    worker.once("exit", finish);
+    try {
+      worker.postMessage(CANCEL_WORKER_MESSAGE);
+    } catch {
+      finish();
+    }
+  });
+}
+
+async function terminateEvaluationWorker(worker: Worker, requestCleanup: boolean): Promise<void> {
+  if (requestCleanup) await requestWorkerCleanup(worker);
+  await worker.terminate().catch(() => undefined);
 }
 
 // dist mirrors src, so the compiled worker is a sibling of this module; resolve it relative to this module's
@@ -47,8 +80,9 @@ async function runEvaluationWorker(
     const timeout = setTimeout(() => {
       if (settled) return;
       settled = true;
-      worker.terminate().catch(() => undefined);
-      resolve({ ok: false, error: `Evaluation timed out after ${timeoutMs} ms.` });
+      void terminateEvaluationWorker(worker, workerFile.endsWith("unguardedWorker.js")).then(() => {
+        resolve({ ok: false, error: `Evaluation timed out after ${timeoutMs} ms.` });
+      });
     }, timeoutMs);
     worker.once("message", (message: GuardedEvaluationWorkerResponse) => {
       if (settled) return;
