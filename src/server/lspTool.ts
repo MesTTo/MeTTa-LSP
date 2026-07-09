@@ -26,6 +26,7 @@ import type {
   CompactWorkspaceSymbolRow,
   CompactWorkspaceSymbols,
 } from "./types.js";
+import { pathIsInsideWorkspace } from "./workspacePath.js";
 
 export const LSP_TOOL_OPERATIONS = [
   "goToDefinition",
@@ -60,6 +61,7 @@ export interface LspToolExecutionOptions {
   readonly defaultWorkspaceRoot?: string;
   readonly requireExistingFile?: boolean;
   readonly scanWorkspace?: boolean;
+  readonly confineToWorkspaceRoot?: boolean;
 }
 
 export interface LspToolResult {
@@ -107,16 +109,21 @@ function normalizeWorkspaceRoot(
 function resolveFilePath(
   request: LspToolRequest,
   workspaceRootPath: string | undefined,
+  confineToWorkspaceRoot: boolean,
 ): string | undefined {
-  if (request.filePath) {
-    return path.isAbsolute(request.filePath)
+  const filePath = request.filePath
+    ? path.isAbsolute(request.filePath)
       ? path.resolve(request.filePath)
-      : path.resolve(workspaceRootPath ?? process.cwd(), request.filePath);
+      : path.resolve(workspaceRootPath ?? process.cwd(), request.filePath)
+    : request.uri?.startsWith("file://") === true
+      ? (uriToPath(normalizeUri(request.uri)) ?? undefined)
+      : undefined;
+  if (filePath !== undefined && confineToWorkspaceRoot && workspaceRootPath !== undefined) {
+    if (!pathIsInsideWorkspace(workspaceRootPath, filePath)) {
+      throw new Error(`LSP tool file is outside the workspace root: ${filePath}`);
+    }
   }
-  if (request.uri?.startsWith("file://") === true) {
-    return uriToPath(normalizeUri(request.uri)) ?? undefined;
-  }
-  return undefined;
+  return filePath;
 }
 
 function resolveUri(request: LspToolRequest, filePath: string | undefined): string | undefined {
@@ -522,7 +529,11 @@ export async function runLspToolOperation(
     if (options.scanWorkspace !== false) await analyzer.scanWorkspace();
   }
 
-  const filePath = resolveFilePath(request, workspaceRootPath);
+  const filePath = resolveFilePath(
+    request,
+    workspaceRootPath,
+    options.confineToWorkspaceRoot === true,
+  );
   if (
     options.requireExistingFile === true &&
     request.text === undefined &&

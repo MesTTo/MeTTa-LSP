@@ -57,4 +57,23 @@ describe("agent LSP tool", () => {
 
     expect(workspaceSymbols[0]?.location).toBeDefined();
   });
+
+  it("can confine file requests to the selected workspace root", async () => {
+    const files = new InMemoryFileProvider("/ws");
+    files.writeFile("/ws/a.metta", "(: square Type)");
+    files.writeFile("/outside/secret.metta", "(: secret Type)");
+    const analyzer = new Analyzer(files);
+
+    await expect(
+      runLspToolOperation(
+        analyzer,
+        {
+          operation: "documentSymbol",
+          workspaceRoot: "/ws",
+          filePath: "/outside/secret.metta",
+        },
+        { confineToWorkspaceRoot: true },
+      ),
+    ).rejects.toThrow("outside the workspace root");
+  });
 });

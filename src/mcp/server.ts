@@ -1,7 +1,15 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Position } from "vscode-languageserver-types";
-import { classifyTestQueries, pathToUri, summarize, uriToPath } from "../language-service/index.js";
+import {
+  classifyTestQueries,
+  normalizeUri,
+  pathToUri,
+  summarize,
+  uriToPath,
+} from "../language-service/index.js";
 import { evaluateGuarded } from "../runtime/guardedEvaluation.js";
 import { NodeFileProvider } from "../runtime/nodeFileProvider.js";
 import { traceReduction } from "../runtime/trace.js";
@@ -26,6 +34,8 @@ import {
 import { NodePrologDiagnosticProvider } from "../server/nodePrologDiagnostics.js";
 import { collectPrologBridgeDiagnostics } from "../server/prologDiagnosticsScheduler.js";
 import type { LspToolInput } from "../server/types.js";
+import { pathIsInsideWorkspace } from "../server/workspacePath.js";
+import { StdioJsonReader } from "./stdioFraming.js";
 
 interface JsonRpcRequest {
   readonly jsonrpc?: "2.0";
@@ -52,6 +62,12 @@ const analyzer = new Analyzer(new NodeFileProvider());
 const prologDiagnosticProvider = new NodePrologDiagnosticProvider();
 analyzer.setPrologDiagnosticProvider(prologDiagnosticProvider);
 analyzer.setPrologDiagnosticsMode("cached");
+const packageJson = JSON.parse(
+  readFileSync(
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../package.json"),
+    "utf8",
+  ),
+) as { readonly version?: string };
 const argv = new Map<string, string>();
 for (let i = 2; i < process.argv.length; i++) {
   const key = process.argv[i];
@@ -63,10 +79,11 @@ for (let i = 2; i < process.argv.length; i++) {
 }
 
 const workspace = argv.get("workspace") ?? process.cwd();
-analyzer.setWorkspaceRoots([pathToUri(path.resolve(workspace))]);
+const configuredWorkspaceRootPath = path.resolve(workspace);
+analyzer.setWorkspaceRoots([pathToUri(configuredWorkspaceRootPath)]);
 // The cross-language host bridge resolves TypeScript host signatures for grounded atoms; lazy, so it costs
 // nothing until a host-type request reaches into the workspace's TypeScript.
-analyzer.setHostBridge(new HostTypeService(path.resolve(workspace)));
+analyzer.setHostBridge(new HostTypeService(configuredWorkspaceRootPath));
 void analyzer.scanWorkspace();
 
 const commonInputSchema = {
@@ -409,7 +426,7 @@ function toolLimit(limit: number | undefined, defaultLimit: number): number {
 
 async function applyWorkspaceRoot(input: LspToolInput): Promise<string | undefined> {
   if (input.workspaceRoot) {
-    const root = normalizeInputUri(input.workspaceRoot);
+    const root = normalizeInputUri(input.workspaceRoot, configuredWorkspaceRootPath);
     analyzer.setWorkspaceRoots([root]);
     await analyzer.scanWorkspace();
     return uriToPath(root) ?? undefined;
@@ -419,11 +436,11 @@ async function applyWorkspaceRoot(input: LspToolInput): Promise<string | undefin
 }
 
 async function prepare(input: LspToolInput): Promise<string | null> {
-  await applyWorkspaceRoot(input);
+  const workspaceRootPath = await applyWorkspaceRoot(input);
   const uri = input.uri
-    ? normalizeInputUri(input.uri)
+    ? normalizeInputUri(input.uri, workspaceRootPath)
     : (input as { filePath?: string }).filePath
-      ? normalizeInputUri((input as { filePath: string }).filePath)
+      ? normalizeInputUri((input as { filePath: string }).filePath, workspaceRootPath)
       : input.text !== undefined
         ? "untitled://metta-lsp-tool/input.metta"
         : null;
@@ -447,14 +464,30 @@ async function runWorkspaceSymbols(input: LspToolInput): Promise<unknown> {
   };
 }
 
-function normalizeInputUri(input: string): string {
-  if (
-    input.startsWith("file://") ||
-    input.startsWith("untitled://") ||
-    input.startsWith("metta://")
-  )
-    return input;
-  return pathToUri(path.resolve(input));
+function activeWorkspaceRootPath(): string | undefined {
+  const root = analyzer.getWorkspaceRoots()[0];
+  return root ? (uriToPath(root) ?? undefined) : undefined;
+}
+
+function assertInsideWorkspaceRoot(filePath: string, rootPath: string | undefined): void {
+  const workspaceRootPath = rootPath ?? activeWorkspaceRootPath() ?? configuredWorkspaceRootPath;
+  if (!pathIsInsideWorkspace(workspaceRootPath, filePath)) {
+    throw new Error(`Path is outside the workspace root: ${filePath}`);
+  }
+}
+
+function normalizeInputUri(input: string, rootPath: string | undefined): string {
+  if (input.startsWith("file://")) {
+    const normalized = normalizeUri(input);
+    const filePath = uriToPath(normalized);
+    if (filePath !== null) assertInsideWorkspaceRoot(path.resolve(filePath), rootPath);
+    return normalized;
+  }
+  if (input.startsWith("untitled://") || input.startsWith("metta://")) return input;
+  const basePath = rootPath ?? activeWorkspaceRootPath() ?? configuredWorkspaceRootPath;
+  const resolved = path.isAbsolute(input) ? path.resolve(input) : path.resolve(basePath, input);
+  assertInsideWorkspaceRoot(resolved, rootPath);
+  return pathToUri(resolved);
 }
 
 function defaultRange(uri: string) {
@@ -477,11 +510,6 @@ function inputPosition(input: LspToolInput): { line: number; character: number }
     };
   }
   return undefined;
-}
-
-function activeWorkspaceRootPath(): string | undefined {
-  const root = analyzer.getWorkspaceRoots()[0];
-  return root ? (uriToPath(root) ?? undefined) : undefined;
 }
 
 function compactLocationResult(input: LspToolInput, locations: ReturnType<Analyzer["definition"]>) {
@@ -619,6 +647,7 @@ async function callTool(name: string, rawInput: unknown): Promise<unknown> {
     return runLspToolOperation(analyzer, input, {
       defaultWorkspaceRoot: workspace,
       requireExistingFile: false,
+      confineToWorkspaceRoot: true,
     });
   }
   if (name === "lsp_capabilities")
@@ -730,9 +759,15 @@ function respond(response: JsonRpcResponse): void {
   process.stdout.write(`${JSON.stringify(response)}\n`);
 }
 
+let requestQueue: Promise<void> = Promise.resolve();
+
 function parseAndHandle(body: string): void {
   try {
-    void handle(JSON.parse(body) as JsonRpcRequest);
+    const request = JSON.parse(body) as JsonRpcRequest;
+    requestQueue = requestQueue.then(
+      () => handle(request),
+      () => handle(request),
+    );
   } catch (error) {
     respond({
       jsonrpc: "2.0",
@@ -755,7 +790,7 @@ async function handle(request: JsonRpcRequest): Promise<void> {
         id,
         result: {
           protocolVersion: "2024-11-05",
-          serverInfo: { name: "metta-ts-lsp", version: "0.10.0" },
+          serverInfo: { name: "metta-ts-lsp", version: packageJson.version ?? "0.0.0" },
           capabilities: { tools: {} },
         },
       });
@@ -799,50 +834,17 @@ async function handle(request: JsonRpcRequest): Promise<void> {
   }
 }
 
-let lineBuffer = "";
-let headerBuffer = Buffer.alloc(0);
-
-function processContentLengthFrames(chunk: Buffer): boolean {
-  headerBuffer = Buffer.concat([headerBuffer, chunk]);
-  let handled = false;
-  for (;;) {
-    const sep = headerBuffer.indexOf("\r\n\r\n");
-    if (sep < 0) return handled;
-    const header = headerBuffer.subarray(0, sep).toString("utf8");
-    const match = /Content-Length:\s*(\d+)/i.exec(header);
-    if (!match) return handled;
-    const length = Number(match[1]);
-    if (!Number.isSafeInteger(length) || length < 0 || length > 10 * 1024 * 1024) {
-      headerBuffer = Buffer.alloc(0);
-      respond({
-        jsonrpc: "2.0",
-        id: null,
-        error: { code: -32600, message: "Invalid or oversized Content-Length." },
-      });
-      return true;
-    }
-    const start = sep + 4;
-    if (headerBuffer.length < start + length) return handled;
-    const body = headerBuffer.subarray(start, start + length).toString("utf8");
-    headerBuffer = headerBuffer.subarray(start + length);
-    handled = true;
-    parseAndHandle(body);
-  }
-}
-
-process.stdin.on("data", (chunk: Buffer) => {
-  if (chunk.includes(Buffer.from("Content-Length:")) || headerBuffer.length > 0) {
-    if (processContentLengthFrames(chunk)) return;
-  }
-  lineBuffer += chunk.toString("utf8");
-  for (;;) {
-    const newline = lineBuffer.indexOf("\n");
-    if (newline < 0) break;
-    const line = lineBuffer.slice(0, newline).trim();
-    lineBuffer = lineBuffer.slice(newline + 1);
-    if (!line) continue;
-    parseAndHandle(line);
-  }
+const reader = new StdioJsonReader({
+  onMessage: parseAndHandle,
+  onProtocolError: (message) => {
+    respond({
+      jsonrpc: "2.0",
+      id: null,
+      error: { code: -32600, message },
+    });
+  },
 });
+
+process.stdin.on("data", (chunk: Buffer) => reader.push(chunk));
 
 process.stdin.resume();
