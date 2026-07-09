@@ -66,16 +66,19 @@ describe("MettaTemplateService", () => {
 
   it("keeps two templates in the same file independent via their node position", () => {
     const service = new MettaTemplateService(ts);
-    const first = service.getSemanticDiagnostics(fakeContext("(foo 1)", "/a.ts", 10));
-    const second = service.getSemanticDiagnostics(fakeContext("(bar 2)", "/a.ts", 40));
-    // each template is validated against its own body, not the other's
-    expect(first.length + second.length).toBeGreaterThanOrEqual(0);
-    expect(
-      service.getCompletionsAtPosition(fakeContext("(foo 1)", "/a.ts", 10), {
-        line: 0,
-        character: 1,
-      }).entries.length,
-    ).toBeGreaterThan(0);
+    const first = service.getSemanticDiagnostics(fakeContext("(car-atomm 1)", "/a.ts", 10));
+    const second = service.getSemanticDiagnostics(fakeContext("(cdr-atomm 2)", "/a.ts", 40));
+    const firstMessages = first.map((diagnostic) =>
+      ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"),
+    );
+    const secondMessages = second.map((diagnostic) =>
+      ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"),
+    );
+
+    expect(firstMessages.some((message) => message.includes("car-atomm"))).toBe(true);
+    expect(firstMessages.some((message) => message.includes("cdr-atomm"))).toBe(false);
+    expect(secondMessages.some((message) => message.includes("cdr-atomm"))).toBe(true);
+    expect(secondMessages.some((message) => message.includes("car-atomm"))).toBe(false);
   });
 });
 

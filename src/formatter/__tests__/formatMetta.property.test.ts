@@ -25,52 +25,41 @@ const anyProgramArb = fc.oneof(programArb, richProgramArb, commentedProgramArb);
 
 describe("formatMetta properties", () => {
   it("preserves the atoms core reads (format changes layout, not meaning)", () => {
-    expect(() =>
-      fc.assert(
-        fc.property(anyProgramArb, (src) => {
-          // only meaningful when the input parses; broken input is returned untouched by design
-          if (!parsesClean(src)) return true;
-          return (
-            JSON.stringify(canonicalForms(formatMetta(src))) === JSON.stringify(canonicalForms(src))
-          );
-        }),
-        { numRuns: 1000 },
-      ),
-    ).not.toThrow();
+    fc.assert(
+      fc.property(anyProgramArb, (src) => {
+        expect(parsesClean(src)).toBe(true);
+        expect(canonicalForms(formatMetta(src))).toStrictEqual(canonicalForms(src));
+      }),
+      { numRuns: 1000 },
+    );
   });
 
   it("is idempotent: format(format(x)) === format(x)", () => {
-    expect(() =>
-      fc.assert(
-        fc.property(anyProgramArb, (src) => {
-          const once = formatMetta(src);
-          return formatMetta(once) === once;
-        }),
-        { numRuns: 1000 },
-      ),
-    ).not.toThrow();
+    fc.assert(
+      fc.property(anyProgramArb, (src) => {
+        const once = formatMetta(src);
+        expect(formatMetta(once)).toBe(once);
+      }),
+      { numRuns: 1000 },
+    );
   });
 
   it("never turns clean source into a syntax error", () => {
-    expect(() =>
-      fc.assert(
-        fc.property(anyProgramArb, (src) => {
-          if (!parsesClean(src)) return true;
-          return parsesClean(formatMetta(src));
-        }),
-        { numRuns: 1000 },
-      ),
-    ).not.toThrow();
+    fc.assert(
+      fc.property(anyProgramArb, (src) => {
+        expect(parsesClean(src)).toBe(true);
+        expect(parsesClean(formatMetta(src))).toBe(true);
+      }),
+      { numRuns: 1000 },
+    );
   });
 
   it("never throws on arbitrary text", () => {
-    expect(() =>
-      fc.assert(
-        fc.property(fc.string(), (src) => {
-          formatMetta(src);
-        }),
-        { numRuns: 500 },
-      ),
-    ).not.toThrow();
+    fc.assert(
+      fc.property(fc.string(), (src) => {
+        expect(() => formatMetta(src)).not.toThrow();
+      }),
+      { numRuns: 500 },
+    );
   });
 });

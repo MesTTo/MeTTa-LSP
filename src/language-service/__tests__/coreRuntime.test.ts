@@ -7,7 +7,6 @@
 // provider surfaces exactly what a direct runProgram query does across a broad corpus.
 
 import { format, runProgram } from "@metta-ts/core";
-import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { CoreRuntime } from "../coreRuntime.js";
 
@@ -98,15 +97,11 @@ describe("CoreRuntime get-type differential vs a direct runProgram query", () =>
       "unknownSymbol",
       "(unknownFn 1 2)",
     ];
-    expect(() =>
-      fc.assert(
-        fc.property(fc.constantFrom(...expressions), (expression) => {
-          const provider = types(FOO, expression);
-          const reference = referenceTypes(FOO, expression);
-          return JSON.stringify(provider) === JSON.stringify(reference);
-        }),
-        { numRuns: expressions.length * 4 },
-      ),
-    ).not.toThrow();
+    for (const expression of expressions) {
+      expect({ expression, types: types(FOO, expression) }).toStrictEqual({
+        expression,
+        types: referenceTypes(FOO, expression),
+      });
+    }
   });
 });

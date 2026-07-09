@@ -59,7 +59,9 @@ describe("embedded MeTTa in a real TypeScript language service", () => {
     const metta = decoratedService()
       .getSemanticDiagnostics(FILE)
       .filter((diag) => diag.source === "metta");
-    expect(metta.every((diag) => diag.messageText !== "" && (diag.length ?? 0) >= 0)).toBe(true);
+    expect(metta).toHaveLength(1);
+    expect(metta[0]?.length).toBe("car-atomm".length);
+    expect(metta[0]?.messageText).toContain("car-atomm");
     expect(
       metta.some((diag) => typeof diag.messageText === "string" && diag.messageText.includes("$x")),
     ).toBe(false);
