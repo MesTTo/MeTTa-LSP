@@ -5,6 +5,7 @@ import {
   type ServerOptions,
 } from "vscode-languageclient/browser";
 import { FileChangeType } from "vscode-languageserver-protocol";
+import { createWorkspaceExcludeMatcher, workspaceExcludeGlobs } from "../language-service/index.js";
 import {
   type FsListFilesParams,
   FsListFilesRequest,
@@ -20,14 +21,6 @@ import {
 let client: LanguageClient | undefined;
 const decoder = new TextDecoder();
 
-function stripSlashes(value: string): string {
-  let start = 0;
-  let end = value.length;
-  while (start < end && value[start] === "/") start++;
-  while (end > start && value[end - 1] === "/") end--;
-  return value.slice(start, end);
-}
-
 function extensionGlob(extensions: readonly string[]): string {
   const clean = extensions.map((ext) => ext.replace(/^\./, "")).filter((ext) => ext.length > 0);
   if (clean.length === 0) return "**/*";
@@ -36,10 +29,7 @@ function extensionGlob(extensions: readonly string[]): string {
 }
 
 function excludeGlob(exclude: readonly string[]): string | undefined {
-  const clean = exclude
-    .map((item) => stripSlashes(item.replaceAll("**", "").replaceAll("*", "")))
-    .filter((item) => item.length > 0)
-    .map((item) => `**/${item}/**`);
+  const clean = workspaceExcludeGlobs(exclude).filter((pattern) => /^[\w./*?-]+$/.test(pattern));
   return clean.length === 0 ? undefined : `{${clean.join(",")}}`;
 }
 
@@ -55,14 +45,6 @@ function uriIsUnderRoots(uri: vscode.Uri, roots: readonly string[]): boolean {
   return roots.some(
     (root) => text === root || text.startsWith(root.endsWith("/") ? root : `${root}/`),
   );
-}
-
-function uriIsExcluded(uri: vscode.Uri, exclude: readonly string[]): boolean {
-  const normalizedPath = uri.path.toLowerCase();
-  return exclude.some((fragment) => {
-    const clean = stripSlashes(fragment.replaceAll("**", "").replaceAll("*", "")).toLowerCase();
-    return clean.length > 0 && normalizedPath.includes(clean);
-  });
 }
 
 async function mapWithLimit<T, R>(
@@ -101,10 +83,11 @@ async function listWorkspaceFiles(params: FsListFilesParams): Promise<FsListFile
     excludeGlob(params.exclude),
     maxFiles + 1,
   );
+  const isExcluded = createWorkspaceExcludeMatcher(params.exclude, { caseSensitive: false });
   const filtered = found
     .filter((uri) => uriHasExtension(uri, params.extensions))
     .filter((uri) => uriIsUnderRoots(uri, params.roots))
-    .filter((uri) => !uriIsExcluded(uri, params.exclude))
+    .filter((uri) => !isExcluded(uri.path))
     .slice(0, maxFiles);
   const reads = await mapWithLimit(filtered, 16, (uri) => readWorkspaceFile(uri.toString()));
   return {
@@ -179,7 +162,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   };
   client = new LanguageClient("metta-ts-lsp-web", "MeTTa LSP Web", serverOptions, clientOptions);
   registerFileAccessHandlers(context, client);
-  void client.start();
+  client.start().catch((error: unknown) => {
+    void vscode.window.showErrorMessage(
+      `MeTTa LSP Web failed to start: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  });
   context.subscriptions.push({
     dispose: () => {
       void client?.stop();

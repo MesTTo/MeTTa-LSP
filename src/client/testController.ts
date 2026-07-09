@@ -8,12 +8,13 @@
 
 import * as vscode from "vscode";
 import type { LanguageClient } from "vscode-languageclient/node";
-import { classifyTestQueries, discoverTests } from "../language-service/index.js";
+import { discoverTests } from "../language-service/index.js";
 import {
   type GuardedEvaluationParams,
   GuardedEvaluationRequest,
   type GuardedEvaluationResultPayload,
 } from "../server/shared/lspRequests.js";
+import { testRunOutcomes } from "./testRunOutcomes.js";
 
 function testId(uri: string, start: number): string {
   return `${uri}#${String(start)}`;
@@ -58,56 +59,96 @@ export function registerTestController(
   ): Promise<void> => {
     const run = controller.createTestRun(request);
     const leaves: vscode.TestItem[] = [];
-    const collect = (item: vscode.TestItem): void => {
-      if (item.children.size > 0) item.children.forEach(collect);
-      else leaves.push(item);
-    };
-    if (request.include) request.include.forEach(collect);
-    else controller.items.forEach(collect);
-    for (const leaf of leaves) run.enqueued(leaf);
+    const completed = new Set<string>();
+    let terminalError: string | undefined;
+    try {
+      const collect = (item: vscode.TestItem): void => {
+        if (item.children.size > 0) item.children.forEach(collect);
+        else leaves.push(item);
+      };
+      if (request.include) request.include.forEach(collect);
+      else controller.items.forEach(collect);
+      for (const leaf of leaves) run.enqueued(leaf);
 
-    const uris = [
-      ...new Set(leaves.map((leaf) => leaf.uri?.toString()).filter(Boolean)),
-    ] as string[];
-    for (const uri of uris) {
-      if (token.isCancellationRequested) break;
-      const byId = new Map(
-        leaves.filter((leaf) => leaf.uri?.toString() === uri).map((leaf) => [leaf.id, leaf]),
-      );
-      const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri));
-      const discovered = discoverTests(document.getText());
-      for (const test of discovered) {
-        const item = byId.get(testId(uri, test.start));
-        if (item) run.started(item);
+      const uris = [
+        ...new Set(leaves.map((leaf) => leaf.uri?.toString()).filter(Boolean)),
+      ] as string[];
+      for (const uri of uris) {
+        if (token.isCancellationRequested) break;
+        const byId = new Map(
+          leaves.filter((leaf) => leaf.uri?.toString() === uri).map((leaf) => [leaf.id, leaf]),
+        );
+        const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri));
+        const discovered = discoverTests(document.getText());
+        for (const test of discovered) {
+          const item = byId.get(testId(uri, test.start));
+          if (item) run.started(item);
+        }
+        const params: GuardedEvaluationParams = { uri, includePriorDefinitions: true };
+        const result = await getClient()?.sendRequest<GuardedEvaluationResultPayload>(
+          GuardedEvaluationRequest,
+          params,
+        );
+        const outcomes = testRunOutcomes(discovered.length, result);
+        discovered.forEach((test, index) => {
+          const item = byId.get(testId(uri, test.start));
+          if (!item) return;
+          const outcome = outcomes[index];
+          if (outcome?.status === "passed") run.passed(item);
+          else if (outcome?.status === "failed")
+            run.failed(item, new vscode.TestMessage(outcome.message ?? "assertion failed"));
+          else if (outcome?.status === "errored")
+            run.errored(item, new vscode.TestMessage(outcome.message ?? "unexpected result"));
+          else run.skipped(item);
+          completed.add(item.id);
+        });
       }
-      const params: GuardedEvaluationParams = { uri, includePriorDefinitions: true };
-      const result = await getClient()?.sendRequest<GuardedEvaluationResultPayload>(
-        GuardedEvaluationRequest,
-        params,
-      );
-      const classified = result ? classifyTestQueries(result.queries) : [];
-      discovered.forEach((test, index) => {
-        const item = byId.get(testId(uri, test.start));
-        if (!item) return;
-        const outcome = classified[index];
-        if (outcome === undefined) run.skipped(item);
-        else if (outcome.status === "pass") run.passed(item);
-        else if (outcome.status === "fail")
-          run.failed(item, new vscode.TestMessage(outcome.message ?? "assertion failed"));
-        else run.errored(item, new vscode.TestMessage(outcome.message ?? "unexpected result"));
-      });
+    } catch (error) {
+      terminalError = error instanceof Error ? error.message : String(error);
+    } finally {
+      for (const leaf of leaves) {
+        if (completed.has(leaf.id)) continue;
+        if (token.isCancellationRequested) run.skipped(leaf);
+        else
+          run.errored(
+            leaf,
+            new vscode.TestMessage(terminalError ?? "test did not produce a result"),
+          );
+      }
+      run.end();
     }
-    run.end();
   };
 
   controller.createRunProfile("Run", vscode.TestRunProfileKind.Run, runHandler, true);
+  const pendingDiscovery = new Map<string, ReturnType<typeof setTimeout>>();
+  const clearPendingDiscovery = (uri: string): void => {
+    const timer = pendingDiscovery.get(uri);
+    if (timer !== undefined) clearTimeout(timer);
+    pendingDiscovery.delete(uri);
+  };
+  const scheduleDiscover = (document: vscode.TextDocument): void => {
+    const uri = document.uri.toString();
+    clearPendingDiscovery(uri);
+    pendingDiscovery.set(
+      uri,
+      setTimeout(() => {
+        pendingDiscovery.delete(uri);
+        discover(document);
+      }, 150),
+    );
+  };
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument(discover),
     vscode.workspace.onDidChangeTextDocument((event) => {
-      discover(event.document);
+      scheduleDiscover(event.document);
     }),
     vscode.workspace.onDidCloseTextDocument((document) => {
-      controller.items.delete(document.uri.toString());
+      const uri = document.uri.toString();
+      clearPendingDiscovery(uri);
+      controller.items.delete(uri);
+    }),
+    new vscode.Disposable(() => {
+      for (const uri of pendingDiscovery.keys()) clearPendingDiscovery(uri);
     }),
   );
   for (const document of vscode.workspace.textDocuments) discover(document);

@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
@@ -128,9 +129,7 @@ function visualiseHtml(
   scriptUri: vscode.Uri,
   payload: { source: string; title: string },
 ): string {
-  const nonce = Buffer.from(
-    Array.from({ length: 16 }, () => Math.floor(Math.random() * 256)),
-  ).toString("base64");
+  const nonce = randomBytes(16).toString("base64");
   const data = JSON.stringify(payload).replaceAll("<", "\\u003c");
   return `<!doctype html>
 <html>
@@ -371,8 +370,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
               : undefined,
           });
           if (!target) return;
-          await vscode.workspace.fs.writeFile(target, Buffer.from(message.base64, "base64"));
-          void vscode.window.showInformationMessage(`Saved ${target.fsPath}`);
+          try {
+            await vscode.workspace.fs.writeFile(target, Buffer.from(message.base64, "base64"));
+            void vscode.window.showInformationMessage(`Saved ${target.fsPath}`);
+          } catch (error) {
+            void vscode.window.showErrorMessage(
+              `Could not save GIF: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
         },
         undefined,
         context.subscriptions,
