@@ -54,8 +54,13 @@
 
 MeTTa LSP is one analyzer exposed through several tools. The same code powers
 the VS Code extension, stdio LSP server, command-line interface, MCP server,
-debug adapter, generated docs, and browser playground. A symbol should mean the
+debug adapter, generated docs, and browser IDE. A symbol should mean the
 same thing in hover, diagnostics, trace output, docs, and an agent tool call.
+
+The [browser IDE](https://mestto.github.io/MeTTa-LSP/browser-ide) runs the same
+language server in a Web Worker. It provides a persistent multi-file workspace,
+live diagnostics, completion, hover, navigation, rename, formatting, document
+symbols, and guarded evaluation without a backend service.
 
 The runtime is built on `@metta-ts/core`, so the server runs on Node without a
 WASM dependency. Editor analysis does not evaluate user code. Explicit run,
@@ -446,8 +451,8 @@ and Sublime Text at
 
 The public docs site is built from `docs-site/`. It covers the LSP overview,
 CLI, MCP setup, editor setup, lint rules, suppression, structural search and
-rewrite, mixfix pseudocode, diagnostics, visual editor, browser playground,
-builtins reference, and generated MeTTa API pages.
+rewrite, mixfix pseudocode, diagnostics, browser IDE, visual editor, runtime
+playground, builtins reference, and generated MeTTa API pages.
 
 Generate the reference pages:
 

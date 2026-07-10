@@ -58,6 +58,7 @@ const forbidden = [
   /^skills\//,
   /^scripts\//,
   /^src\//,
+  /^test\//,
   /^examples\//,
   /^todo\.md$/,
   /^package-lock\.json$/,

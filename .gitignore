@@ -37,3 +37,4 @@ Thumbs.db
 
 # docs-site build artifacts
 docs-site/.vitepress/cache/
+docs-site/public/browser-ide/

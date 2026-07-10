@@ -5,6 +5,7 @@
 .gitleaks.toml
 .gitignore
 src/**
+test/**
 examples/**
 bench/**
 docs/**

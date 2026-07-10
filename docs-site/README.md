@@ -1,9 +1,10 @@
 # MeTTa LSP docs site
 
 The documentation site for the MeTTa language server, built with [VitePress](https://vitepress.dev). It is
-the browser-previewable version of the editor and agent docs: the [MeTTa API reference](reference/metta/),
-the [builtins reference](reference/builtins.md), the [diagnostics catalogue](diagnostics/), lint rules,
-mixfix pseudocode, editor setup, MCP setup, and the LSP playground.
+the browser-previewable version of the editor and agent docs: the [browser IDE](browser-ide.md), the
+[MeTTa API reference](reference/metta/), the [builtins reference](reference/builtins.md), the
+[diagnostics catalogue](diagnostics/), lint rules, mixfix pseudocode, editor setup, MCP setup, and the
+runtime playground.
 
 ## Develop and build
 

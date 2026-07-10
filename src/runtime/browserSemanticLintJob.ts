@@ -8,7 +8,7 @@ import type {
 } from "./semanticLintShared.js";
 
 function defaultWorkerUrl(): URL {
-  return new URL("./browserSemanticLintWorker.js", import.meta.url);
+  return new URL("../runtime/browserSemanticLintWorker.js", import.meta.url);
 }
 
 export function createBrowserSemanticLintJobFactory(

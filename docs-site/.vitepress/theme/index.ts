@@ -4,15 +4,18 @@
 
 import DefaultTheme from "vitepress/theme";
 import type { Theme } from "vitepress";
+import { defineAsyncComponent } from "vue";
 import MettaRunner from "./MettaRunner.vue";
 import MeTTaGrapher from "./MeTTaGrapher.vue";
 import "./custom.css";
 
-// Extend the default VitePress theme with the live MeTTa sandbox component <MettaRunner> and the visual
-// node editor <MeTTaGrapher>, available in any page.
+const BrowserIDE = defineAsyncComponent(() => import("./BrowserIDE.vue"));
+
+// Register the interactive browser surfaces for use from documentation pages.
 export default {
   extends: DefaultTheme,
   enhanceApp({ app }) {
+    app.component("BrowserIDE", BrowserIDE);
     app.component("MettaRunner", MettaRunner);
     app.component("MeTTaGrapher", MeTTaGrapher);
   },

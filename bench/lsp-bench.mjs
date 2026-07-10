@@ -22,6 +22,7 @@ import { dirname, join } from "node:path";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
+import { browserWorker, createBrowserLspHarness } from "./browser-lsp-harness.mjs";
 
 const require = createRequire(import.meta.url);
 const { Analyzer } = require("../dist/server/analyzer.js");
@@ -206,136 +207,6 @@ const GUARDED_HYPERPOSE_SOURCE = `
 const BROWSER_ROOT = "vscode-vfs://bench/ws";
 const BROWSER_MAIN = `${BROWSER_ROOT}/main.metta`;
 const BROWSER_LIB = `${BROWSER_ROOT}/lib.metta`;
-
-function browserWorker(script) {
-  return new Worker(new URL("./browser-worker-node-adapter.mjs", import.meta.url), {
-    workerData: { script: new URL(script, import.meta.url).href },
-    execArgv: [],
-  });
-}
-
-function createBrowserLspHarness(workspaceFiles = new Map()) {
-  const worker = browserWorker("../dist/server/browserServer.js");
-  let nextId = 1;
-  const pending = new Map();
-  const diagnosticsWaiters = [];
-  const send = (message) => worker.postMessage({ jsonrpc: "2.0", ...message });
-  const respond = (id, result) => send({ id, result });
-  const notify = (method, params) => send({ method, params });
-  const request = (method, params) =>
-    new Promise((resolve, reject) => {
-      const id = nextId++;
-      const timeout = setTimeout(() => {
-        pending.delete(id);
-        reject(new Error(`${method} timed out`));
-      }, 10_000);
-      pending.set(id, {
-        resolve: (value) => {
-          clearTimeout(timeout);
-          resolve(value);
-        },
-        reject: (error) => {
-          clearTimeout(timeout);
-          reject(error);
-        },
-      });
-      send({ id, method, params });
-    });
-  const waitDiagnostics = (uri) =>
-    new Promise((resolve, reject) => {
-      const waiter = {
-        uri,
-        resolve: (diagnostics) => {
-          clearTimeout(timeout);
-          resolve(diagnostics);
-        },
-        reject: (error) => {
-          clearTimeout(timeout);
-          reject(error);
-        },
-      };
-      const timeout = setTimeout(() => {
-        const index = diagnosticsWaiters.indexOf(waiter);
-        if (index >= 0) diagnosticsWaiters.splice(index, 1);
-        reject(new Error(`diagnostics for ${uri} timed out`));
-      }, 10_000);
-      diagnosticsWaiters.push(waiter);
-    });
-  worker.on("message", (message) => {
-    if (message.id !== undefined && (message.result !== undefined || message.error !== undefined)) {
-      const waiter = pending.get(message.id);
-      if (!waiter) return;
-      pending.delete(message.id);
-      if (message.error) waiter.reject(new Error(String(message.error.message ?? message.error)));
-      else waiter.resolve(message.result);
-      return;
-    }
-    if (message.method === "metta/fs/watchPattern") {
-      respond(message.id, { watching: true });
-      return;
-    }
-    if (message.method === "metta/fs/listFiles") {
-      const maxFiles = Math.max(0, Number(message.params?.maxFiles ?? workspaceFiles.size));
-      const files = [...workspaceFiles.entries()]
-        .slice(0, maxFiles)
-        .map(([uri, text]) => ({ uri, text }));
-      respond(message.id, { files, truncated: workspaceFiles.size > maxFiles });
-      return;
-    }
-    if (message.method === "metta/fs/readFile") {
-      const uri = String(message.params?.uri ?? "");
-      respond(message.id, { uri, text: workspaceFiles.get(uri) ?? null });
-      return;
-    }
-    if (message.id !== undefined) {
-      respond(message.id, null);
-      return;
-    }
-    if (message.method === "textDocument/publishDiagnostics") {
-      const uri = message.params?.uri;
-      const index = diagnosticsWaiters.findIndex((waiter) => waiter.uri === uri);
-      if (index >= 0) {
-        const [waiter] = diagnosticsWaiters.splice(index, 1);
-        waiter.resolve(message.params?.diagnostics ?? []);
-      }
-    }
-  });
-  worker.on("error", (error) => {
-    for (const waiter of pending.values()) waiter.reject(error);
-    pending.clear();
-    for (const waiter of diagnosticsWaiters.splice(0)) waiter.reject(error);
-  });
-  return {
-    async initialize() {
-      await request("initialize", {
-        processId: null,
-        rootUri: BROWSER_ROOT,
-        workspaceFolders: [{ uri: BROWSER_ROOT, name: "bench" }],
-        capabilities: {},
-        clientInfo: { name: "bench" },
-      });
-      notify("initialized", {});
-    },
-    async open(uri, text, version = 1) {
-      const diagnostics = waitDiagnostics(uri);
-      notify("textDocument/didOpen", {
-        textDocument: { uri, languageId: "metta", version, text },
-      });
-      await diagnostics;
-    },
-    async change(uri, text, version) {
-      const diagnostics = waitDiagnostics(uri);
-      notify("textDocument/didChange", {
-        textDocument: { uri, version },
-        contentChanges: [{ text }],
-      });
-      await diagnostics;
-    },
-    dispose() {
-      worker.terminate().catch(() => undefined);
-    },
-  };
-}
 
 function assertGuardedResult(name, result, expected) {
   const actual = result.queries.at(-1)?.results ?? [];

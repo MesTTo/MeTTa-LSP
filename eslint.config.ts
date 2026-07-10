@@ -320,6 +320,15 @@ export default defineConfig(
       "sonarjs/cognitive-complexity": "off",
     },
   },
+  // Standalone integration tests are transpiled by Vitest and are intentionally outside tsconfig.json.
+  {
+    files: ["test/**/*.{ts,mts,cts}"],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: { projectService: false, sourceType: "module", ecmaVersion: "latest" },
+    },
+    rules: tseslint.configs.disableTypeChecked.rules,
+  },
   // Tests are not shipped code: keep behavior assertions, relax the immutability and unsafe-value rules.
   {
     files: ["**/*.{test,spec}.{ts,mts,cts}", "test/**/*.{ts,mts,cts}"],

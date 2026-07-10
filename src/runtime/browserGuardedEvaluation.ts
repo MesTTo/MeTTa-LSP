@@ -31,7 +31,7 @@ async function sourceHash(source: string): Promise<string> {
 }
 
 function defaultWorkerUrl(): URL {
-  return new URL("./browserEvaluationWorker.js", import.meta.url);
+  return new URL("../runtime/browserEvaluationWorker.js", import.meta.url);
 }
 
 function runBrowserEvaluationWorker(

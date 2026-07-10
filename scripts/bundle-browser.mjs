@@ -5,58 +5,13 @@
 // not rely on Node module loading or Node builtins; esbuild's browser platform catches most bad imports, and
 // the post-build scan fails on any remaining builtin references in the emitted files.
 
-import { builtinModules } from "node:module";
-import * as esbuild from "esbuild";
+import path from "node:path";
+import { bundleBrowserArtifacts, repositoryRoot } from "./browser-bundles.mjs";
 
-const forbidden = new Set([...builtinModules, ...builtinModules.map((module) => `node:${module}`)]);
-
-async function bundle(options) {
-  const result = await esbuild.build({
-    bundle: true,
-    format: "esm",
-    platform: "browser",
-    target: "es2022",
-    sourcemap: true,
-    metafile: true,
-    logLevel: "warning",
-    ...options,
-  });
-  for (const [input, metadata] of Object.entries(result.metafile.inputs)) {
-    if (forbidden.has(input)) {
-      throw new Error(`${options.outfile} pulled forbidden browser input ${input}`);
-    }
-    for (const imported of metadata.imports) {
-      if (forbidden.has(imported.path)) {
-        throw new Error(`${options.outfile} pulled forbidden browser import ${imported.path}`);
-      }
-    }
-  }
-}
-
-await bundle({
-  entryPoints: ["src/client/browserExtension.ts"],
-  external: ["vscode"],
-  outfile: "dist/client/browserExtension.js",
-});
-
-await bundle({
-  entryPoints: ["src/server/browserServer.ts"],
-  outfile: "dist/server/browserServer.js",
-});
-
-await bundle({
-  entryPoints: ["src/runtime/browserEvaluationWorker.ts"],
-  outfile: "dist/runtime/browserEvaluationWorker.js",
-});
-
-await bundle({
-  entryPoints: ["src/runtime/browserSemanticLintWorker.ts"],
-  outfile: "dist/runtime/browserSemanticLintWorker.js",
-});
-
-await bundle({
-  entryPoints: ["src/runtime/browserHyperposeWorker.ts"],
-  outfile: "dist/runtime/browserHyperposeWorker.js",
+await bundleBrowserArtifacts({
+  client: path.join(repositoryRoot, "dist/client/browserExtension.js"),
+  serverDir: path.join(repositoryRoot, "dist/server"),
+  runtimeDir: path.join(repositoryRoot, "dist/runtime"),
 });
 
 console.log("browser bundles written to dist/client, dist/server, and dist/runtime");

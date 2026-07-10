@@ -12,11 +12,11 @@ hero:
     alt: MeTTaGrapher playing a generate-and-test search, where candidate selections fan out, are tested, and prune to the answers
   actions:
     - theme: brand
+      text: Open browser IDE
+      link: /browser-ide
+    - theme: alt
       text: The language server
       link: /lsp/overview
-    - theme: alt
-      text: Editor setup
-      link: /lsp/editors
     - theme: alt
       text: Diagnostics
       link: /diagnostics/
@@ -25,6 +25,8 @@ hero:
       link: https://github.com/MesTTo/MeTTa-LSP
 
 features:
+  - title: Browser IDE
+    details: Edit a persistent multi-file workspace with live diagnostics, completion, hover, navigation, rename, formatting, symbols, and guarded MeTTa evaluation. The language server runs in a Web Worker.
   - title: Rust-analyzer-style hovers
     details: Signature, interpreter-exact type, definition site, and a link to the builtins reference. Diagnostics link to a catalogue page with the message and the fix.
   - title: Run and visualise
@@ -36,5 +38,5 @@ features:
   - title: An agent tool
     details: 'The MCP server gives coding agents MeTTa intelligence: definition, references, hover, symbols, and call hierarchy. One command registers it with Claude Code, Codex, or any MCP client.'
   - title: Every editor
-    details: Reads configuration from initializationOptions, a workspace/configuration pull, or a didChangeConfiguration push, so VS Code, Neovim, Helix, Emacs, and Sublime all work.
+    details: Reads configuration from initializationOptions, a workspace/configuration pull, or a didChangeConfiguration push, so browser hosts, VS Code, Neovim, Helix, Emacs, and Sublime all work.
 ---

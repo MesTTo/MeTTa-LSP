@@ -5,7 +5,8 @@
 import { readFileSync } from "node:fs";
 import githubDark from "@shikijs/themes/github-dark";
 import githubLight from "@shikijs/themes/github-light";
-import { defineConfig } from "vitepress";
+import type { LanguageRegistration } from "@shikijs/types";
+import { defineConfig, type DefaultTheme } from "vitepress";
 import { mettaApiSidebar } from "./metta-sidebar.generated";
 
 type TokenColor = {
@@ -17,10 +18,10 @@ type TextMateTheme = typeof githubLight & {
   readonly tokenColors?: readonly unknown[];
 };
 
-const mettaLanguage = {
+const mettaLanguage: LanguageRegistration = {
   ...(JSON.parse(
     readFileSync(new URL("../../syntaxes/metta.tmLanguage.json", import.meta.url), "utf8"),
-  ) as Record<string, unknown>),
+  ) as LanguageRegistration),
   name: "metta",
   displayName: "MeTTa",
   scopeName: "source.metta",
@@ -142,11 +143,11 @@ export default defineConfig({
   themeConfig: {
     logo: { src: "/favicon.png", alt: "Hyperon" },
     nav: [
+      { text: "Browser IDE", link: "/browser-ide" },
       { text: "LSP", link: "/lsp/overview" },
       { text: "Diagnostics", link: "/diagnostics/" },
       { text: "Visual editor", link: "/tools/grapher" },
       { text: "Reference", link: "/reference/metta/" },
-      { text: "Playground", link: "/playground" },
       { text: "MeTTa TS docs", link: mettaTsDocsUrl },
       { text: "GitHub", link: "https://github.com/MesTTo/MeTTa-LSP" },
     ],
@@ -164,8 +165,9 @@ export default defineConfig({
           { text: "Suppressing diagnostics", link: "/lsp/suppression" },
           { text: "Lint rules", link: "/lsp/rules" },
           { text: "Mixfix pseudocode", link: "/lsp/mixfix" },
+          { text: "Browser IDE", link: "/browser-ide" },
           { text: "Visual editor", link: "/tools/grapher" },
-          { text: "Playground", link: "/playground" },
+          { text: "Runtime playground", link: "/playground" },
         ],
       },
       {
@@ -173,8 +175,8 @@ export default defineConfig({
         collapsed: false,
         items: [{ text: "Builtins reference", link: "/reference/builtins" }],
       },
-      mettaApiSidebar,
-    ],
+      mettaApiSidebar as unknown as DefaultTheme.SidebarItem,
+    ] satisfies DefaultTheme.SidebarItem[],
     socialLinks: [{ icon: "github", link: "https://github.com/MesTTo/MeTTa-LSP" }],
     search: { provider: "local" },
     footer: {
