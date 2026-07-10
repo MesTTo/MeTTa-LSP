@@ -111,6 +111,7 @@ async function hydrateWorkspace(): Promise<void> {
     });
     for (const file of result.files) files.cacheFile(normalizeUri(file.uri), file.text);
     await analyzer.scanWorkspace();
+    analyzer.refreshImportResolutions();
     if (result.truncated)
       connection.console.warn(
         `workspace file preload reached ${settings.workspace.maxFiles} files`,
@@ -219,14 +220,17 @@ documents.onDidClose((event) => {
 });
 connection.onDidChangeWatchedFiles((params) => {
   void (async () => {
+    let topologyChanged = false;
     for (const change of params.changes) {
       const uri = normalizeUri(change.uri);
+      if (change.type !== FileChangeType.Changed) topologyChanged = true;
       if (change.type === FileChangeType.Deleted) {
         files.deleteUri(uri);
         analyzer.forgetDocument(uri);
       } else await refreshChangedFile(uri);
       if (uri.endsWith("lint.metta")) analyzer.invalidateConfig();
     }
+    if (topologyChanged) analyzer.refreshImportResolutions();
     revalidateOpenDocuments();
   })();
 });

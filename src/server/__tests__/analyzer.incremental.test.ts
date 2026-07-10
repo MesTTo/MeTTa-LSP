@@ -193,15 +193,10 @@ describe("Analyzer engine — file lifecycle", () => {
         .filter((d) => String(d.code).startsWith("symbol.")),
     ).toHaveLength(0);
 
-    // Delete lib and re-index main (what a watched-files delete does): its import no longer resolves.
+    // Delete lib and refresh import resolution as the watched-files delete handler does.
     analyzer.forgetDocument("file:///ws/lib.metta");
     files.deleteFile("/ws/lib.metta");
-    analyzer.updateDocument(
-      "file:///ws/main.metta",
-      '(import! &self "lib")\n(= (use $x) (inc $x))',
-      2,
-      true,
-    );
+    analyzer.refreshImportResolutions();
 
     const afterDelete = serialize(analyzer.validate("file:///ws/main.metta"));
     // A from-scratch analyzer that never saw lib produces the identical diagnostics.
@@ -217,6 +212,30 @@ describe("Analyzer engine — file lifecycle", () => {
     expect(
       analyzer.validate("file:///ws/main.metta").some((d) => d.code === "import.unresolved"),
     ).toBe(true);
+  });
+
+  it("resolves an unchanged import after its target is created", () => {
+    const files = new InMemoryFileProvider("/ws");
+    files.writeFile("/ws/main.metta", '!(import! &self "lib.metta")\n!(inc 1)');
+    const analyzer = new Analyzer(files);
+    analyzer.setWorkspaceRoots(["file:///ws"]);
+    analyzer.updateDocument(
+      "file:///ws/main.metta",
+      files.readFile("/ws/main.metta") ?? "",
+      1,
+      true,
+    );
+    expect(
+      analyzer.validate("file:///ws/main.metta").some((d) => d.code === "import.unresolved"),
+    ).toBe(true);
+
+    files.writeFile("/ws/lib.metta", "(: inc (-> Number Number))\n(= (inc $x) (+ $x 1))");
+    analyzer.refreshFromDisk("file:///ws/lib.metta");
+    analyzer.refreshImportResolutions();
+
+    expect(
+      analyzer.validate("file:///ws/main.metta").some((d) => d.code === "import.unresolved"),
+    ).toBe(false);
   });
 });
 

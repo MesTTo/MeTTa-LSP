@@ -311,14 +311,17 @@ documents.onDidClose((event) => {
 connection.onDidChangeWatchedFiles((params) => {
   let configChanged = false;
   let prologChanged = false;
+  let topologyChanged = false;
   for (const change of params.changes) {
     if (change.uri.endsWith("lint.metta")) configChanged = true;
     if (change.uri.toLowerCase().endsWith(".pl")) prologChanged = true;
+    if (change.type !== FileChangeType.Changed) topologyChanged = true;
     if (change.type === FileChangeType.Deleted) analyzer.forgetDocument(change.uri);
     else analyzer.refreshFromDisk(change.uri);
   }
   if (configChanged) analyzer.invalidateConfig();
   if (prologChanged) analyzer.clearAllPrologDiagnostics();
+  if (topologyChanged) analyzer.refreshImportResolutions();
   void revalidateAll();
 });
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Refresh cached import resolution when workspace files are created, deleted, or renamed.
+
 ## 0.11.1 - 2026-07-09
 
 First public release candidate for MeTTa LSP.

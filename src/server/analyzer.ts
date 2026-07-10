@@ -1362,6 +1362,23 @@ export class Analyzer {
     if (existing && existing.text === text && existing.version === version) {
       return existing;
     }
+    return this.replaceDocumentIndex(normalized, text, version);
+  }
+
+  // File creation, deletion, and rename can change whether an unchanged import path resolves. Rebuild the
+  // indexed documents after those topology changes so their ImportRecords reflect the current provider.
+  public refreshImportResolutions(): void {
+    const documents = [...this.documents.values()];
+    for (const document of documents) {
+      this.replaceDocumentIndex(document.uri, document.text, document.version);
+    }
+  }
+
+  private replaceDocumentIndex(
+    normalized: string,
+    text: string,
+    version: number | null,
+  ): DocumentIndex {
     this.semanticLintCache.delete(normalized);
     this.prologDiagnosticsCache.delete(normalized);
     this.removeDocumentFromIndexes(normalized);
