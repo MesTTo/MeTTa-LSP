@@ -1,0 +1,16 @@
+name: Set up Node and Emacs
+description: Install the runtimes and dependencies used by repository verification.
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+        cache: npm
+    - name: Install Emacs
+      shell: bash
+      run: sudo apt-get update && sudo apt-get install -y emacs-nox
+    - name: Install Node dependencies
+      shell: bash
+      run: npm ci

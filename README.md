@@ -479,6 +479,7 @@ Useful checks:
 ```sh
 npm run typecheck
 npm run test
+npm run test:emacs
 npm run smoke:tool
 npm run smoke:all
 npm run verify:strict
@@ -488,6 +489,9 @@ npm run verify:strict
 `examples/mcp-tool-smoke.jsonl` request stream. `npm run smoke:all` also checks
 parser behavior, guarded safety, DAP, Python interop, DSL helpers, capability
 drift, setup scripts, and the MCP smoke streams.
+
+`npm run test:emacs` and `npm run verify:strict` require Emacs 29.1 or newer. CI installs the terminal-only
+`emacs-nox` package.
 
 Build the release artifact:
 

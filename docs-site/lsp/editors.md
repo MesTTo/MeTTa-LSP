@@ -56,27 +56,48 @@ file-types = ["metta"]
 language-servers = ["metta-ts-lsp"]
 ```
 
-## Emacs — eglot
+## Emacs
+
+Emacs does not ship a MeTTa major mode. Load the repository's editor-neutral mode first. It associates
+`.metta` files with `metta-mode` and provides comments, strings, brackets, and static font-lock whether or not
+an LSP client is active:
 
 ```elisp
-(add-to-list 'eglot-server-programs
-  '(metta-mode . ("node" "/path/to/metta-ts-lsp/dist/server/server.js" "--stdio")))
-(setq-default eglot-workspace-configuration
-  '(:metta (:docs (:baseUrl "https://your-user.github.io/MeTTa-LSP")
-            :inlayHints (:enabled t)
-            :pseudocode (:enabled :json-false))))
+(load "/path/to/metta-ts-lsp/emacs/metta-mode.el")
 ```
 
-## Emacs — lsp-mode
+Terminal Emacs supports the same LSP operations as the GUI. Eglot presents hover documentation through
+ElDoc in the echo area; `M-x eldoc-doc-buffer` opens the full result in a buffer.
+
+### Eglot
+
+```elisp
+(with-eval-after-load 'eglot
+  (add-to-list 'eglot-server-programs
+    '(metta-mode . ("node" "/path/to/metta-ts-lsp/dist/server/server.js" "--stdio"))))
+
+(defun metta-eglot-setup ()
+  (setq-local eglot-workspace-configuration
+    '(:metta (:docs (:baseUrl "https://your-user.github.io/MeTTa-LSP")
+              :inlayHints (:enabled t)
+              :pseudocode (:enabled :json-false))))
+  (eglot-ensure))
+
+(add-hook 'metta-mode-hook #'metta-eglot-setup)
+```
+
+### lsp-mode
 
 ```elisp
 (with-eval-after-load 'lsp-mode
+  (add-to-list 'lsp-language-id-configuration '(metta-mode . "metta"))
   (lsp-register-client
    (make-lsp-client
     :new-connection (lsp-stdio-connection
                      '("node" "/path/to/metta-ts-lsp/dist/server/server.js" "--stdio"))
     :major-modes '(metta-mode)
     :server-id 'metta-ts-lsp)))
+(add-hook 'metta-mode-hook #'lsp-deferred)
 ;; Set metta.* via customize or lsp-register-custom-settings under the "metta" section.
 ```
 

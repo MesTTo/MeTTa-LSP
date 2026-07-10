@@ -19,11 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-      - run: npm ci
+      - uses: ./.github/actions/setup-node-emacs
       - name: Typecheck and build
         run: npm run compile
       - name: Biome (format check + lint)
@@ -38,6 +34,8 @@ jobs:
         run: npm run jscpd
       - name: Tests
         run: npm test
+      - name: Test Emacs mode
+        run: npm run test:emacs
       - name: Smoke
         run: npm run smoke:all
 

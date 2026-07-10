@@ -25,6 +25,7 @@ import { capabilitySummary } from "./capabilities.js";
 import { configurationToSettings, extractMettaSection } from "./configResolve.js";
 import { registerAnalyzerHandlers } from "./registerAnalyzerHandlers.js";
 import { SemanticLintScheduler } from "./semanticLintScheduler.js";
+import { configurationClientSupport } from "./shared/clientCapabilities.js";
 import {
   CapabilityRegistryRequest,
   FsListFilesRequest,
@@ -48,7 +49,8 @@ const analyzer = new Analyzer(files);
 analyzer.setSemanticLintMode("cached");
 const runtime = new BrowserRuntimeHost();
 let workspaceRoots: string[] = [];
-let hasConfigurationCapability = false;
+let clientSupportsConfigurationPull = false;
+let clientSupportsConfigurationChangeRegistration = false;
 let settings = DEFAULT_SETTINGS;
 const semanticLintScheduler = new SemanticLintScheduler(analyzer, {
   getSettings: () => settings.diagnostics,
@@ -96,7 +98,7 @@ function applySettings(config: unknown): void {
 }
 
 async function refreshSettings(): Promise<void> {
-  if (!hasConfigurationCapability) return;
+  if (!clientSupportsConfigurationPull) return;
   applySettings(await connection.workspace.getConfiguration("metta"));
 }
 
@@ -141,7 +143,9 @@ async function refreshChangedFile(uri: string): Promise<void> {
 }
 
 connection.onInitialize((params) => {
-  hasConfigurationCapability = params.capabilities.workspace?.configuration === true;
+  const configurationSupport = configurationClientSupport(params.capabilities);
+  clientSupportsConfigurationPull = configurationSupport.pull;
+  clientSupportsConfigurationChangeRegistration = configurationSupport.dynamicRegistration;
   workspaceRoots = workspaceRootUris(params);
   analyzer.setWorkspaceRoots(workspaceRoots);
   applySettings(extractMettaSection(params.initializationOptions));
@@ -185,7 +189,7 @@ connection.onInitialized(() => {
     .catch((error: unknown) => {
       connection.console.warn(`workspace file watcher unavailable: ${String(error)}`);
     });
-  if (hasConfigurationCapability) {
+  if (clientSupportsConfigurationChangeRegistration) {
     connection.client
       .register(DidChangeConfigurationNotification.type, undefined)
       .catch((error: unknown) => {
@@ -197,7 +201,7 @@ connection.onInitialized(() => {
 
 connection.onDidChangeConfiguration((change) => {
   void (async () => {
-    if (hasConfigurationCapability) await refreshSettings();
+    if (clientSupportsConfigurationPull) await refreshSettings();
     else applySettings(extractMettaSection(change.settings));
     await hydrateWorkspace();
     revalidateOpenDocuments();

@@ -10,6 +10,7 @@ examples/**
 bench/**
 docs/**
 docs-site/**
+emacs/**
 scripts/**
 omegaclaw/**
 skills/**

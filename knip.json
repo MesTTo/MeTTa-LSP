@@ -10,6 +10,7 @@
   ],
   "project": ["src/**/*.ts", "scripts/**/*.mjs"],
   "ignore": ["src/runtime/mettaTs.ts"],
+  "ignoreBinaries": ["emacs"],
   "ignoreDependencies": ["metta-ts-typescript-plugin", "@metta-ts/core"],
   "ignoreExportsUsedInFile": true,
   "rules": {

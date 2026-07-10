@@ -5,6 +5,8 @@
 - Add a browser-hosted multi-file MeTTa IDE with live LSP diagnostics, completion, hover, navigation,
   rename, formatting, symbols, semantic tokens, workspace persistence, and guarded evaluation.
 - Refresh cached import resolution when workspace files are created, deleted, or renamed.
+- Register configuration-change notifications only when the LSP client advertises dynamic registration.
+- Add an editor-neutral Emacs major mode with static MeTTa font-lock and setup for Eglot and lsp-mode.
 
 ## 0.11.1 - 2026-07-09
 

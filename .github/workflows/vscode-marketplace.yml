@@ -22,13 +22,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-
-      - run: npm ci
+      - uses: ./.github/actions/setup-node-emacs
 
       - name: Verify release build
         run: npm run verify:strict

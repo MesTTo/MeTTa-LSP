@@ -54,6 +54,7 @@ const forbidden = [
   /^bench\//,
   /^docs\//,
   /^docs-site\//,
+  /^emacs\//,
   /^omegaclaw\//,
   /^skills\//,
   /^scripts\//,

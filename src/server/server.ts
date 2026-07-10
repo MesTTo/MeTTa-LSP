@@ -30,6 +30,7 @@ import { PrologDiagnosticsScheduler } from "./prologDiagnosticsScheduler.js";
 import { registerAnalyzerHandlers } from "./registerAnalyzerHandlers.js";
 import { SemanticLintScheduler } from "./semanticLintScheduler.js";
 import { serverCapabilities } from "./serverCapabilities.js";
+import { configurationClientSupport } from "./shared/clientCapabilities.js";
 import {
   CapabilityRegistryRequest,
   type GuardedEvaluationParams,
@@ -58,7 +59,8 @@ const logger = createLogger(connection.console, "info");
 const documentLog = logger.child("document");
 const validateLog = logger.child("validate");
 
-let hasConfigurationCapability = false;
+let clientSupportsConfigurationPull = false;
+let clientSupportsConfigurationChangeRegistration = false;
 let hasWorkspaceFolderCapability = false;
 // Whether the client pulls diagnostics (textDocument/diagnostic). If it does, the server must NOT also push
 // via publishDiagnostics — a client that supports both renders each diagnostic twice.
@@ -124,7 +126,7 @@ function applySettings(config: unknown): void {
 // eglot). Clients without pull deliver settings through initializationOptions at startup and
 // didChangeConfiguration pushes instead, so there is nothing to pull for them.
 async function refreshSettings(): Promise<void> {
-  if (!hasConfigurationCapability) return;
+  if (!clientSupportsConfigurationPull) return;
   applySettings(await connection.workspace.getConfiguration("metta"));
 }
 
@@ -222,7 +224,9 @@ function startParentWatchdog(): void {
 
 connection.onInitialize((params: InitializeParams): InitializeResult => {
   const capabilities = params.capabilities;
-  hasConfigurationCapability = capabilities.workspace?.configuration === true;
+  const configurationSupport = configurationClientSupport(capabilities);
+  clientSupportsConfigurationPull = configurationSupport.pull;
+  clientSupportsConfigurationChangeRegistration = configurationSupport.dynamicRegistration;
   hasWorkspaceFolderCapability = capabilities.workspace?.workspaceFolders === true;
   clientSupportsPullDiagnostics = capabilities.textDocument?.diagnostic !== undefined;
   workspaceFolders = params.workspaceFolders ?? [];
@@ -252,7 +256,7 @@ connection.onInitialized(() => {
     logger.info(`ready — ${documents.all().length} open document(s)`);
   });
 
-  if (hasConfigurationCapability) {
+  if (clientSupportsConfigurationChangeRegistration) {
     connection.client
       .register(DidChangeConfigurationNotification.type, undefined)
       .catch((error: unknown) => {
@@ -279,7 +283,7 @@ connection.onInitialized(() => {
 // settings in change.settings, section-keyed or direct. Then revalidate every open document.
 connection.onDidChangeConfiguration((change) => {
   void (async () => {
-    if (hasConfigurationCapability) await refreshSettings();
+    if (clientSupportsConfigurationPull) await refreshSettings();
     else applySettings(extractMettaSection(change.settings));
     await revalidateAll();
   })();
