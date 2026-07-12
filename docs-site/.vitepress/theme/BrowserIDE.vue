@@ -59,6 +59,7 @@ import {
   SemanticTokenController,
   semanticTokenDecorations,
 } from "./browser-ide/semantic-tokens";
+import { BROWSER_WORKER_BUILD_ID } from "./browser-ide/worker-version.generated";
 
 type PanelName = "problems" | "output" | "symbols";
 type DialogMode = "create" | "rename" | "delete" | "reset";
@@ -88,6 +89,7 @@ const NO_FEATURE_SUPPORT: IdeFeatureSupport = {
   rename: false,
   formatting: false,
 };
+const PANEL_ORDER: readonly PanelName[] = ["problems", "output", "symbols"];
 
 const editorHost = ref<HTMLElement | null>(null);
 const fileDialog = ref<HTMLDialogElement | null>(null);
@@ -117,6 +119,14 @@ let syncTimer: ReturnType<typeof setTimeout> | undefined;
 let symbolTimer: ReturnType<typeof setTimeout> | undefined;
 let persistTimer: ReturnType<typeof setTimeout> | undefined;
 let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+let sessionGeneration = 0;
+let symbolGeneration = 0;
+let runGeneration = 0;
+let workspaceRevision = 0;
+let disposed = false;
+let persistenceErrorShown = false;
+let runCancellation: AbortController | undefined;
+let symbolCancellation: AbortController | undefined;
 const semanticTokens = new SemanticTokenController();
 
 const problems = computed<readonly ProblemRow[]>(() => {
@@ -158,7 +168,14 @@ function refreshFileNames(): void {
 }
 
 function persistNow(): void {
-  if (typeof window !== "undefined") saveBrowserWorkspace(window.localStorage, files, activeName.value);
+  if (typeof window === "undefined") return;
+  const saved = saveBrowserWorkspace(window.localStorage, files, activeName.value);
+  if (saved) {
+    persistenceErrorShown = false;
+  } else if (!disposed && !persistenceErrorShown) {
+    persistenceErrorShown = true;
+    showStatusNotice("Workspace changes could not be saved in this browser.");
+  }
 }
 
 function schedulePersist(): void {
@@ -167,6 +184,25 @@ function schedulePersist(): void {
     persistTimer = undefined;
     persistNow();
   }, 180);
+}
+
+function flushWorkspace(): void {
+  session?.sync();
+  if (persistTimer !== undefined) clearTimeout(persistTimer);
+  persistTimer = undefined;
+  persistNow();
+}
+
+function persistWhenHidden(): void {
+  if (document.visibilityState === "hidden") flushWorkspace();
+}
+
+function persistBeforePageHide(): void {
+  flushWorkspace();
+}
+
+function browserLspWorkerUrl(): string {
+  return `${withBase("/browser-ide/server/browserServer.js")}?v=${BROWSER_WORKER_BUILD_ID}`;
 }
 
 function diagnosticLabel(diagnostic: Diagnostic): string {
@@ -193,6 +229,25 @@ function showStatusNotice(message: string): void {
     noticeTimer = undefined;
     statusNotice.value = "";
   }, 4_000);
+}
+
+function cancellationError(message: string): Error {
+  const error = new Error(message);
+  error.name = "AbortError";
+  return error;
+}
+
+function cancelRun(message?: string): void {
+  const cancellation = runCancellation;
+  if (cancellation === undefined || cancellation.signal.aborted) return;
+  cancellation.abort(cancellationError(message ?? "Run cancelled."));
+  if (message !== undefined && running.value) showStatusNotice(message);
+}
+
+function workspaceChanged(): void {
+  workspaceRevision += 1;
+  symbolCancellation?.abort(cancellationError("Symbol request superseded."));
+  cancelRun("Run cancelled because the workspace changed.");
 }
 
 function updateCursor(view: EditorView): void {
@@ -236,8 +291,8 @@ function editorTheme(): Extension {
       borderColor: "var(--vp-c-divider)",
     },
     ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
-      color: "var(--vp-c-white)",
-      backgroundColor: "var(--vp-c-brand-1)",
+      color: "var(--vp-button-brand-text)",
+      backgroundColor: "var(--vp-button-brand-bg)",
     },
     ".cm-lintRange-error": { backgroundImage: "none", textDecoration: "underline wavy #e05252" },
     ".cm-lintRange-warning": {
@@ -290,7 +345,7 @@ function createEditor(): EditorView | null {
           preventDefault: true,
         },
       ]),
-      EditorView.editorAttributes.of({
+      EditorView.contentAttributes.of({
         "aria-label": `${activeName.value} MeTTa editor`,
         spellcheck: "false",
       }),
@@ -306,7 +361,10 @@ function createEditor(): EditorView | null {
       }),
       EditorView.updateListener.of((update) => {
         if (update.selectionSet || update.docChanged) updateCursor(update.view);
-        if (update.docChanged) scheduleSync(update);
+        if (update.docChanged) {
+          workspaceChanged();
+          scheduleSync(update);
+        }
       }),
       session.client.plugin(uri, "metta"),
     ],
@@ -338,6 +396,8 @@ async function selectFile(name: string): Promise<void> {
     editor.value.focus();
     return;
   }
+  cancelRun("Run cancelled because the active file changed.");
+  symbolCancellation?.abort(cancellationError("Symbol request superseded."));
   destroyEditor();
   activeName.value = name;
   evaluation.value = undefined;
@@ -348,30 +408,43 @@ async function selectFile(name: string): Promise<void> {
 }
 
 async function startSession(): Promise<void> {
+  const generation = ++sessionGeneration;
   setStatus("starting");
   statusDetail.value = "";
+  let nextSession: BrowserIdeSession | undefined;
   try {
-    const nextSession = new BrowserIdeSession({
+    nextSession = new BrowserIdeSession({
       files,
-      workerUrl: withBase("/browser-ide/server/browserServer.js"),
+      workerUrl: browserLspWorkerUrl(),
       displayFile,
       onDiagnostics: (uri, diagnostics) => {
+        if (disposed || generation !== sessionGeneration) return;
+        const name = browserFileName(uri);
+        if (name === null || !files.has(name)) return;
         const next = new Map(diagnosticsByUri.value);
         next.set(uri, diagnostics);
         diagnosticsByUri.value = next;
       },
       onFilesChanged: () => {
+        if (disposed || generation !== sessionGeneration) return;
+        workspaceChanged();
         refreshFileNames();
         schedulePersist();
       },
       onLog: (message) => {
+        if (disposed || generation !== sessionGeneration) return;
         if (message.trim() !== "") statusDetail.value = message;
       },
-      onStatus: setStatus,
+      onStatus: (nextStatus, detail) => {
+        if (!disposed && generation === sessionGeneration) setStatus(nextStatus, detail);
+      },
     });
     session = nextSession;
     await nextSession.start();
-    if (session !== nextSession) return;
+    if (disposed || generation !== sessionGeneration || session !== nextSession) {
+      nextSession.stop();
+      return;
+    }
     const capabilities = nextSession.client.serverCapabilities;
     featureSupport.value = {
       definition: Boolean(capabilities?.definitionProvider),
@@ -383,52 +456,97 @@ async function startSession(): Promise<void> {
     createEditor();
     await refreshSymbols();
   } catch (error) {
-    setStatus("error", error instanceof Error ? error.message : String(error));
+    if (!disposed && generation === sessionGeneration && session === nextSession) {
+      setStatus("error", error instanceof Error ? error.message : String(error));
+    }
   }
 }
 
 function stopSession(): void {
+  sessionGeneration += 1;
+  symbolGeneration += 1;
+  runGeneration += 1;
+  runCancellation?.abort(cancellationError("Browser IDE session stopped."));
+  symbolCancellation?.abort(cancellationError("Browser IDE session stopped."));
+  runCancellation = undefined;
+  symbolCancellation = undefined;
   if (syncTimer !== undefined) clearTimeout(syncTimer);
   if (symbolTimer !== undefined) clearTimeout(symbolTimer);
   syncTimer = undefined;
   symbolTimer = undefined;
+  running.value = false;
   destroyEditor();
+  if (persistTimer !== undefined) clearTimeout(persistTimer);
+  persistTimer = undefined;
   semanticTokens.dispose();
-  session?.stop();
+  const currentSession = session;
   session = undefined;
+  currentSession?.stop();
   featureSupport.value = NO_FEATURE_SUPPORT;
 }
 
 async function restartSession(): Promise<void> {
-  persistNow();
   stopSession();
+  persistNow();
   diagnosticsByUri.value = new Map();
   symbols.value = [];
   await nextTick();
-  await startSession();
+  if (!disposed) await startSession();
 }
 
 async function runProgram(): Promise<void> {
-  if (session === undefined || status.value !== "ready" || running.value) return;
+  const currentSession = session;
+  if (currentSession === undefined || status.value !== "ready" || running.value) return;
+  currentSession.sync();
+  const generation = ++runGeneration;
+  const name = activeName.value;
+  const revision = workspaceRevision;
+  const cancellation = new AbortController();
+  runCancellation = cancellation;
   running.value = true;
   activePanel.value = "output";
   evaluation.value = undefined;
   try {
-    evaluation.value = await session.evaluate(activeName.value);
+    const result = await currentSession.evaluate(name, cancellation.signal);
+    if (
+      !disposed &&
+      generation === runGeneration &&
+      session === currentSession &&
+      activeName.value === name &&
+      workspaceRevision === revision
+    ) {
+      evaluation.value = result;
+    } else if (
+      !disposed &&
+      generation === runGeneration &&
+      session === currentSession &&
+      activeName.value === name
+    ) {
+      showStatusNotice("Run result discarded because the workspace changed.");
+    }
   } catch (error) {
-    evaluation.value = {
-      ok: false,
-      elapsedMs: 0,
-      blockers: [],
-      diagnostics: [],
-      queries: [],
-      stdout: "",
-      stderr: "",
-      truncated: false,
-      error: error instanceof Error ? error.message : String(error),
-    };
+    if (
+      !(error instanceof Error && error.name === "AbortError") &&
+      !disposed &&
+      generation === runGeneration &&
+      session === currentSession &&
+      activeName.value === name
+    ) {
+      evaluation.value = {
+        ok: false,
+        elapsedMs: 0,
+        blockers: [],
+        diagnostics: [],
+        queries: [],
+        stdout: "",
+        stderr: "",
+        truncated: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   } finally {
-    running.value = false;
+    if (runCancellation === cancellation) runCancellation = undefined;
+    if (generation === runGeneration) running.value = false;
   }
 }
 
@@ -493,12 +611,56 @@ function symbolKind(kind: number): string {
 }
 
 async function refreshSymbols(): Promise<void> {
-  if (session === undefined || status.value !== "ready") return;
+  const currentSession = session;
+  if (currentSession === undefined || status.value !== "ready") return;
+  currentSession.sync();
+  const generation = ++symbolGeneration;
+  const name = activeName.value;
+  const revision = workspaceRevision;
+  symbolCancellation?.abort(cancellationError("Symbol request superseded."));
+  const cancellation = new AbortController();
+  symbolCancellation = cancellation;
   try {
-    symbols.value = flattenSymbols(await session.documentSymbols(activeName.value));
-  } catch {
-    symbols.value = [];
+    const nextSymbols = flattenSymbols(
+      await currentSession.documentSymbols(name, cancellation.signal),
+    );
+    if (
+      !disposed &&
+      generation === symbolGeneration &&
+      session === currentSession &&
+      activeName.value === name &&
+      workspaceRevision === revision
+    ) {
+      symbols.value = nextSymbols;
+    }
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") return;
+    if (
+      !disposed &&
+      generation === symbolGeneration &&
+      session === currentSession &&
+      activeName.value === name
+    ) {
+      symbols.value = [];
+    }
+  } finally {
+    if (symbolCancellation === cancellation) symbolCancellation = undefined;
   }
+}
+
+function handlePanelKeydown(event: KeyboardEvent, panel: PanelName): void {
+  const index = PANEL_ORDER.indexOf(panel);
+  let nextIndex: number | undefined;
+  if (event.key === "ArrowRight") nextIndex = (index + 1) % PANEL_ORDER.length;
+  else if (event.key === "ArrowLeft") nextIndex = (index - 1 + PANEL_ORDER.length) % PANEL_ORDER.length;
+  else if (event.key === "Home") nextIndex = 0;
+  else if (event.key === "End") nextIndex = PANEL_ORDER.length - 1;
+  if (nextIndex === undefined) return;
+  event.preventDefault();
+  const nextPanel = PANEL_ORDER[nextIndex];
+  if (nextPanel === undefined) return;
+  activePanel.value = nextPanel;
+  void nextTick(() => document.getElementById(`ide-tab-${nextPanel}`)?.focus());
 }
 
 function invokeEditorCommand(command: (view: EditorView) => boolean): void {
@@ -576,6 +738,9 @@ async function submitDialog(): Promise<void> {
       const nextName = currentSession.workspace.renameFile(oldName, dialogName.value);
       currentSession.notifyFileDeleted(oldName);
       currentSession.notifyFileCreated(nextName);
+      const nextDiagnostics = new Map(diagnosticsByUri.value);
+      nextDiagnostics.delete(browserFileUri(oldName));
+      diagnosticsByUri.value = nextDiagnostics;
       if (wasActive) activeName.value = nextName;
       refreshFileNames();
       closeDialog();
@@ -608,6 +773,7 @@ async function submitDialog(): Promise<void> {
     closeDialog();
     stopSession();
     files = new BrowserFileStore(DEFAULT_BROWSER_FILES);
+    workspaceChanged();
     activeName.value = "main.metta";
     evaluation.value = undefined;
     diagnosticsByUri.value = new Map();
@@ -626,6 +792,9 @@ async function submitDialog(): Promise<void> {
 }
 
 onMounted(async () => {
+  disposed = false;
+  window.addEventListener("pagehide", persistBeforePageHide);
+  document.addEventListener("visibilitychange", persistWhenHidden);
   const saved = loadBrowserWorkspace(window.localStorage);
   if (saved !== null) {
     files = new BrowserFileStore(saved.files);
@@ -636,10 +805,13 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  disposed = true;
+  window.removeEventListener("pagehide", persistBeforePageHide);
+  document.removeEventListener("visibilitychange", persistWhenHidden);
   if (persistTimer !== undefined) clearTimeout(persistTimer);
   if (noticeTimer !== undefined) clearTimeout(noticeTimer);
-  persistNow();
   stopSession();
+  persistNow();
 });
 </script>
 
@@ -732,19 +904,17 @@ onBeforeUnmount(() => {
           <FilePlus2 :size="16" aria-hidden="true" />
         </button>
       </div>
-      <div class="file-list" role="listbox" aria-label="MeTTa files">
-        <div
+      <ul class="file-list" aria-label="MeTTa files">
+        <li
           v-for="name in fileNames"
           :key="name"
           class="file-row"
           :class="{ active: name === activeName }"
-          role="presentation"
         >
           <button
             class="file-select"
             type="button"
-            role="option"
-            :aria-selected="name === activeName"
+            :aria-current="name === activeName ? 'true' : undefined"
             :title="name"
             @click="selectFile(name)"
           >
@@ -772,8 +942,8 @@ onBeforeUnmount(() => {
               <Trash2 :size="14" aria-hidden="true" />
             </button>
           </div>
-        </div>
-      </div>
+        </li>
+      </ul>
       <button class="reset-workspace" type="button" @click="openDialog('reset')">
         <RotateCcw :size="14" aria-hidden="true" />
         <span>Reset workspace</span>
@@ -806,8 +976,10 @@ onBeforeUnmount(() => {
           id="ide-tab-problems"
           aria-controls="ide-panel-problems"
           :aria-selected="activePanel === 'problems'"
+          :tabindex="activePanel === 'problems' ? 0 : -1"
           :class="{ active: activePanel === 'problems' }"
           @click="activePanel = 'problems'"
+          @keydown="handlePanelKeydown($event, 'problems')"
         >
           <CircleAlert :size="14" aria-hidden="true" />
           <span>Problems</span>
@@ -819,8 +991,10 @@ onBeforeUnmount(() => {
           id="ide-tab-output"
           aria-controls="ide-panel-output"
           :aria-selected="activePanel === 'output'"
+          :tabindex="activePanel === 'output' ? 0 : -1"
           :class="{ active: activePanel === 'output' }"
           @click="activePanel = 'output'"
+          @keydown="handlePanelKeydown($event, 'output')"
         >
           <Play :size="14" aria-hidden="true" />
           <span>Output</span>
@@ -831,8 +1005,10 @@ onBeforeUnmount(() => {
           id="ide-tab-symbols"
           aria-controls="ide-panel-symbols"
           :aria-selected="activePanel === 'symbols'"
+          :tabindex="activePanel === 'symbols' ? 0 : -1"
           :class="{ active: activePanel === 'symbols' }"
           @click="activePanel = 'symbols'"
+          @keydown="handlePanelKeydown($event, 'symbols')"
         >
           <ListTree :size="14" aria-hidden="true" />
           <span>Symbols</span>
@@ -846,6 +1022,7 @@ onBeforeUnmount(() => {
         class="panel-content"
         role="tabpanel"
         aria-labelledby="ide-tab-problems"
+        :tabindex="problems.length === 0 ? 0 : undefined"
       >
         <div v-if="problems.length === 0" class="panel-empty">
           <CircleCheck :size="18" aria-hidden="true" />
@@ -878,6 +1055,7 @@ onBeforeUnmount(() => {
         class="panel-content output-content"
         role="tabpanel"
         aria-labelledby="ide-tab-output"
+        tabindex="0"
       >
         <div v-if="evaluation === undefined" class="panel-empty">
           <Play :size="18" aria-hidden="true" />
@@ -925,6 +1103,7 @@ onBeforeUnmount(() => {
         class="panel-content"
         role="tabpanel"
         aria-labelledby="ide-tab-symbols"
+        :tabindex="symbols.length === 0 ? 0 : undefined"
       >
         <div v-if="symbols.length === 0" class="panel-empty">
           <ListTree :size="18" aria-hidden="true" />
@@ -990,6 +1169,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .browser-ide-shell {
   --ide-toolbar-height: 48px;
+  --ide-semantic-op: #c02f40;
   display: grid;
   grid-template-columns: 218px minmax(0, 1fr);
   grid-template-rows: var(--ide-toolbar-height) minmax(360px, 1fr) 210px 25px;
@@ -1002,6 +1182,10 @@ onBeforeUnmount(() => {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 12px 32px rgb(8 50 104 / 12%);
+}
+
+.dark .browser-ide-shell {
+  --ide-semantic-op: var(--mh-op);
 }
 
 .ide-toolbar {
@@ -1051,7 +1235,7 @@ onBeforeUnmount(() => {
 }
 
 .ide-connection.is-ready {
-  color: #16845b;
+  color: #11734f;
 }
 
 .dark .ide-connection.is-ready {
@@ -1122,8 +1306,8 @@ button:disabled {
   height: 32px;
   margin-left: 4px;
   padding: 0 13px;
-  color: var(--vp-c-white);
-  background: #087f8c;
+  color: var(--vp-button-brand-text);
+  background: var(--vp-button-brand-bg);
   border-radius: 5px;
   font-size: 13px;
   font-weight: 600;
@@ -1131,7 +1315,7 @@ button:disabled {
 
 .run-button:hover:not(:disabled),
 .run-button:focus-visible {
-  background: #006f7a;
+  background: var(--vp-button-brand-hover-bg);
 }
 
 .file-pane {
@@ -1159,9 +1343,11 @@ button:disabled {
 }
 
 .file-list {
+  margin: 0;
   min-height: 0;
   overflow: auto;
   padding: 4px 0;
+  list-style: none;
 }
 
 .file-row {
@@ -1226,7 +1412,7 @@ button:disabled {
   gap: 7px;
   width: 100%;
   padding: 0 12px;
-  color: var(--vp-c-text-3);
+  color: var(--vp-c-text-2);
   background: transparent;
   border-top: 1px solid var(--vp-c-divider);
   font-size: 12px;
@@ -1267,7 +1453,7 @@ button:disabled {
 
 .editor-language {
   flex: 0 0 auto;
-  color: var(--vp-c-text-3);
+  color: var(--vp-c-text-2);
   font-weight: 500;
 }
 
@@ -1305,8 +1491,8 @@ button:disabled {
 
 .ide-state button {
   padding: 5px 16px;
-  color: var(--vp-c-white);
-  background: var(--vp-c-brand-1);
+  color: var(--vp-button-brand-text);
+  background: var(--vp-button-brand-bg);
   border: 0;
   border-radius: 5px;
   cursor: pointer;
@@ -1340,7 +1526,7 @@ button:disabled {
   gap: 6px;
   min-width: 0;
   padding: 0 8px;
-  color: var(--vp-c-text-3);
+  color: var(--vp-c-text-2);
   background: transparent;
   font-size: 12px;
 }
@@ -1383,7 +1569,7 @@ button:disabled {
   gap: 8px;
   min-height: 100%;
   padding: 16px;
-  color: var(--vp-c-text-3);
+  color: var(--vp-c-text-2);
   font-size: 12px;
 }
 
@@ -1505,7 +1691,7 @@ button:disabled {
   gap: 14px;
   min-width: 0;
   padding: 0 10px;
-  color: #eaf7f8;
+  color: #fff;
   background: #087f8c;
   font-size: 11px;
 }
@@ -1606,12 +1792,12 @@ button:disabled {
 }
 
 .primary-command {
-  color: var(--vp-c-white);
-  background: var(--vp-c-brand-1);
+  color: var(--vp-button-brand-text);
+  background: var(--vp-button-brand-bg);
 }
 
 .primary-command.danger {
-  background: var(--vp-c-danger-1);
+  background: var(--metta-danger-button-bg);
 }
 
 .secondary-command {
@@ -1749,9 +1935,7 @@ button:disabled {
 }
 
 @media (max-width: 470px) {
-  .ide-connection span,
-  .editor-language,
-  .ide-actions .icon-button:nth-child(-n + 2) {
+  .editor-language {
     display: none;
   }
 
@@ -1778,12 +1962,16 @@ button:disabled {
 
 @media (prefers-reduced-motion: reduce) {
   .spin {
-    animation-duration: 1.8s;
+    animation: none;
   }
 }
 </style>
 
 <style>
+.browser-ide-shell [class*="cm-metta-semantic-"] > * {
+  color: inherit;
+}
+
 .cm-metta-semantic-comment {
   color: var(--mh-comment);
 }
@@ -1818,7 +2006,7 @@ button:disabled {
 .cm-metta-semantic-mettaArithmeticOperator,
 .cm-metta-semantic-mettaComparisonOperator,
 .cm-metta-semantic-mettaLogicalOperator {
-  color: var(--mh-op);
+  color: var(--ide-semantic-op);
 }
 .cm-metta-semantic-mettaTypeOperator {
   color: var(--mh-type);

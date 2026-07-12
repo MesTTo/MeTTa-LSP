@@ -9,6 +9,7 @@ import type {
   GuardedEvaluationWorkerResponse,
 } from "../server/guardedEvaluationTypes.js";
 import { wrapBareExpression } from "../server/runnableForms.js";
+import { relatedBrowserWorkerUrl } from "./browserWorkerUrl.js";
 import {
   emptyEvaluationResult,
   guardedResultFromWorker,
@@ -31,14 +32,18 @@ async function sourceHash(source: string): Promise<string> {
 }
 
 function defaultWorkerUrl(): URL {
-  return new URL("../runtime/browserEvaluationWorker.js", import.meta.url);
+  return relatedBrowserWorkerUrl("../runtime/browserEvaluationWorker.js");
 }
 
 function runBrowserEvaluationWorker(
   payload: GuardedEvaluationWorkerRequest,
   timeoutMs: number,
   workerUrl = defaultWorkerUrl(),
+  signal?: AbortSignal,
 ): Promise<GuardedEvaluationWorkerResponse> {
+  if (signal?.aborted === true) {
+    return Promise.resolve({ ok: false, error: "Evaluation cancelled." });
+  }
   return new Promise<GuardedEvaluationWorkerResponse>((resolve) => {
     const worker = new Worker(workerUrl, { type: "module" });
     let settled = false;
@@ -46,12 +51,15 @@ function runBrowserEvaluationWorker(
       if (settled) return;
       settled = true;
       clearTimeout(timeout);
+      signal?.removeEventListener("abort", abort);
       worker.terminate();
       resolve(response);
     };
+    const abort = (): void => finish({ ok: false, error: "Evaluation cancelled." });
     const timeout = setTimeout(() => {
       finish({ ok: false, error: `Evaluation timed out after ${timeoutMs} ms.` });
     }, timeoutMs);
+    signal?.addEventListener("abort", abort, { once: true });
     worker.onmessage = (event: MessageEvent<GuardedEvaluationWorkerResponse>) => finish(event.data);
     worker.onerror = (event) => {
       finish({
@@ -67,6 +75,7 @@ async function runWithPolicy(
   request: GuardedEvaluationRequest,
   policy: GuardedEvaluationPolicy,
   workerUrl?: URL,
+  signal?: AbortSignal,
 ): Promise<GuardedEvaluationResult> {
   const started = Date.now();
   const source =
@@ -96,6 +105,7 @@ async function runWithPolicy(
     { source, policy, imports: request.imports ?? {} },
     policy.timeoutMs,
     workerUrl,
+    signal,
   );
   return guardedResultFromWorker(
     workerResponse,
@@ -111,8 +121,9 @@ async function runWithPolicy(
 export async function evaluateGuardedInBrowser(
   request: GuardedEvaluationRequest,
   workerUrl?: URL,
+  signal?: AbortSignal,
 ): Promise<GuardedEvaluationResult> {
-  return runWithPolicy(request, mergeGuardedEvaluationPolicy(request.policy), workerUrl);
+  return runWithPolicy(request, mergeGuardedEvaluationPolicy(request.policy), workerUrl, signal);
 }
 
 export class BrowserRuntimeHost implements RuntimeHost {
@@ -120,7 +131,10 @@ export class BrowserRuntimeHost implements RuntimeHost {
 
   public constructor(private readonly evaluationWorkerUrl = defaultWorkerUrl()) {}
 
-  public guardedEvaluate(request: GuardedEvaluationRequest): Promise<GuardedEvaluationResult> {
-    return evaluateGuardedInBrowser(request, this.evaluationWorkerUrl);
+  public guardedEvaluate(
+    request: GuardedEvaluationRequest,
+    signal?: AbortSignal,
+  ): Promise<GuardedEvaluationResult> {
+    return evaluateGuardedInBrowser(request, this.evaluationWorkerUrl, signal);
   }
 }

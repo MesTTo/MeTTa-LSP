@@ -39,6 +39,8 @@ function textDocument(text: string): Text {
 export class BrowserWorkspace extends Workspace {
   public readonly files: BrowserWorkspaceFile[];
   private connectedToServer = false;
+  private connectionGeneration = 0;
+  private connectionReady: Promise<void> = Promise.resolve();
 
   public constructor(
     client: LSPClient,
@@ -57,12 +59,26 @@ export class BrowserWorkspace extends Workspace {
   }
 
   public override connected(): void {
-    this.connectedToServer = true;
-    for (const file of this.files) this.client.didOpen(file);
+    this.connectedToServer = false;
+    const generation = ++this.connectionGeneration;
+    this.connectionReady = this.client.initializing
+      .then(async () => {
+        if (generation !== this.connectionGeneration) return;
+        this.connectedToServer = true;
+        for (const file of this.files) this.client.didOpen(file);
+        // LSPClient.notification queues one more microtask after initialization.
+        await Promise.resolve();
+      })
+      .catch(() => undefined);
   }
 
   public override disconnected(): void {
+    this.connectionGeneration += 1;
     this.connectedToServer = false;
+  }
+
+  public whenConnected(): Promise<void> {
+    return this.connectionReady;
   }
 
   public override openFile(uri: string, languageId: string, view: EditorView): void {

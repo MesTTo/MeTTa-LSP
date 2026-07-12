@@ -22,7 +22,11 @@ import { dirname, join } from "node:path";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
-import { browserWorker, createBrowserLspHarness } from "./browser-lsp-harness.mjs";
+import {
+  browserWorker,
+  createBrowserLspHarness,
+  DEFAULT_BROWSER_LSP_ROOT,
+} from "./browser-lsp-harness.mjs";
 
 const require = createRequire(import.meta.url);
 const { Analyzer } = require("../dist/server/analyzer.js");
@@ -284,6 +288,48 @@ async function benchBrowserServerInitialize() {
   }
 }
 
+const BROWSER_IDE_FILE_COUNT = 24;
+const BROWSER_IDE_FUNCTIONS_PER_FILE = 300;
+
+function browserIdeFileSource(fileIndex) {
+  return Array.from(
+    { length: BROWSER_IDE_FUNCTIONS_PER_FILE },
+    (_, index) =>
+      `(: f_${fileIndex}_${index} (-> Number Number))\n(= (f_${fileIndex}_${index} $x) (+ $x 1))`,
+  ).join("\n");
+}
+
+async function benchBrowserIdeWorkspaceReady() {
+  const workspace = new Map(
+    Array.from({ length: BROWSER_IDE_FILE_COUNT }, (_, index) => [
+      `${DEFAULT_BROWSER_LSP_ROOT}/${index === 0 ? "main.metta" : `lib/file-${index}.metta`}`,
+      browserIdeFileSource(index),
+    ]),
+  );
+  const harness = createBrowserLspHarness(workspace);
+  try {
+    await harness.initialize({
+      capabilities: {
+        experimental: { mettaBrowserIde: { preopenedWorkspace: true } },
+      },
+    });
+    for (const [uri, text] of workspace) {
+      harness.notify("textDocument/didOpen", {
+        textDocument: { uri, languageId: "metta", version: 0, text },
+      });
+    }
+    const ready = await harness.request("metta/browserWorkspaceReady", {});
+    if (!ready?.accepted || ready.files !== BROWSER_IDE_FILE_COUNT) {
+      throw new Error(`browser IDE workspace readiness failed: ${JSON.stringify(ready)}`);
+    }
+    if (harness.serverRequestCount("metta/fs/listFiles") !== 0) {
+      throw new Error("browser IDE preopened workspace performed a redundant file-list request");
+    }
+  } finally {
+    harness.dispose();
+  }
+}
+
 async function measureBrowserServerValidate(text, runs = 5) {
   const workspace = new Map([
     [BROWSER_LIB, "(: inc (-> Number Number))\n(= (inc $x) (+ $x 1))"],
@@ -374,6 +420,12 @@ const BROWSER_LSP_BENCHES =
           count: 1,
           operation: "server initialize",
           run: () => measureAsync(() => benchBrowserServerInitialize(), 5),
+        },
+        {
+          size: "browser-ide",
+          count: BROWSER_IDE_FILE_COUNT * BROWSER_IDE_FUNCTIONS_PER_FILE,
+          operation: "preopened workspace ready (24 files)",
+          run: () => measureAsync(() => benchBrowserIdeWorkspaceReady(), 5),
         },
         ...ALL_SIZES.map((size) => ({
           size: `browser-${size.name}`,

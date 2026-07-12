@@ -6,6 +6,7 @@ import type {
   GuardedEvaluationWorkerResponse,
 } from "../server/guardedEvaluationTypes.js";
 import { serveBrowserWorker } from "./browserWorkerPort.js";
+import { relatedBrowserWorkerUrl } from "./browserWorkerUrl.js";
 import { evaluatorOptionsForPolicy } from "./guardedEvaluationShared.js";
 import { captureOutput, collectResponse, importsAsAtoms } from "./workerShared.js";
 
@@ -23,7 +24,10 @@ async function run(
       request.policy.fuel,
       importsAsAtoms(core, request.imports),
       evaluatorOptionsForPolicy(request.policy),
-      { hostEffects: false, workerUrl: new URL("./browserHyperposeWorker.js", import.meta.url) },
+      {
+        hostEffects: false,
+        workerUrl: relatedBrowserWorkerUrl("./browserHyperposeWorker.js"),
+      },
     );
     return collectResponse(core, raw, request.policy, output);
   } finally {

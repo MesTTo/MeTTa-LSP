@@ -1,11 +1,14 @@
 import {
   BrowserMessageReader,
   BrowserMessageWriter,
+  type CancellationToken,
   createConnection,
   DidChangeConfigurationNotification,
   FileChangeType,
   type InitializeParams,
+  LSPErrorCodes,
   ProposedFeatures,
+  ResponseError,
   TextDocumentSyncKind,
   TextDocuments,
 } from "vscode-languageserver/browser";
@@ -51,7 +54,15 @@ const runtime = new BrowserRuntimeHost();
 let workspaceRoots: string[] = [];
 let clientSupportsConfigurationPull = false;
 let clientSupportsConfigurationChangeRegistration = false;
+let preopenedBrowserWorkspace = false;
+let browserWorkspaceReady = false;
+let browserWorkspaceFinalization: Promise<BrowserWorkspaceReadyResult> | undefined;
 let settings = DEFAULT_SETTINGS;
+
+interface BrowserWorkspaceReadyResult {
+  readonly accepted: boolean;
+  readonly files: number;
+}
 const semanticLintScheduler = new SemanticLintScheduler(analyzer, {
   getSettings: () => settings.diagnostics,
   pullDiagnostics: () => false,
@@ -68,6 +79,17 @@ function workspaceRootUris(params: InitializeParams): string[] {
   if (folders.length > 0) return folders.map((folder) => normalizeUri(folder.uri));
   const legacyRootUri = (params as { readonly rootUri?: string | null }).rootUri;
   return legacyRootUri ? [normalizeUri(legacyRootUri)] : [];
+}
+
+function clientPreopensBrowserWorkspace(capabilities: InitializeParams["capabilities"]): boolean {
+  const experimental: unknown = capabilities.experimental;
+  if (typeof experimental !== "object" || experimental === null) return false;
+  const browserIde = (experimental as Record<string, unknown>).mettaBrowserIde;
+  return (
+    typeof browserIde === "object" &&
+    browserIde !== null &&
+    (browserIde as Record<string, unknown>).preopenedWorkspace === true
+  );
 }
 
 function cacheDocument(uri: string, text: string, version: number | null, open: boolean): void {
@@ -90,6 +112,20 @@ function revalidateOpenDocuments(): void {
     analyzer.clearAllSemanticLintDiagnostics();
   }
   for (const document of documents.all()) validateAndPublish(document.uri);
+}
+
+async function finalizePreopenedBrowserWorkspace(): Promise<BrowserWorkspaceReadyResult> {
+  // BrowserMessageReader may dispatch the request after TextDocuments records didOpen but before this
+  // module's didChangeContent listener runs. Yield once so every earlier notification finishes preloading.
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  for (const document of documents.all()) {
+    cacheDocument(document.uri, document.getText(), document.version, true);
+  }
+  analyzer.invalidateConfig();
+  analyzer.refreshImportResolutions();
+  browserWorkspaceReady = true;
+  setTimeout(revalidateOpenDocuments, 0);
+  return { accepted: true, files: documents.all().length };
 }
 
 function applySettings(config: unknown): void {
@@ -147,6 +183,9 @@ connection.onInitialize((params) => {
   clientSupportsConfigurationPull = configurationSupport.pull;
   clientSupportsConfigurationChangeRegistration = configurationSupport.dynamicRegistration;
   workspaceRoots = workspaceRootUris(params);
+  preopenedBrowserWorkspace = clientPreopensBrowserWorkspace(params.capabilities);
+  browserWorkspaceReady = false;
+  browserWorkspaceFinalization = undefined;
   analyzer.setWorkspaceRoots(workspaceRoots);
   applySettings(extractMettaSection(params.initializationOptions));
   return {
@@ -196,7 +235,7 @@ connection.onInitialized(() => {
         connection.console.warn(`configuration notifications unavailable: ${String(error)}`);
       });
   }
-  void refreshSettings().then(() => hydrateWorkspace());
+  void refreshSettings().then(() => (preopenedBrowserWorkspace ? undefined : hydrateWorkspace()));
 });
 
 connection.onDidChangeConfiguration((change) => {
@@ -208,13 +247,15 @@ connection.onDidChangeConfiguration((change) => {
   })();
 });
 
-documents.onDidOpen((event) => {
-  cacheDocument(event.document.uri, event.document.getText(), event.document.version, true);
-  validateAndPublish(event.document.uri);
-});
+// TextDocuments emits onDidChangeContent for the initial open and every later edit. Keeping one handler
+// avoids indexing and publishing the same opening version twice.
 documents.onDidChangeContent((event) => {
-  cacheDocument(event.document.uri, event.document.getText(), event.document.version, true);
-  validateAndPublish(event.document.uri);
+  if (preopenedBrowserWorkspace && !browserWorkspaceReady) {
+    files.cacheFile(normalizeUri(event.document.uri), event.document.getText());
+  } else {
+    cacheDocument(event.document.uri, event.document.getText(), event.document.version, true);
+    validateAndPublish(event.document.uri);
+  }
 });
 documents.onDidClose((event) => {
   analyzer.closeDocument(event.document.uri);
@@ -249,25 +290,52 @@ connection.onRequest(SideEffectPolicyRequest, () => ({
   defaultGuard: settings.runtime.guard,
 }));
 
-connection.onRequest(GuardedEvaluationRequest, async (params: GuardedEvaluationParams) => {
-  const uri = params.uri;
-  const source =
-    params.source ??
-    (uri
-      ? analyzer.evaluationSource(uri, params.range, params.includePriorDefinitions !== false)
-      : "");
-  return runtime.guardedEvaluate({
-    source,
-    uri,
-    policy: { ...settings.runtime.guard, ...(params.policy ?? {}) },
-    imports: uri ? analyzer.importSourceMap(uri) : {},
-    wrapBareExpression: params.wrapBareExpression,
-  });
-});
+connection.onRequest(
+  GuardedEvaluationRequest,
+  async (params: GuardedEvaluationParams, cancellationToken: CancellationToken) => {
+    const cancellation = new AbortController();
+    if (cancellationToken.isCancellationRequested) cancellation.abort();
+    const subscription = cancellationToken.onCancellationRequested(() => cancellation.abort());
+    try {
+      const uri = params.uri;
+      const source =
+        params.source ??
+        (uri
+          ? analyzer.evaluationSource(uri, params.range, params.includePriorDefinitions !== false)
+          : "");
+      const result = await runtime.guardedEvaluate(
+        {
+          source,
+          uri,
+          policy: { ...settings.runtime.guard, ...(params.policy ?? {}) },
+          imports: uri ? analyzer.importSourceMap(uri) : {},
+          wrapBareExpression: params.wrapBareExpression,
+        },
+        cancellation.signal,
+      );
+      if (cancellationToken.isCancellationRequested) {
+        throw new ResponseError(LSPErrorCodes.RequestCancelled, "Evaluation cancelled.");
+      }
+      return result;
+    } finally {
+      subscription.dispose();
+    }
+  },
+);
 
 connection.onRequest(CapabilityRegistryRequest, () => capabilitySummary());
 
 connection.onRequest(RuntimeCapabilitiesRequest, () => runtime.capabilities);
+
+connection.onRequest(
+  "metta/browserWorkspaceReady",
+  async (): Promise<BrowserWorkspaceReadyResult> => {
+    if (!preopenedBrowserWorkspace) return { accepted: false, files: documents.all().length };
+    if (browserWorkspaceReady) return { accepted: true, files: documents.all().length };
+    browserWorkspaceFinalization ??= finalizePreopenedBrowserWorkspace();
+    return browserWorkspaceFinalization;
+  },
+);
 
 connection.onRequest("metta/stdlibDocument", (params: { uri: string }) =>
   analyzer.stdlibDocument(params.uri),

@@ -238,7 +238,7 @@ export function saveBrowserWorkspace(
   storage: StorageLike,
   store: BrowserFileStore,
   activeName: string,
-): void {
+): boolean {
   try {
     const snapshot: BrowserWorkspaceSnapshot = {
       version: 1,
@@ -246,7 +246,9 @@ export function saveBrowserWorkspace(
       files: store.snapshots(),
     };
     storage.setItem(BROWSER_WORKSPACE_STORAGE_KEY, JSON.stringify(snapshot));
+    return true;
   } catch {
     // Persistence is optional. Private browsing and storage quotas must not disable the IDE.
+    return false;
   }
 }

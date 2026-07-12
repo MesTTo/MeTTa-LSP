@@ -291,8 +291,9 @@ connection.onDidChangeConfiguration((change) => {
 
 documents.onDidOpen((event) => {
   documentLog.debug(`opened ${event.document.uri}`);
-  validateAndPublish(event.document);
 });
+// TextDocuments fires onDidChangeContent immediately after onDidOpen, then for every later edit.
+// Validate only here so opening a document does not index and publish the same version twice.
 documents.onDidChangeContent((change) => {
   validateAndPublish(change.document);
 });

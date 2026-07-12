@@ -1368,7 +1368,9 @@ export class Analyzer {
   // File creation, deletion, and rename can change whether an unchanged import path resolves. Rebuild the
   // indexed documents after those topology changes so their ImportRecords reflect the current provider.
   public refreshImportResolutions(): void {
-    const documents = [...this.documents.values()];
+    const documents = [...this.documents.values()].filter(
+      (document) => document.imports.length > 0,
+    );
     for (const document of documents) {
       this.replaceDocumentIndex(document.uri, document.text, document.version);
     }

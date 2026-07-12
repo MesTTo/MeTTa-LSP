@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import fc from "fast-check";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   BROWSER_WORKSPACE_ROOT,
   BROWSER_WORKSPACE_STORAGE_KEY,
@@ -16,7 +16,12 @@ import {
   type StorageLike,
   saveBrowserWorkspace,
 } from "../docs-site/.vitepress/theme/browser-ide/files";
+import {
+  BrowserIdeSession,
+  type BrowserIdeStatus,
+} from "../docs-site/.vitepress/theme/browser-ide/session";
 import { BrowserWorkerTransport } from "../docs-site/.vitepress/theme/browser-ide/transport";
+import { relatedBrowserWorkerUrl } from "../src/runtime/browserWorkerUrl";
 
 class MemoryStorage implements StorageLike {
   public readonly values = new Map<string, string>();
@@ -53,6 +58,28 @@ class FakeWorker {
     for (const listener of this.listeners) listener({ data: message } as MessageEvent<unknown>);
   }
 }
+
+class SilentSessionWorker extends EventTarget {
+  public static instances: SilentSessionWorker[] = [];
+  public terminated = false;
+
+  public constructor() {
+    super();
+    SilentSessionWorker.instances.push(this);
+  }
+
+  public postMessage(): void {}
+
+  public terminate(): void {
+    this.terminated = true;
+  }
+}
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+  SilentSessionWorker.instances.length = 0;
+});
 
 describe("browser IDE file store", () => {
   it("round-trips valid nested file names through workspace URIs", () => {
@@ -104,7 +131,7 @@ describe("browser IDE file store", () => {
   it("loads only valid snapshots and tolerates unavailable storage", () => {
     const store = new BrowserFileStore([{ name: "main.metta", text: "!(+ 1 1)" }]);
     const storage = new MemoryStorage();
-    saveBrowserWorkspace(storage, store, "main.metta");
+    expect(saveBrowserWorkspace(storage, store, "main.metta")).toBe(true);
     expect(loadBrowserWorkspace(storage)).toStrictEqual({
       version: 1,
       activeName: "main.metta",
@@ -121,6 +148,18 @@ describe("browser IDE file store", () => {
         setItem: () => undefined,
       }),
     ).toBeNull();
+    expect(
+      saveBrowserWorkspace(
+        {
+          getItem: () => null,
+          setItem: () => {
+            throw new Error("storage denied");
+          },
+        },
+        store,
+        "main.metta",
+      ),
+    ).toBe(false);
   });
 });
 
@@ -200,5 +239,68 @@ describe("browser IDE worker transport", () => {
       },
     ]);
     transport.dispose();
+  });
+});
+
+describe("browser IDE worker generations", () => {
+  it("propagates the owning worker generation to nested worker URLs", () => {
+    expect(
+      relatedBrowserWorkerUrl(
+        "../runtime/browserEvaluationWorker.js",
+        "https://example.test/browser-ide/server/browserServer.js?v=release-42",
+      ).href,
+    ).toBe("https://example.test/browser-ide/runtime/browserEvaluationWorker.js?v=release-42");
+    expect(
+      relatedBrowserWorkerUrl(
+        "./browserHyperposeWorker.js",
+        "https://example.test/browser-ide/runtime/browserEvaluationWorker.js",
+      ).href,
+    ).toBe("https://example.test/browser-ide/runtime/browserHyperposeWorker.js");
+  });
+});
+
+describe("browser IDE session lifecycle", () => {
+  function createSession(): {
+    readonly session: BrowserIdeSession;
+    readonly statuses: BrowserIdeStatus[];
+  } {
+    const statuses: BrowserIdeStatus[] = [];
+    const session = new BrowserIdeSession({
+      files: new BrowserFileStore([{ name: "main.metta", text: "!(+ 1 1)" }]),
+      workerUrl: "https://example.test/browserServer.js",
+      displayFile: async () => null,
+      onDiagnostics: () => undefined,
+      onFilesChanged: () => undefined,
+      onLog: () => undefined,
+      onStatus: (status) => statuses.push(status),
+    });
+    return { session, statuses };
+  }
+
+  it("does not let an abandoned initialization overwrite the stopped state", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("Worker", SilentSessionWorker);
+    const { session, statuses } = createSession();
+
+    const starting = session.start();
+    session.stop();
+    await expect(starting).rejects.toMatchObject({ name: "AbortError" });
+    await vi.advanceTimersByTimeAsync(8_000);
+
+    expect(statuses).toStrictEqual(["starting", "stopped"]);
+  });
+
+  it("terminates a failed worker before the user retries", async () => {
+    vi.stubGlobal("Worker", SilentSessionWorker);
+    const { session, statuses } = createSession();
+
+    const starting = session.start();
+    const worker = SilentSessionWorker.instances[0];
+    expect(worker).toBeDefined();
+    worker?.dispatchEvent(new Event("error"));
+
+    await expect(starting).rejects.toBeInstanceOf(Error);
+    expect(worker?.terminated).toBe(true);
+    expect(statuses).toStrictEqual(["starting", "error"]);
   });
 });

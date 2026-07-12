@@ -5,6 +5,10 @@ reference. Full-file validate includes core `check-types`; the cold row includes
 cache and declaration context, the warm row reuses them. Runtime rows include the worker boundary they
 exercise and use a wider regression threshold because worker startup is noisier.
 
+The browser IDE maximum-workspace row was added on a clean Node 22.22.2 arm64 host because the original
+workstation was under sustained I/O contention. Two release-gate runs recorded 196.58 ms and 200.52 ms
+medians; the table keeps the latter run as its regression baseline.
+
 | size | functions | operation | min ms | median ms |
 |---|---:|---|---:|---:|
 | small | 10 | validate (cold) | 1.00 | 1.30 |
@@ -40,6 +44,7 @@ exercise and use a wider regression threshold because worker startup is noisier.
 | runtime | 100 | semantic lint worker | 37.26 | 38.51 |
 | browser-runtime | 4 | browser guarded eval (hyperpose workers) | 88.46 | 90.26 |
 | browser-lsp | 1 | server initialize | 50.38 | 51.06 |
+| browser-ide | 7200 | preopened workspace ready (24 files) | 186.09 | 200.52 |
 | browser-small | 10 | validate | 1.07 | 1.49 |
 | browser-medium | 100 | validate | 1.44 | 10.49 |
 | browser-large | 1000 | validate | 6.84 | 69.52 |

@@ -11,7 +11,14 @@
   --vp-c-brand-1: #0b8f9d;
   --vp-c-brand-2: #0186db;
   --vp-c-brand-3: #ff9f2f;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-bg: #08717c;
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-hover-bg: #006da8;
+  --vp-button-brand-active-text: #ffffff;
+  --vp-button-brand-active-bg: #075e67;
   --metta-code-accent: #ff9f2f;
+  --metta-danger-button-bg: #a62336;
 }
 
 /* The hero illustration is the visual editor playing a generate-and-test search. Show it a little larger

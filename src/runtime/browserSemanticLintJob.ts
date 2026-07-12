@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 MesTTo
 // SPDX-License-Identifier: Apache-2.0
 
+import { relatedBrowserWorkerUrl } from "./browserWorkerUrl.js";
 import type { SemanticLintJob, SemanticLintJobFactory } from "./semanticLintJob.js";
 import type {
   SemanticLintWorkerRequest,
@@ -8,7 +9,7 @@ import type {
 } from "./semanticLintShared.js";
 
 function defaultWorkerUrl(): URL {
-  return new URL("../runtime/browserSemanticLintWorker.js", import.meta.url);
+  return relatedBrowserWorkerUrl("../runtime/browserSemanticLintWorker.js");
 }
 
 export function createBrowserSemanticLintJobFactory(

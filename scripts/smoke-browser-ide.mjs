@@ -3,7 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { createBrowserLspHarness } from "../bench/browser-lsp-harness.mjs";
+import { browserWorkerBuildId } from "./browser-worker-version.mjs";
 
 const rootUri = "file:///metta-browser-workspace";
 const mainUri = `${rootUri}/main.metta`;
@@ -54,6 +57,21 @@ const semanticTokenTypes = [
   "mettaPredicateFunction",
   "mettaAssertion",
 ];
+
+const browserWorkerRoot = fileURLToPath(
+  new URL("../docs-site/public/browser-ide/", import.meta.url),
+);
+const generatedWorkerVersion = await readFile(
+  new URL("../docs-site/.vitepress/theme/browser-ide/worker-version.generated.ts", import.meta.url),
+  "utf8",
+);
+const expectedWorkerBuildId = await browserWorkerBuildId(browserWorkerRoot);
+assert.ok(
+  generatedWorkerVersion.includes(
+    `export const BROWSER_WORKER_BUILD_ID = "${expectedWorkerBuildId}";`,
+  ),
+  "Expected the browser page worker generation to match every deployed worker bundle",
+);
 
 function positionOf(source, needle, characterOffset = 0) {
   const offset = source.indexOf(needle);
@@ -232,7 +250,68 @@ try {
     `Expected guarded evaluation to produce 42, got ${JSON.stringify(evaluation.queries)}`,
   );
 
-  process.stdout.write("browser IDE worker smoke passed\n");
+  const cancelledUri = `${rootUri}/cancelled.metta`;
+  const cancelledSource = `(= (forever $x) (forever $x))
+!(forever 0)`;
+  workspace.set(cancelledUri, cancelledSource);
+  await harness.open(cancelledUri, cancelledSource);
+  const startedAt = performance.now();
+  const cancelled = harness.requestWithId("metta/evaluateGuarded", {
+    uri: cancelledUri,
+    includePriorDefinitions: true,
+    wrapBareExpression: false,
+    policy: { fuel: 1_000_000, timeoutMs: 10_000 },
+  });
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  harness.cancelRequest(cancelled.id);
+  await assert.rejects(cancelled.promise, /Evaluation cancelled/u);
+  assert.ok(
+    performance.now() - startedAt < 2_000,
+    "Expected cancellation to stop browser evaluation before its timeout",
+  );
 } finally {
   harness.dispose();
 }
+
+const preopenedWorkspace = new Map([
+  [mainUri, mainSource],
+  [mathUri, mathSource],
+]);
+const preopenedHarness = createBrowserLspHarness(preopenedWorkspace, {
+  rootUri,
+  script: new URL("../docs-site/public/browser-ide/server/browserServer.js", import.meta.url),
+  timeoutMs: 20_000,
+});
+try {
+  await preopenedHarness.initialize({
+    capabilities: {
+      experimental: { mettaBrowserIde: { preopenedWorkspace: true } },
+    },
+  });
+  const diagnosticsReady = preopenedHarness.waitDiagnostics(mainUri, (items) =>
+    items.some((diagnostic) => diagnostic.code === "call.arity"),
+  );
+  preopenedHarness.notify("textDocument/didOpen", {
+    textDocument: { uri: mainUri, languageId: "metta", version: 0, text: mainSource },
+  });
+  preopenedHarness.notify("textDocument/didOpen", {
+    textDocument: { uri: mathUri, languageId: "metta", version: 0, text: mathSource },
+  });
+  const workspaceReady = await Promise.all([
+    preopenedHarness.request("metta/browserWorkspaceReady", {}),
+    preopenedHarness.request("metta/browserWorkspaceReady", {}),
+  ]);
+  assert.deepEqual(workspaceReady, [
+    { accepted: true, files: 2 },
+    { accepted: true, files: 2 },
+  ]);
+  assert.equal(preopenedHarness.serverRequestCount("metta/fs/listFiles"), 0);
+  assert.ok(
+    (await diagnosticsReady).some((diagnostic) => diagnostic.code === "call.arity"),
+    "Expected preopened browser workspace diagnostics after the readiness handshake",
+  );
+} finally {
+  preopenedHarness.dispose();
+}
+
+process.stdout.write("browser IDE worker smoke passed\n");

@@ -157,7 +157,6 @@ describe("Analyzer engine — fine-grained invalidation", () => {
       1,
       true,
     );
-
     const before = serialize(analyzer.validate("file:///ws/main.metta"));
     const runsAfterFirst = analyzer.diagnosticsComputationCount();
 
@@ -225,6 +224,9 @@ describe("Analyzer engine — file lifecycle", () => {
       1,
       true,
     );
+    analyzer.updateDocument("file:///ws/plain.metta", "(= (plain) 1)", 1, true);
+    const importerBeforeRefresh = analyzer.getDocument("file:///ws/main.metta");
+    const plainBeforeRefresh = analyzer.getDocument("file:///ws/plain.metta");
     expect(
       analyzer.validate("file:///ws/main.metta").some((d) => d.code === "import.unresolved"),
     ).toBe(true);
@@ -233,6 +235,8 @@ describe("Analyzer engine — file lifecycle", () => {
     analyzer.refreshFromDisk("file:///ws/lib.metta");
     analyzer.refreshImportResolutions();
 
+    expect(analyzer.getDocument("file:///ws/main.metta")).not.toBe(importerBeforeRefresh);
+    expect(analyzer.getDocument("file:///ws/plain.metta")).toBe(plainBeforeRefresh);
     expect(
       analyzer.validate("file:///ws/main.metta").some((d) => d.code === "import.unresolved"),
     ).toBe(false);

@@ -2,16 +2,16 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": [
     "src/server/browserServer.ts",
+    "src/runtime/browserHyperposeWorker.ts",
+    "src/runtime/browserSemanticLintWorker.ts",
     "src/language-service/index.ts",
-    "src/debug/mettaDebugAdapter.ts",
     "scripts/**/*.mjs",
-    "src/client/webview/visualiseMain.ts",
-    "src/dsl/index.ts"
+    "src/client/webview/visualiseMain.ts"
   ],
   "project": ["src/**/*.ts", "scripts/**/*.mjs"],
   "ignore": ["src/runtime/mettaTs.ts"],
   "ignoreBinaries": ["emacs"],
-  "ignoreDependencies": ["metta-ts-typescript-plugin", "@metta-ts/core"],
+  "ignoreDependencies": ["metta-ts-typescript-plugin"],
   "ignoreExportsUsedInFile": true,
   "rules": {
     "exports": "off",

@@ -58,13 +58,20 @@ interface BrowserIdeSessionOptions {
 }
 
 const semanticExtension: LSPClientExtension = semanticTokensClientExtension;
+const browserIdeExtension: LSPClientExtension = {
+  clientCapabilities: { experimental: { mettaBrowserIde: { preopenedWorkspace: true } } },
+};
+const BROWSER_WORKSPACE_READY_METHOD = "metta/browserWorkspaceReady";
 
 export class BrowserIdeSession {
   public readonly client: LSPClient;
   public readonly workspace: BrowserWorkspace;
   private readonly worker: Worker;
   private readonly transport: BrowserWorkerTransport;
+  private readonly lifecycle = new AbortController();
   private stopped = false;
+  private ready = false;
+  private connectionDisposed = false;
 
   public constructor(private readonly options: BrowserIdeSessionOptions) {
     this.options.onStatus("starting");
@@ -75,7 +82,7 @@ export class BrowserIdeSession {
       rootUri: BROWSER_WORKSPACE_ROOT,
       timeout: 8_000,
       sanitizeHTML: (html) => String(DOMPurify.sanitize(html, { USE_PROFILES: { html: true } })),
-      extensions: [...languageServerExtensions(), semanticExtension],
+      extensions: [...languageServerExtensions(), semanticExtension, browserIdeExtension],
       notificationHandlers: {
         "textDocument/publishDiagnostics": (_client, params: PublishDiagnosticsParams) => {
           options.onDiagnostics(params.uri, params.diagnostics);
@@ -106,17 +113,21 @@ export class BrowserIdeSession {
   public async start(): Promise<void> {
     this.client.connect(this.transport);
     try {
-      await this.client.initializing;
-      if (!this.stopped) this.options.onStatus("ready");
+      await this.waitForLifecycle(() => this.client.initializing);
+      await this.waitForLifecycle(() => this.workspace.whenConnected());
+      await this.waitForLifecycle(() => this.client.request(BROWSER_WORKSPACE_READY_METHOD, {}));
+      if (!this.stopped) {
+        this.ready = true;
+        this.options.onStatus("ready");
+      }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.options.onStatus("error", message);
+      if (!this.stopped && !this.lifecycle.signal.aborted) this.fail(error);
       throw error;
     }
   }
 
   public sync(): void {
-    this.client.sync();
+    if (!this.stopped && !this.lifecycle.signal.aborted) this.client.sync();
   }
 
   public notifyFileCreated(name: string): void {
@@ -131,45 +142,135 @@ export class BrowserIdeSession {
     this.notifyWatchedFile(browserFileUri(name), 3);
   }
 
-  public async evaluate(name: string): Promise<BrowserEvaluationResult> {
-    this.client.sync();
-    return this.client.request(
-      "metta/evaluateGuarded",
-      { uri: browserFileUri(name), includePriorDefinitions: true, wrapBareExpression: false },
-    );
+  public async evaluate(name: string, signal?: AbortSignal): Promise<BrowserEvaluationResult> {
+    if (!this.lifecycle.signal.aborted) this.client.sync();
+    const params = {
+      uri: browserFileUri(name),
+      includePriorDefinitions: true,
+      wrapBareExpression: false,
+    };
+    return this.request("metta/evaluateGuarded", params, signal);
   }
 
-  public async documentSymbols(name: string): Promise<readonly BrowserSymbol[]> {
-    this.client.sync();
+  public async documentSymbols(
+    name: string,
+    signal?: AbortSignal,
+  ): Promise<readonly BrowserSymbol[]> {
+    if (!this.lifecycle.signal.aborted) this.client.sync();
+    const params = { textDocument: { uri: browserFileUri(name) } };
     return (
-      (await this.client.request("textDocument/documentSymbol", {
-        textDocument: { uri: browserFileUri(name) },
-      })) ?? []
+      (await this.request<typeof params, readonly BrowserSymbol[] | null>(
+        "textDocument/documentSymbol",
+        params,
+        signal,
+      )) ?? []
     );
   }
 
   public stop(): void {
     if (this.stopped) return;
     this.stopped = true;
+    this.ready = false;
+    this.lifecycle.abort(this.lifecycleError("Browser IDE session stopped."));
+    this.disposeConnection();
+    this.options.onStatus("stopped");
+  }
+
+  private notifyWatchedFile(uri: string, type: 1 | 2 | 3): void {
+    if (this.ready) {
+      this.client.notification("workspace/didChangeWatchedFiles", { changes: [{ uri, type }] });
+    }
+  }
+
+  private readonly workerFailed = (event: ErrorEvent): void => {
+    if (!this.stopped) this.fail(event.message || "Browser LSP worker failed.");
+  };
+
+  private readonly workerMessageFailed = (): void => {
+    if (!this.stopped) this.fail("Browser LSP worker sent an invalid message.");
+  };
+
+  private fail(reason: unknown): void {
+    if (this.lifecycle.signal.aborted) return;
+    const error = reason instanceof Error ? reason : new Error(String(reason));
+    this.ready = false;
+    this.lifecycle.abort(error);
+    this.disposeConnection();
+    this.options.onStatus("error", error.message);
+  }
+
+  private disposeConnection(): void {
+    if (this.connectionDisposed) return;
+    this.connectionDisposed = true;
     this.client.disconnect();
     this.transport.dispose();
     this.worker.removeEventListener("error", this.workerFailed);
     this.worker.removeEventListener("messageerror", this.workerMessageFailed);
     this.worker.terminate();
-    this.options.onStatus("stopped");
   }
 
-  private notifyWatchedFile(uri: string, type: 1 | 2 | 3): void {
-    this.client.notification("workspace/didChangeWatchedFiles", { changes: [{ uri, type }] });
+  private request<Params, Result>(
+    method: string,
+    params: Params,
+    signal?: AbortSignal,
+  ): Promise<Result> {
+    return this.waitForLifecycle(
+      () => this.client.request<Params, Result>(method, params),
+      signal,
+      () => this.client.cancelRequest(params),
+    );
   }
 
-  private readonly workerFailed = (event: ErrorEvent): void => {
-    if (!this.stopped) this.options.onStatus("error", event.message || "Browser LSP worker failed.");
-  };
+  private waitForLifecycle<T>(
+    startWork: () => Promise<T>,
+    operationSignal?: AbortSignal,
+    cancelWork?: () => void,
+  ): Promise<T> {
+    const lifecycleSignal = this.lifecycle.signal;
+    if (lifecycleSignal.aborted) return Promise.reject(lifecycleSignal.reason);
+    if (operationSignal?.aborted) return Promise.reject(operationSignal.reason);
+    let work: Promise<T>;
+    try {
+      work = startWork();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+    return new Promise<T>((resolve, reject) => {
+      let settled = false;
+      const finish = (action: () => void): void => {
+        if (settled) return;
+        settled = true;
+        lifecycleSignal.removeEventListener("abort", onLifecycleAbort);
+        operationSignal?.removeEventListener("abort", onOperationAbort);
+        action();
+      };
+      const cancel = (signal: AbortSignal): void => {
+        try {
+          cancelWork?.();
+        } catch {
+          // Local cancellation still settles even if the disconnected transport cannot send its notice.
+        } finally {
+          finish(() => reject(signal.reason ?? this.lifecycleError("Operation cancelled.")));
+        }
+      };
+      const onLifecycleAbort = (): void => cancel(lifecycleSignal);
+      const onOperationAbort = (): void => {
+        if (operationSignal !== undefined) cancel(operationSignal);
+      };
+      lifecycleSignal.addEventListener("abort", onLifecycleAbort, { once: true });
+      operationSignal?.addEventListener("abort", onOperationAbort, { once: true });
+      void work.then(
+        (value) => finish(() => resolve(value)),
+        (error: unknown) => finish(() => reject(error)),
+      );
+    });
+  }
 
-  private readonly workerMessageFailed = (): void => {
-    if (!this.stopped) this.options.onStatus("error", "Browser LSP worker sent an invalid message.");
-  };
+  private lifecycleError(message: string): Error {
+    const error = new Error(message);
+    error.name = "AbortError";
+    return error;
+  }
 }
 
 export type { Diagnostic };

@@ -4,6 +4,14 @@
 
 - Add a browser-hosted multi-file MeTTa IDE with live LSP diagnostics, completion, hover, navigation,
   rename, formatting, symbols, semantic tokens, workspace persistence, and guarded evaluation.
+- Cancel obsolete browser requests and evaluation workers after edits, file switches, restarts, and page
+  teardown. Persist the final editor state when the page is hidden or unloaded.
+- Open browser workspaces through one indexed startup pass, avoid duplicate open diagnostics, and version all
+  nested worker assets from one content hash so a deployment cannot mix worker releases.
+- Add browser IDE keyboard tab navigation, named editor input, reduced-motion behavior, narrow-screen command
+  access, readable contrast, and storage-failure reporting.
+- Pin the documentation toolchain to a patched esbuild release while VitePress remains on its stable line.
+- Update the MeTTa TS runtime, browser, graph, Hyperon, Node, Python, and Prolog packages to 1.1.4.
 - Refresh cached import resolution when workspace files are created, deleted, or renamed.
 - Register configuration-change notifications only when the LSP client advertises dynamic registration.
 - Add an editor-neutral Emacs major mode with static MeTTa font-lock and setup for Eglot and lsp-mode.

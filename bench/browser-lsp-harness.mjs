@@ -24,12 +24,13 @@ export function createBrowserLspHarness(
   let nextId = 1;
   const pending = new Map();
   const diagnosticsWaiters = [];
+  const serverRequestCounts = new Map();
   const send = (message) => worker.postMessage({ jsonrpc: "2.0", ...message });
   const respond = (id, result) => send({ id, result });
   const notify = (method, params) => send({ method, params });
-  const request = (method, params) =>
-    new Promise((resolve, reject) => {
-      const id = nextId++;
+  const requestWithId = (method, params) => {
+    const id = nextId++;
+    const promise = new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         pending.delete(id);
         reject(new Error(`${method} timed out`));
@@ -46,6 +47,9 @@ export function createBrowserLspHarness(
       });
       send({ id, method, params });
     });
+    return { id, promise };
+  };
+  const request = (method, params) => requestWithId(method, params).promise;
   const waitDiagnostics = (uri, predicate = () => true) =>
     new Promise((resolve, reject) => {
       const waiter = {
@@ -76,6 +80,9 @@ export function createBrowserLspHarness(
       if (message.error) waiter.reject(new Error(String(message.error.message ?? message.error)));
       else waiter.resolve(message.result);
       return;
+    }
+    if (message.id !== undefined && typeof message.method === "string") {
+      serverRequestCounts.set(message.method, (serverRequestCounts.get(message.method) ?? 0) + 1);
     }
     if (message.method === "metta/fs/watchPattern") {
       respond(message.id, { watching: true });
@@ -164,8 +171,15 @@ export function createBrowserLspHarness(
       return diagnostics;
     },
     request,
+    requestWithId,
+    cancelRequest(id) {
+      notify("$/cancelRequest", { id });
+    },
     notify,
     waitDiagnostics,
+    serverRequestCount(method) {
+      return serverRequestCounts.get(method) ?? 0;
+    },
     dispose() {
       void worker.terminate();
     },
