@@ -517,4 +517,35 @@ function fitWhenReady(tries = 30): void {
 requestAnimationFrame(() => fitWhenReady());
 new ResizeObserver(() => grapher.fitView()).observe(canvas);
 
+// Drag-to-pan implementation
+let isDragging = false;
+let lastMouseX = 0;
+let lastMouseY = 0;
+
+canvas.addEventListener("mousedown", (e) => {
+  if (e.button === 0) {
+    isDragging = true;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+    canvas.style.cursor = "grabbing";
+  }
+});
+
+window.addEventListener("mousemove", (e) => {
+  if (isDragging) {
+    const dx = e.clientX - lastMouseX;
+    const dy = e.clientY - lastMouseY;
+    grapher.panBy(dx, dy);
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+  }
+});
+
+window.addEventListener("mouseup", () => {
+  if (isDragging) {
+    isDragging = false;
+    canvas.style.cursor = "default";
+  }
+});
+
 refreshUi();

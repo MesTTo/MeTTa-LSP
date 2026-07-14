@@ -39,6 +39,7 @@ dist/**/__tests__/**
 dist/**/__fixtures__/**
 node_modules/**/__pycache__/**
 node_modules/**/*.pyc
+node_modules/metta-ts-typescript-plugin
 .playwright-mcp/**
 gate*.log
 coverage/**
