@@ -41,6 +41,10 @@ const required = [
   "node_modules/@metta-ts/prolog/package.json",
   "node_modules/@metta-ts/py/package.json",
   "node_modules/pythonia/package.json",
+  // contributes.typescriptServerPlugins names this plugin, and tsserver resolves it against
+  // <extension>/node_modules. Without the built bundle at exactly this path the contribution dangles and
+  // the plugin dies silently, which a VSIX that packages cleanly will not otherwise tell you.
+  "node_modules/metta-ts-typescript-plugin/dist/index.js",
   "syntaxes/metta.tmLanguage.json",
   "snippets/metta.json",
   "language-configuration.json",

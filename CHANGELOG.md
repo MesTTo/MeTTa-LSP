@@ -10,6 +10,10 @@
   nested worker assets from one content hash so a deployment cannot mix worker releases.
 - Add browser IDE keyboard tab navigation, named editor input, reduced-motion behavior, narrow-screen command
   access, readable contrast, and storage-failure reporting.
+- Ship the TypeScript language-service plugin at the path tsserver resolves it from. `npm install` packs the
+  plugin into `node_modules` as a real directory instead of a symlink vsce cannot package, the build mirrors
+  the bundle into it, and the VSIX check now requires it, so a packaged extension cannot lose the plugin
+  silently.
 - Pin the documentation toolchain to a patched esbuild release while VitePress remains on its stable line.
 - Update the MeTTa TS runtime, browser, graph, Hyperon, Node, Python, and Prolog packages to 1.1.4.
 - Refresh cached import resolution when workspace files are created, deleted, or renamed.
