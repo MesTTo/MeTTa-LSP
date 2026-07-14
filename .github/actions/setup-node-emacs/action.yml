@@ -14,3 +14,10 @@ runs:
     - name: Install Node dependencies
       shell: bash
       run: npm ci
+    # test/browser-ide.test.ts imports the IDE session from docs-site/, whose dependencies live in
+    # docs-site/package.json and are not in the root lockfile, so the root install alone leaves the suite
+    # unable to resolve @codemirror/lsp-client. A local checkout has them from working in docs-site; a clean
+    # CI checkout does not, which is why the suite failed here and passed on a laptop.
+    - name: Install docs-site dependencies
+      shell: bash
+      run: npm ci --prefix docs-site
