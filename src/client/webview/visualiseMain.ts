@@ -170,7 +170,9 @@ const canvas = mustGet("canvas");
 const bar = mustGet("bar");
 const sourcePane = mustGet("source");
 
-const grapher = new MeTTaGrapher(canvas, { source: payload().source });
+// panOnLeftDrag: the canvas owns this whole panel rather than sitting in a scrolling article, so a drag
+// reads as "move the picture". Shift-drag still rubber-bands, so box-select stays available.
+const grapher = new MeTTaGrapher(canvas, { source: payload().source, panOnLeftDrag: true });
 // Expose the instance the way the metta-ts site does, so the console (and tests) can drive it:
 // document.querySelector(".canvas").grapher
 (canvas as HTMLElement & { grapher?: MeTTaGrapher }).grapher = grapher;
