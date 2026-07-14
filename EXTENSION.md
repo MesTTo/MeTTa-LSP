@@ -142,12 +142,27 @@ The VS Code extension adds status bar controls, settings quick-pick, run and
 trace buttons, Test Explorer integration for assert forms, and a launch
 configuration for stepping through reductions with the debug adapter.
 
+Hover any symbol for a rust-analyzer-style card: the signature, the type, where
+it is defined, and a link to the definitions.
+
+<img src="https://raw.githubusercontent.com/MesTTo/MeTTa-LSP/main/docs/images/02-hover.png" width="100%" alt="Hovering the factorial symbol shows a card with its (-> Number Number) type, documentation, and a link to its two definitions" />
+
+Completion offers workspace symbols and builtins as you type, and auto-imports
+one from another module when you accept it.
+
+<img src="https://raw.githubusercontent.com/MesTTo/MeTTa-LSP/main/docs/images/04-completion.png" width="100%" alt="Typing (sum offers sum-of-squares with an auto-import from another module, sum-to, and guarded-sum" />
+
 ### Diagnostics and lint
 
 Diagnostics cover syntax errors, duplicate definitions, unresolved symbols,
 undefined types, unbound spaces, arity mismatches, literal type mismatches,
 project lint rules, TypeScript host-bridge checks, and read-only Prolog parser
 diagnostics for referenced `.pl` bridge files.
+
+Every diagnostic carries its rule code, so you can read the exact rule that
+fired and suppress it by name.
+
+<img src="https://raw.githubusercontent.com/MesTTo/MeTTa-LSP/main/docs/images/03-diagnostics.png" width="100%" alt="Editor squiggles and the Problems panel showing type.undefined, call.arity, call.typeMismatch, definition.duplicate, and Prolog-bridge diagnostics with their rule codes" />
 
 Suppressions are visible by design. Inline comments such as
 `; @suppress symbol.possibleTypo` hide one diagnostic and get hover text that
@@ -156,10 +171,23 @@ using the same structural matcher as lint rules.
 
 ### Run, test, trace, visualise
 
+Visualise steps a query through its reduction as an interactive graph. Play it,
+scrub it, or step one rewrite at a time, and switch between the graph and nested
+blocks. Each frame is one settled reduction state, so you watch the term grow as
+it recurses and collapse as it resolves.
+
+<img src="https://raw.githubusercontent.com/MesTTo/MeTTa-LSP/main/docs/images/visualise-reduction.gif" width="100%" alt="The MeTTaGrapher panel stepping (sum-to 3) through its reduction, one settled state per frame" />
+
 Run commands evaluate top-level bang queries and print MeTTa syntax back to the
-output channel or CLI. Test discovery runs top-level assert forms. Trace records
-each reduction step for a query, and visualise writes an interactive
-MeTTaGrapher HTML view.
+output channel or CLI.
+
+<img src="https://raw.githubusercontent.com/MesTTo/MeTTa-LSP/main/docs/images/05-run.png" width="100%" alt="The MeTTa output channel showing query results: (fib 10) => 55, a superpose fanning to 2 4 6, and a match query resolving to Ann" />
+
+Test discovery turns each top-level assert form into a Test Explorer entry with
+an inline run button in the gutter. Trace records each reduction step for a
+query, and visualise writes the interactive MeTTaGrapher view above.
+
+<img src="https://raw.githubusercontent.com/MesTTo/MeTTa-LSP/main/docs/images/07-testing.png" width="100%" alt="The Test Explorer listing 10-testing.metta and green run-test icons in the editor gutter beside each assert form" />
 
 Guarded evaluation runs in a stateless worker with fuel, timeout, output, and
 stack limits. Unguarded run is available for trusted programs that intentionally
