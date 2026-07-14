@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.0 - 2026-07-15
 
 - Add a browser-hosted multi-file MeTTa IDE with live LSP diagnostics, completion, hover, navigation,
   rename, formatting, symbols, semantic tokens, workspace persistence, and guarded evaluation.
