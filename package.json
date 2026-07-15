@@ -187,7 +187,7 @@
       {
         "id": "mettaComparisonOperator",
         "superType": "operator",
-        "description": "MeTTa comparison operators such as <, <=, >, >=, and ==."
+        "description": "MeTTa comparison operators such as <, <=, >, >=, ==, and !=."
       },
       {
         "id": "mettaLogicalOperator",

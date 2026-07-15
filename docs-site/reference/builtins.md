@@ -488,6 +488,20 @@ Subtracts second argument from first one
 
 **Returns** `Number` — Difference
 
+### `!=` {#_21__3d_}
+
+```metta
+(-> $t $t Bool)
+```
+
+Checks inequality of two arguments of the same type
+
+**Parameters**
+- `$t` — First argument
+- `$t` — Second argument
+
+**Returns** `Bool` — True if the two arguments are not equal, False otherwise
+
 ### `*` {#_2a_}
 
 ```metta

@@ -88,6 +88,7 @@ export const OPERATORS = new Set([
   ">",
   ">=",
   "==",
+  "!=",
   "and",
   "or",
   "not",
@@ -173,7 +174,7 @@ export const METTA_EVALUATION_FORMS = new Set([
 export const METTA_QUOTE_FORMS = new Set(["quote", "unquote", "noeval"]);
 
 export const METTA_ARITHMETIC_OPERATORS = new Set(["+", "-", "*", "/", "%"]);
-export const METTA_COMPARISON_OPERATORS = new Set(["<", "<=", ">", ">=", "=="]);
+export const METTA_COMPARISON_OPERATORS = new Set(["<", "<=", ">", ">=", "==", "!="]);
 export const METTA_LOGICAL_OPERATORS = new Set(["and", "or", "not", "xor"]);
 
 export const METTA_MATH_FUNCTIONS = new Set([

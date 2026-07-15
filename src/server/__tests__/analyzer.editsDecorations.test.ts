@@ -170,6 +170,7 @@ describe("decorations", () => {
       "!(assertEqual (+ 1 1) 2)",
       "!(+ 1 2)",
       "!(<= 1 2)",
+      "!(!= 1 2)",
       "!(and True False)",
       "(:: x)",
     ].join("\n");
@@ -203,6 +204,7 @@ describe("decorations", () => {
     expect(typeOf("assertEqual")).toBe("mettaAssertion");
     expect(typeOf("+")).toBe("mettaArithmeticOperator");
     expect(typeOf("<=")).toBe("mettaComparisonOperator");
+    expect(typeOf("!=")).toBe("mettaComparisonOperator");
     expect(typeOf("and")).toBe("mettaLogicalOperator");
     expect(decoded.some((token) => token.text === "::")).toBe(false);
   });

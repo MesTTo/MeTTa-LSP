@@ -16,6 +16,7 @@ describe("builtins.ts catalog vs @metta-ts/core", () => {
   it("core exposes a non-trivial builtin type catalog with correct arities", () => {
     expect(core.size).toBeGreaterThan(50);
     expect(core.get("+")).toStrictEqual({ name: "+", type: "(-> Number Number Number)", arity: 2 });
+    expect(core.get("!=")).toStrictEqual({ name: "!=", type: "(-> $t $t Bool)", arity: 2 });
     expect(core.get("not")).toStrictEqual({ name: "not", type: "(-> Bool Bool)", arity: 1 });
   });
 

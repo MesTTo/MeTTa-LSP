@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "MeTTa",
   "scopeName": "source.metta",
-  "comment": "Lexical token model shared with the editor, hover code fences, output channels, and the metta-lang.dev / MeTTaLingo highlighter: it colours comments, strings, numbers, @doc atoms, $variables, &space refs, capitalized type/value atoms, %Special% meta-types, the core operators : = -> ! ==, and parens. Meaning-based colouring (definition vs call, parameter vs free variable, known type or keyword) is layered on top by the server's semantic tokens, which a static highlighter cannot do. A GitHub Light/Dark theme reproduces the metta-lang.dev palette (green parens, red operators, orange variables, blue numbers, purple doc atoms).",
+  "comment": "Lexical token model shared with the editor, hover code fences, output channels, and the metta-lang.dev / MeTTaLingo highlighter: it colours comments, strings, numbers, @doc atoms, $variables, &space refs, capitalized type/value atoms, %Special% meta-types, the core operators : = -> ! == !=, and parens. Meaning-based colouring (definition vs call, parameter vs free variable, known type or keyword) is layered on top by the server's semantic tokens, which a static highlighter cannot do. A GitHub Light/Dark theme reproduces the metta-lang.dev palette (green parens, red operators, orange variables, blue numbers, purple doc atoms).",
   "patterns": [
     { "include": "#comment" },
     { "include": "#string" },
@@ -93,7 +93,7 @@
       "patterns": [
         {
           "name": "keyword.operator.metta",
-          "match": "(?<![^\\s()\\[\\]{}])(?:==|~=)(?![^\\s()\\[\\]{}])"
+          "match": "(?<![^\\s()\\[\\]{}])(?:==|!=|~=)(?![^\\s()\\[\\]{}])"
         }
       ]
     },

@@ -87,6 +87,7 @@ describe("MeTTa TextMate grammar", () => {
     expect(firstMatch("control", "(-> A B)")).toBe("->");
     expect(firstMatch("control", "(! (foo))")).toBe("!");
     expect(firstMatch("operator", "(== 1 1)")).toBe("==");
+    expect(firstMatch("operator", "(!= 1 2)")).toBe("!=");
     // The trailing ! of import!, the `=` pair of `==`, and the colons in `::` are not control atoms.
     expect(re("control").exec("(import! m)")).toBeNull();
     expect(re("control").exec("(== 1 1)")).toBeNull();

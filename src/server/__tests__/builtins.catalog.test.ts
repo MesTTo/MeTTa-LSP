@@ -81,7 +81,7 @@ describe("interpreter-derived builtin catalog", () => {
     expect(BUILTIN_BY_NAME.get("py-dict")?.source).toBe("@metta-ts/py bridge");
     expect(BUILTIN_BY_NAME.has("sequential")).toBe(false);
     expect(BUILTIN_BY_NAME.has("print")).toBe(false);
-    expect(BUILTIN_BY_NAME.has("!=")).toBe(false);
+    expect(BUILTIN_BY_NAME.get("!=")?.signatures).toStrictEqual(["(-> $t $t Bool)"]);
   });
 
   it("keeps semantic token groups tied to known stdlib, operator, or special-form symbols", () => {

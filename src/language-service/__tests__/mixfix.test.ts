@@ -18,6 +18,7 @@ describe("toMixfix", () => {
 
   it("renders comparison and logic with and binding tighter than or", () => {
     expect(toMixfix("(== a b)")).toBe("a == b");
+    expect(toMixfix("(!= a b)")).toBe("a != b");
     expect(toMixfix("(or a (and b c))")).toBe("a or b and c");
     expect(toMixfix("(and (or a b) c)")).toBe("(a or b) and c");
     expect(toMixfix("(not (== a b))")).toBe("not (a == b)");
