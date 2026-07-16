@@ -18,6 +18,10 @@ npm run setup:mcp -- --all     # both
 
 Applying is idempotent: an existing registration is left alone.
 
+The Claude Code and Codex modes also install the complete `skills/metta-lsp`
+directory, including `agents/openai.yaml`. Set `CLAUDE_CONFIG_DIR` or
+`CODEX_HOME` to install into a non-default agent root.
+
 ## OmegaClaw
 
 OmegaClaw does not consume MCP client config. It exposes agent tools through its MeTTa `getSkills` catalogue.

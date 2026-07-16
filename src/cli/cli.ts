@@ -27,8 +27,22 @@ import { CAPABILITIES, CAPABILITY_IDS, capabilitySummary } from "../server/capab
 import { NodePrologDiagnosticProvider } from "../server/nodePrologDiagnostics.js";
 import { flagValue, positionalArgs } from "./args.js";
 import { startRepl } from "./repl.js";
+import {
+  inspectStdlib,
+  renderStdlibError,
+  renderStdlibInspection,
+  renderStdlibList,
+  stdlibCatalog,
+} from "./stdlib.js";
 
-const HELP = `metta-lsp <command> [args]\n\nCommands:\n  capabilities\n  check <file> [--json] [--show-suppressed]\n  symbols <file> [--json]\n  hover <file> <line> <character> [--json]\n  def <file> <line> <character> [--json]\n  host-type <file> <line> <character> [--json]\n  explain <file> <line> <character> [--json]\n  refs <file> <line> <character> [--json]\n  fmt <file> [--check]\n  lint <file> [--json] [--fix]\n  search <file> "<pattern>" [--json]\n  replace <file> "<pattern>" "<template>" [--write]\n  test <file> [--json] [--tap] [--junit]\n  run <file> [--unguarded]\n  trace <file> "<query>" [--json] [--max N]\n  visualise <file> "<query>" [--out file.html] [--block]\n  doc [root] [--json] [--build] [--serve] [--open] [--port N] [--base PATH]\n  repl [file]\n  lsp --stdio\n  mcp --stdio\n\nMost commands take --json for machine-readable output.`;
+// Listing the whole stdlib is commonly piped into a pager or head. Treat a closed downstream pipe as normal
+// termination instead of printing an uncaught EPIPE stack trace.
+process.stdout.on("error", (error: NodeJS.ErrnoException) => {
+  if (error.code === "EPIPE") process.exit(0);
+  throw error;
+});
+
+const HELP = `metta-lsp <command> [args]\n\nCommands:\n  capabilities\n  list stdlib [--json]\n  inspect <name> [--json]\n  check <file> [--json] [--show-suppressed]\n  symbols <file> [--json]\n  hover <file> <line> <character> [--json]\n  def <file> <line> <character> [--json]\n  host-type <file> <line> <character> [--json]\n  explain <file> <line> <character> [--json]\n  refs <file> <line> <character> [--json]\n  fmt <file> [--check]\n  lint <file> [--json] [--fix]\n  search <file> "<pattern>" [--json]\n  replace <file> "<pattern>" "<template>" [--write]\n  test <file> [--json] [--tap] [--junit]\n  run <file> [--unguarded]\n  trace <file> "<query>" [--json] [--max N]\n  visualise <file> "<query>" [--out file.html] [--block]\n  doc [workspace] [--json] [--build] [--serve] [--open] [--port N] [--base PATH]\n      [--module-roots PATHS] [--host-roots PATHS]\n  repl [file]\n  lsp --stdio\n  mcp --stdio\n\nMost commands take --json for machine-readable output.`;
 
 function usage(): never {
   console.error(HELP);
@@ -100,12 +114,8 @@ function findDocsRepoRoot(start: string): string | null {
   }
 }
 
-function docsRepoRoot(args: readonly string[]): string {
-  const requested = positionalArgs(args)[0];
-  const root =
-    requested === undefined
-      ? (findDocsRepoRoot(process.cwd()) ?? findDocsRepoRoot(cliPackageRoot()))
-      : path.resolve(requested);
+function docsRepoRoot(): string {
+  const root = findDocsRepoRoot(process.cwd()) ?? findDocsRepoRoot(cliPackageRoot());
   if (root === null || !fs.existsSync(path.join(root, "docs-site/package.json")))
     throw new Error("metta-lsp doc must run from a checkout with docs-site/package.json");
   return root;
@@ -146,12 +156,15 @@ function npmDocsScript(
 }
 
 async function runDocsCommand(args: readonly string[], json: boolean): Promise<void> {
-  const root = docsRepoRoot(args);
+  const roots = positionalArgs(args);
+  if (roots.length > 1) throw new Error("metta-lsp doc accepts at most one workspace root");
+  const root = docsRepoRoot();
+  const workspaceRoot = roots[0] ?? "examples";
   const defaults = defaultMettaDocsOptions(root);
   const result = await generateMettaDocs({
     ...defaults,
-    moduleRoots: parseRootList(root, flagValue(args, "--module-roots"), "examples"),
-    hostRoots: parseRootList(root, flagValue(args, "--host-roots"), "examples"),
+    moduleRoots: parseRootList(root, flagValue(args, "--module-roots"), workspaceRoot),
+    hostRoots: parseRootList(root, flagValue(args, "--host-roots"), workspaceRoot),
   });
   const summary = {
     docsRoot: result.docsRoot,
@@ -191,6 +204,7 @@ async function main(): Promise<void> {
     return;
   }
   const json = args.includes("--json");
+  const operands = positionalArgs(args);
   if (!command) usage();
   if (command === "lsp" && args.includes("--stdio")) {
     await import("../server/server.js");
@@ -208,14 +222,35 @@ async function main(): Promise<void> {
     return;
   }
   if (command === "repl") {
-    await startRepl(positionalArgs(args)[0]);
+    await startRepl(operands[0]);
     return;
   }
   if (command === "doc" || command === "docs") {
     await runDocsCommand(args, json);
     return;
   }
-  const operands = positionalArgs(args);
+  if (command === "list") {
+    if (operands.length !== 1 || operands[0] !== "stdlib") usage();
+    const catalog = stdlibCatalog();
+    if (json) print(catalog, true);
+    else console.log(renderStdlibList(catalog));
+    return;
+  }
+  if (command === "inspect") {
+    const target = operands[0];
+    if (target === undefined || operands.length !== 1) usage();
+    const lookup = inspectStdlib(target);
+    if (!lookup.ok) {
+      console.error(
+        json ? JSON.stringify({ error: lookup.error }, null, 2) : renderStdlibError(lookup.error),
+      );
+      process.exitCode = lookup.error.code === "stdlib.ambiguous" ? 2 : 1;
+      return;
+    }
+    if (json) print({ inspection: lookup.value }, true);
+    else console.log(renderStdlibInspection(lookup.value));
+    return;
+  }
   const file = operands[0];
   if (!file) usage();
   // Structural search and replace treat code as data: they match a MeTTa pattern over the file's forms and

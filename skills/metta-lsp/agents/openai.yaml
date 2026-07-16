@@ -1,0 +1,4 @@
+interface:
+  display_name: "MeTTa LSP"
+  short_description: "Navigate, inspect, and document MeTTa code"
+  default_prompt: "Use $metta-lsp to inspect this MeTTa workspace with language-aware tools."

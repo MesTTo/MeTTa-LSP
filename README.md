@@ -282,6 +282,8 @@ npm link
 | Command | What it does |
 | --- | --- |
 | `capabilities` | Prints the capability ledger and surface coverage. |
+| `list stdlib [--json]` | Lists the default library, labeled extensions, and builtin modules. |
+| `inspect <name> [--json]` | Shows a builtin or module's signatures, docs, parameters, return value, and source. |
 | `check <file> [--json] [--show-suppressed]` | Runs parser, analyzer, lint, bridge, and optional diagnostics. |
 | `symbols <file> [--json]` | Prints the document outline. |
 | `hover <file> <line> <character> [--json]` | Shows hover text at a 1-based editor position. |
@@ -297,12 +299,24 @@ npm link
 | `run <file> [--unguarded]` | Evaluates top-level bang queries. Use `--unguarded` only for trusted host interop. |
 | `trace <file> "<query>" [--json] [--max N]` | Shows each reduction step for a query. |
 | `visualise <file> "<query>" [--out file.html] [--block]` | Writes a reduction graph HTML view. |
-| `doc [root] [--json] [--build] [--serve] [--open] [--port N] [--base PATH]` | Generates or serves MeTTa docs for a workspace. |
+| `doc [workspace] [--json] [--build] [--serve] [--open] [--port N] [--base PATH]` | Generates or serves MeTTa docs for a workspace. |
 | `repl [file]` | Starts an interactive MeTTa REPL, optionally seeded with a file. |
 | `lsp --stdio` | Starts the language server over stdio. |
 | `mcp --stdio` | Starts the MCP server over stdio. |
 
 Most read commands accept `--json` for scripts and agents.
+
+List and inspect the default library known to MeTTa-LSP, including bundled host
+bridges and modules supplied by the installed runtime:
+
+```sh
+metta-lsp list stdlib
+metta-lsp inspect '+'
+metta-lsp inspect json::json-encode --json
+```
+
+The list separates core globals, MeTTa-LSP extensions, host extensions, and
+import-gated modules. Qualify an ambiguous name with `global::` or `<module>::`.
 
 ### Suppression example
 
@@ -369,9 +383,10 @@ npm run setup:mcp -- --claude --codex
 ```
 
 The setup script registers `metta-lsp` as a stdio MCP server pointing at
-`dist/mcp/server.js`. Agents can call granular tools such as `lsp_diagnostics`,
-`lsp_hover`, `lsp_workspace_symbols`, and `lsp_guarded_evaluate`, or the
-operation-dispatched `lsp` tool.
+`dist/mcp/server.js`. It also installs the shipped `metta-lsp` skill for Claude
+Code and Codex, including its agent metadata. Agents can call tools such as
+`lsp_diagnostics`, `lsp_hover`, `lsp_workspace_symbols`, and
+`lsp_guarded_evaluate`, or the operation-dispatched `lsp` tool.
 
 Run the setup script with no flags to print snippets:
 
@@ -488,6 +503,12 @@ Generate the reference pages:
 npm run docs:builtins
 npm run docs:metta
 ```
+
+Document portable MeTTa APIs with structured `@doc`, `@desc`, `@params`, and
+`@return` atoms beside a type declaration. MeTTa-LSP also uses contiguous `;;`
+comments directly above a declaration or definition as local fallback docs.
+The [CLI documentation](https://mestto.github.io/MeTTa-LSP/lsp/cli) contains the
+exact syntax, generation flags, and official MeTTa reference links.
 
 Use the CLI docs command when you want to generate, build, or serve docs from a
 workspace root:

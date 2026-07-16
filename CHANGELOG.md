@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Add `metta-lsp list stdlib` and `metta-lsp inspect` for the MeTTa-LSP default
+  library and installed builtin modules, with qualified names, structured JSON,
+  ambiguity errors, suggestions, and broken-pipe handling.
+- Expand the shipped MeTTa-LSP skill with CLI, stdlib, official MeTTa docs,
+  structured `@doc` syntax, local doc comments, and exact docs commands. Install
+  the complete skill for Claude Code and Codex.
+- Interpret the positional argument to `metta-lsp doc` as its workspace root
+  while locating `docs-site` from the MeTTa-LSP checkout.
+
 ## 0.12.0 - 2026-07-15
 
 - Add a browser-hosted multi-file MeTTa IDE with live LSP diagnostics, completion, hover, navigation,

@@ -7,8 +7,8 @@
 // findReferences, …) and takes its workspace from the client's working directory.
 //
 //   node scripts/setup-mcp.mjs                 # print snippets for Claude Code, Codex, and generic clients
-//   node scripts/setup-mcp.mjs --claude        # register with Claude Code + install the metta-lsp skill
-//   node scripts/setup-mcp.mjs --codex         # add [mcp_servers."metta-lsp"] to ~/.codex/config.toml
+//   node scripts/setup-mcp.mjs --claude        # register with Claude Code and install the metta-lsp skill
+//   node scripts/setup-mcp.mjs --codex         # configure Codex and install the metta-lsp skill
 //   node scripts/setup-mcp.mjs --all           # both
 //   node scripts/setup-mcp.mjs --project=DIR    # register in DIR/.mcp.json for one MCP-aware project,
 //                                               # not the global config
@@ -17,7 +17,7 @@
 // a different config file (used by the tests).
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,6 +36,8 @@ if (!existsSync(serverPath)) {
 const flags = new Set(process.argv.slice(2));
 const wantClaude = flags.has("--claude") || flags.has("--all");
 const wantCodex = flags.has("--codex") || flags.has("--all");
+const claudeConfigRoot = process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude");
+const codexHome = process.env.CODEX_HOME ?? join(homedir(), ".codex");
 const projectDir = (process.argv.slice(2).find((a) => a.startsWith("--project=")) ?? "").slice(
   "--project=".length,
 );
@@ -77,7 +79,7 @@ function codexSection() {
 }
 
 function setupCodex() {
-  const configPath = process.env.CODEX_CONFIG ?? join(homedir(), ".codex", "config.toml");
+  const configPath = process.env.CODEX_CONFIG ?? join(codexHome, "config.toml");
   const current = existsSync(configPath) ? readFileSync(configPath, "utf8") : "";
   if (current.includes(`[mcp_servers."${NAME}"]`) || current.includes(`[mcp_servers.${NAME}]`)) {
     console.log(`Codex: ${NAME} already in ${configPath} — leaving it.`);
@@ -88,19 +90,18 @@ function setupCodex() {
   console.log(`Codex: added ${NAME} to ${configPath}.`);
 }
 
-// Install the metta-lsp skill so a Claude Code agent knows to reach for the LSP's intelligence on .metta
-// code. Overwritten on each apply so it tracks the installed version; the skill is a shipped artifact, not
-// a user config.
-function installSkill() {
-  const src = join(root, "skills", "metta-lsp", "SKILL.md");
-  if (!existsSync(src)) {
-    console.log("Skill source skills/metta-lsp/SKILL.md not found — skipping skill install.");
+// Install the complete skill directory for each supported agent. Copying the directory keeps product metadata
+// such as agents/openai.yaml beside SKILL.md instead of silently dropping it.
+function installSkill(label, configRoot) {
+  const srcDir = join(root, "skills", "metta-lsp");
+  if (!existsSync(join(srcDir, "SKILL.md"))) {
+    console.log("Skill source skills/metta-lsp/SKILL.md not found; skipping skill install.");
     return;
   }
-  const destDir = join(homedir(), ".claude", "skills", "metta-lsp");
-  mkdirSync(destDir, { recursive: true });
-  writeFileSync(join(destDir, "SKILL.md"), readFileSync(src, "utf8"));
-  console.log(`Claude Code: installed the metta-lsp skill to ${join(destDir, "SKILL.md")}.`);
+  const destDir = join(configRoot, "skills", "metta-lsp");
+  mkdirSync(dirname(destDir), { recursive: true });
+  cpSync(srcDir, destDir, { recursive: true, force: true });
+  console.log(`${label}: installed the metta-lsp skill to ${destDir}.`);
 }
 
 // Register the server for a single MCP-aware project via a .mcp.json at its root, the config Claude Code,
@@ -143,9 +144,12 @@ function printSnippets() {
 }
 
 if (wantClaude) {
-  installSkill();
+  installSkill("Claude Code", claudeConfigRoot);
   setupClaude();
 }
-if (wantCodex) setupCodex();
+if (wantCodex) {
+  installSkill("Codex", codexHome);
+  setupCodex();
+}
 if (projectDir) setupProject(projectDir);
 if (!wantClaude && !wantCodex && !projectDir) printSnippets();
