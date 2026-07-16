@@ -1,7 +1,9 @@
-"""Python bridge used by the OmegaClaw MeTTa-LSP skills.
+"""OmegaClaw plugin that exposes the MeTTa-LSP CLI to MeTTa skill wrappers.
 
-The installer writes the absolute MeTTa-LSP checkout path into LSP_ROOT. Each
-function invokes the CLI as an argv array, never through the shell.
+OmegaClaw loads this module from its plugins.yaml file and keeps it in the
+Python plugin registry. The MeTTa wrappers call these functions through
+py-call. Arguments are always passed to Node as an argv array, never a shell
+command.
 """
 
 from __future__ import annotations
@@ -11,14 +13,22 @@ import shlex
 import subprocess
 from pathlib import Path
 
-LSP_ROOT = Path(os.environ.get("METTA_LSP_ROOT", "__METTA_LSP_ROOT__")).expanduser()
+LSP_ROOT = Path(os.environ.get("METTA_LSP_ROOT", Path(__file__).resolve().parents[2])).expanduser()
 NODE = os.environ.get("METTA_LSP_NODE", "node")
 TIMEOUT_SECONDS = float(os.environ.get("METTA_LSP_TIMEOUT", "30"))
-MAX_OUTPUT_CHARS = int(os.environ.get("METTA_LSP_MAX_OUTPUT", "12000"))
+MAX_OUTPUT_CHARS = int(os.environ.get("METTA_LSP_MAX_OUTPUT", "64000"))
 
 
 def _cli_path() -> Path:
     return LSP_ROOT / "dist" / "cli" / "cli.js"
+
+
+def loadOmegaClawPlugin() -> None:
+    """Validate the external CLI when OmegaClaw loads the plugin."""
+
+    cli = _cli_path()
+    if not cli.is_file():
+        raise RuntimeError(f"MeTTa-LSP is not built: {cli}. Run npm run compile in {LSP_ROOT}.")
 
 
 def _bounded(text: str) -> str:
@@ -56,11 +66,8 @@ def _run(args: list[str]) -> str:
     return _bounded("\n".join(parts) if parts else "OK")
 
 
-def _position(spec: str) -> list[str] | str:
-    parts = shlex.split(str(spec))
-    if len(parts) != 3:
-        return "METTA_LSP_USAGE: expected path line character"
-    return parts
+def _position(path: str, line: object, character: object) -> list[str]:
+    return [str(path), str(line), str(character)]
 
 
 def check(path: str) -> str:
@@ -83,32 +90,28 @@ def format_check(path: str) -> str:
     return _run(["fmt", str(path), "--check"])
 
 
-def hover(spec: str) -> str:
-    parts = _position(spec)
-    if isinstance(parts, str):
-        return parts
-    return _run(["hover", *parts, "--json"])
+def hover(path: str, line: object, character: object) -> str:
+    return _run(["hover", *_position(path, line, character), "--json"])
 
 
-def definition(spec: str) -> str:
-    parts = _position(spec)
-    if isinstance(parts, str):
-        return parts
-    return _run(["def", *parts, "--json"])
+def definition(path: str, line: object, character: object) -> str:
+    return _run(["def", *_position(path, line, character), "--json"])
 
 
-def references(spec: str) -> str:
-    parts = _position(spec)
-    if isinstance(parts, str):
-        return parts
-    return _run(["refs", *parts, "--json"])
+def references(path: str, line: object, character: object) -> str:
+    return _run(["refs", *_position(path, line, character), "--json"])
 
 
-def explain(spec: str) -> str:
-    parts = _position(spec)
-    if isinstance(parts, str):
-        return parts
-    return _run(["explain", *parts, "--json"])
+def explain(path: str, line: object, character: object) -> str:
+    return _run(["explain", *_position(path, line, character), "--json"])
+
+
+def list_stdlib() -> str:
+    return _run(["list", "stdlib"])
+
+
+def inspect(name: str) -> str:
+    return _run(["inspect", str(name)])
 
 
 def cli(args: str) -> str:

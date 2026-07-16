@@ -8,6 +8,9 @@
 - Expand the shipped MeTTa-LSP skill with CLI, stdlib, official MeTTa docs,
   structured `@doc` syntax, local doc comments, and exact docs commands. Install
   the complete skill for Claude Code and Codex.
+- Load the OmegaClaw Python bridge through the plugin API and
+  `loadOmegaClawPlugin()`. Keep only the MeTTa wrapper and skill catalogue as a
+  managed overlay because upstream does not expose skill registration.
 - Treat a running `import!` target as the space token it declares, so
   `!(import! &schema module)` no longer reports `space.unbound`.
 - Interpret the positional argument to `metta-lsp doc` as its workspace root

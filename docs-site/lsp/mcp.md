@@ -24,23 +24,40 @@ directory, including `agents/openai.yaml`. Set `CLAUDE_CONFIG_DIR` or
 
 ## OmegaClaw
 
-OmegaClaw does not consume MCP client config. It exposes agent tools through its MeTTa `getSkills` catalogue.
-Install the MeTTa-LSP OmegaClaw overlay into a user checkout instead:
+OmegaClaw does not consume MCP client config. Install the MeTTa-LSP integration
+into a checkout that has the [Python plugin API](https://github.com/asi-alliance/OmegaClaw-Core/commit/4a1439ce2e8b7bf55eb2fdbbfa0566fd0c8be6c5):
 
 ```bash
 npm run compile
 npm run setup:omegaclaw -- /path/to/OmegaClaw-Core
 ```
 
-The overlay is reversible:
+The installer adds a managed `metta_lsp` entry to `config/plugins.yaml`. Its
+`location` points at `omegaclaw/plugin` in this MeTTa-LSP checkout. OmegaClaw's
+Python loader imports `metta_lsp.py`, retains it in the plugin registry, and
+calls `loadOmegaClawPlugin()`. Build MeTTa-LSP before starting OmegaClaw, and
+rerun the installer if you move the MeTTa-LSP checkout.
+
+The plugin API currently registers communication channels and LLM providers.
+It has no skill-registration callback, and the MeTTa plugin loader is not
+implemented. The installer therefore keeps a small managed MeTTa layer:
+
+- It copies `src/skills_metta_lsp.metta` into the OmegaClaw checkout.
+- It adds one managed import to `lib_omegaclaw.metta`.
+- It advertises the wrappers through the existing `getSkills` catalogue.
+
+Use `--skill-registry` to convert the closed catalogue to `skill-doc` equations
+before registering the wrappers. The default mode leaves OmegaClaw's catalogue
+shape intact. Both modes are idempotent and write a receipt.
+
+The integration is reversible:
 
 ```bash
 npm run setup:omegaclaw -- /path/to/OmegaClaw-Core --uninstall
 ```
 
-Current OmegaClaw upstream still uses a closed `getSkills` catalogue plus direct MeTTa equations for skills.
-The overlay follows that contract with managed blocks and a receipt, so users can install it into their own
-OmegaClaw system without forking OmegaClaw-Core.
+The Python bridge remains external. Uninstall removes the plugin record, copied
+wrapper, managed imports, catalogue entries, backups, and receipt.
 
 ## Or paste it yourself
 

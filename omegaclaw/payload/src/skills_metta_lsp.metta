@@ -4,10 +4,7 @@
 ; Agent-facing MeTTa-LSP skills for OmegaClaw.
 ;
 ; OmegaClaw skills are plain MeTTa equations advertised through getSkills. These
-; wrappers call the MeTTa-LSP CLI through the Python bridge installed beside this
-; file, so an OmegaClaw agent can ask the same interpreter-backed language service
-; for diagnostics, symbols, hovers, definitions, references, tests, and runs.
-!(import! &self (library OmegaClaw-Core ./src/metta_lsp.py))
+; wrappers call the MeTTa-LSP Python plugin loaded through config/plugins.yaml.
 
 (= (metta-lsp-check $path) (py-call (metta_lsp.check $path)))
 (= (metta-lsp-symbols $path) (py-call (metta_lsp.symbols $path)))
@@ -15,11 +12,17 @@
 (= (metta-lsp-run $path) (py-call (metta_lsp.run $path)))
 (= (metta-lsp-format-check $path) (py-call (metta_lsp.format_check $path)))
 
-; Position specs are one OmegaClaw string: "path line character".
-(= (metta-lsp-hover $spec) (py-call (metta_lsp.hover $spec)))
-(= (metta-lsp-def $spec) (py-call (metta_lsp.definition $spec)))
-(= (metta-lsp-refs $spec) (py-call (metta_lsp.references $spec)))
-(= (metta-lsp-explain $spec) (py-call (metta_lsp.explain $spec)))
+(= (metta-lsp-hover $path $line $character)
+   (py-call (metta_lsp.hover $path $line $character)))
+(= (metta-lsp-def $path $line $character)
+   (py-call (metta_lsp.definition $path $line $character)))
+(= (metta-lsp-refs $path $line $character)
+   (py-call (metta_lsp.references $path $line $character)))
+(= (metta-lsp-explain $path $line $character)
+   (py-call (metta_lsp.explain $path $line $character)))
+
+(= (metta-lsp-list-stdlib) (py-call (metta_lsp.list_stdlib)))
+(= (metta-lsp-inspect $name) (py-call (metta_lsp.inspect $name)))
 
 ; Expert escape hatch. Not advertised in getSkills by default.
 (= (metta-lsp-cli $args) (py-call (metta_lsp.cli $args)))
@@ -33,4 +36,6 @@
     "- Show hover docs/types at a position: metta-lsp-hover path line character"
     "- Find the definition at a position: metta-lsp-def path line character"
     "- Find references at a position: metta-lsp-refs path line character"
-    "- Explain the form at a position as mixfix: metta-lsp-explain path line character"))
+    "- Explain the form at a position as mixfix: metta-lsp-explain path line character"
+    "- List the installed MeTTa standard library: metta-lsp-list-stdlib"
+    "- Inspect a standard-library entry or module: metta-lsp-inspect name"))

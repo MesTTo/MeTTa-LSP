@@ -437,18 +437,21 @@ Pass `"resultFormat": "lsp"` when an agent needs raw LSP protocol objects.
 
 ### OmegaClaw
 
-OmegaClaw exposes tools through its MeTTa `getSkills` catalogue, so it uses a
-skill overlay rather than MCP client config:
+OmegaClaw uses its Python plugin loader rather than MCP client config:
 
 ```sh
 npm run compile
 npm run setup:omegaclaw -- /path/to/OmegaClaw-Core
 ```
 
-The installer copies the MeTTa-LSP bridge files into the target OmegaClaw-Core
-checkout, adds reversible managed blocks, and writes a receipt. The integration
-files stay in this repository, and a user can apply the overlay to their own
-OmegaClaw system rather than maintaining a separate OmegaClaw fork.
+The installer registers the external `omegaclaw/plugin/metta_lsp.py` through
+OmegaClaw's `config/plugins.yaml`. The plugin loader calls
+`loadOmegaClawPlugin()`, and the Python bridge stays in this repository.
+
+OmegaClaw's current plugin API has no skill-registration callback. The installer
+therefore copies one MeTTa wrapper file and adds reversible managed import and
+`getSkills` blocks. It writes a receipt and removes legacy copied bridge files
+when upgrading an earlier installation.
 
 Remove the overlay with:
 
