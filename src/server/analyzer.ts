@@ -1731,8 +1731,9 @@ export class Analyzer {
         // A top-level (import! …) runs only with a leading !; a bare one is inert data. The parser recorded
         // which top-level forms are banged, keyed by start offset; a nested import (no such key) counts as
         // banged so it is not flagged.
+        const topLevel = parsed.topLevelBangs.has(node.offsetStart);
         const banged = parsed.topLevelBangs.get(node.offsetStart) ?? true;
-        const imp = this.importFromNode(uri, text, node, children, head, banged);
+        const imp = this.importFromNode(uri, text, node, children, head, banged, topLevel);
         if (imp) imports.push(imp);
       }
 
@@ -1931,6 +1932,7 @@ export class Analyzer {
     children: readonly AstNode[],
     head: string,
     banged: boolean,
+    topLevel: boolean,
   ): ImportRecord | null {
     const filePath = this.uriToPath(uri);
     const baseDir = filePath ? path.dirname(filePath) : this.files.cwd();
@@ -1962,8 +1964,10 @@ export class Analyzer {
       resolvedUri: resolvedUri ?? undefined,
       exists: resolvedUri !== null,
       targetSpace,
+      targetSpaceRange: targetSpace === undefined ? undefined : children[1]?.range,
       quoted: pathNode.kind === "string",
       banged,
+      topLevel,
     };
   }
 
@@ -2751,10 +2755,27 @@ export class Analyzer {
       for (const def of this.allVisibleDefinitions(index.uri, false, closureUris)) {
         if (def.kind === "space" || def.kind === "binding") knownSpaces.add(def.name);
       }
+      // The first argument of a running import! is a declaration site. The interpreter turns that symbol
+      // into the token for the imported module, so it does not need a preceding bind!. Only direct top-level
+      // imports before a reference have executed. Nested, later, and unbanged imports remain deferred.
+      const executedImportBindings = index.imports.filter(
+        (imp) => imp.topLevel && imp.banged && imp.targetSpace !== undefined,
+      );
+      const importTargetRanges = new Set(
+        index.imports
+          .map((imp) => imp.targetSpaceRange)
+          .filter((range): range is Range => range !== undefined)
+          .map(rangeKey),
+      );
       const spaceFuzzy = new FuzzyMatcher(knownSpaces);
       for (const ref of index.references) {
         if (ref.kind !== "space-reference") continue;
-        if (isLintConfigFile(index.uri) || knownSpaces.has(ref.name)) continue;
+        if (importTargetRanges.has(rangeKey(ref.range))) continue;
+        const importedBefore = executedImportBindings.some(
+          (imp) =>
+            imp.targetSpace === ref.name && comparePosition(imp.range.start, ref.range.start) < 0,
+        );
+        if (isLintConfigFile(index.uri) || knownSpaces.has(ref.name) || importedBefore) continue;
         const suggestion = spaceFuzzy.suggest(ref.name)[0];
         add(
           ref.range,

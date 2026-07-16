@@ -61,4 +61,61 @@ describe("type + space suggestions", () => {
       .find((a) => a.title === "Change '&Self' to '&self'");
     expect(fix?.edit?.changes?.[URI]?.[0]?.newText).toBe("&self");
   });
+
+  it("treats the target of a running import as a space binding", () => {
+    const source = ['!(import! &schema "../data/epilog-parts")', "!(match &schema ($x) $x)"].join(
+      "\n",
+    );
+
+    expect(messagesFor(source, "space.unbound")).toEqual([]);
+  });
+
+  it("does not treat an unbanged import as a space binding", () => {
+    const source = ['(import! &schema "../data/epilog-parts")', "!(match &schema ($x) $x)"].join(
+      "\n",
+    );
+
+    expect(messagesFor(source, "space.unbound")).toEqual(["Unbound atom-space symbol '&schema'."]);
+  });
+
+  it("does not promote a deferred nested import to a top-level space binding", () => {
+    const source = [
+      '(= (load-schema) (import! &schema "../data/epilog-parts"))',
+      "!(match &schema ($x) $x)",
+    ].join("\n");
+
+    expect(messagesFor(source, "space.unbound")).toEqual(["Unbound atom-space symbol '&schema'."]);
+  });
+
+  it("does not make an import target available to earlier top-level forms", () => {
+    const source = ["!(match &schema ($x) $x)", '!(import! &schema "../data/epilog-parts")'].join(
+      "\n",
+    );
+
+    expect(messagesFor(source, "space.unbound")).toEqual(["Unbound atom-space symbol '&schema'."]);
+  });
+
+  it("allows an explicit bind before import without reporting a duplicate", () => {
+    const analyzer = analyzerFor(
+      [
+        "!(bind! &schema (new-space))",
+        '!(import! &schema "../data/epilog-parts")',
+        "!(match &schema ($x) $x)",
+      ].join("\n"),
+    );
+    const codes = analyzer.validate(URI).map((diagnostic) => diagnostic.code);
+
+    expect(codes).not.toContain("space.unbound");
+    expect(codes).not.toContain("definition.duplicate");
+  });
+
+  it("keeps &self available across repeated imports", () => {
+    const source = ['!(import! &self "one")', '!(import! &self "two")'].join("\n");
+    const codes = analyzerFor(source)
+      .validate(URI)
+      .map((diagnostic) => diagnostic.code);
+
+    expect(codes).not.toContain("space.unbound");
+    expect(codes).not.toContain("definition.duplicate");
+  });
 });

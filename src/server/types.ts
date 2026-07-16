@@ -129,12 +129,16 @@ export interface ImportRecord {
   readonly resolvedUri?: string;
   readonly exists: boolean;
   readonly targetSpace?: string;
+  readonly targetSpaceRange?: Range;
   // The path was written as a string literal. MeTTa imports now resolve quoted file paths; Prolog diagnostics
   // still use this bit to distinguish `.pl` bridge files from core modules.
   readonly quoted: boolean;
   // A top-level (import! …) runs only when banged with a leading !. A bare one is inert data whose symbols
   // never load at runtime; false flags that.
   readonly banged: boolean;
+  // Nested imports are deferred until their enclosing expression runs. Only a direct top-level import can
+  // make its target token available to later top-level forms during static analysis.
+  readonly topLevel: boolean;
 }
 
 export interface FunctionCallInfo {

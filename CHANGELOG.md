@@ -8,6 +8,8 @@
 - Expand the shipped MeTTa-LSP skill with CLI, stdlib, official MeTTa docs,
   structured `@doc` syntax, local doc comments, and exact docs commands. Install
   the complete skill for Claude Code and Codex.
+- Treat a running `import!` target as the space token it declares, so
+  `!(import! &schema module)` no longer reports `space.unbound`.
 - Interpret the positional argument to `metta-lsp doc` as its workspace root
   while locating `docs-site` from the MeTTa-LSP checkout.
 
