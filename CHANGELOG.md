@@ -15,6 +15,12 @@
   `!(import! &schema module)` no longer reports `space.unbound`.
 - Interpret the positional argument to `metta-lsp doc` as its workspace root
   while locating `docs-site` from the MeTTa-LSP checkout.
+- Update the MeTTa TS runtime, browser, graph, Hyperon, Node, Python, and Prolog
+  packages to 1.1.7. The 1.1.7 core resolves grounded substitution to a fixpoint,
+  fixing a unification soundness bug where a single-pass substitution could return
+  a spurious extra proof, so guarded MeTTa evaluation inherits the fix. The 1.1.6
+  core adds structural inequality `!=` with type `(-> $t $t Bool)`, matching the
+  type the language server already reports for it.
 
 ## 0.12.0 - 2026-07-15
 
