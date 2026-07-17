@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.13.0 - 2026-07-18
 
 - Add `metta-lsp list stdlib` and `metta-lsp inspect` for the MeTTa-LSP default
   library and installed builtin modules, with qualified names, structured JSON,
