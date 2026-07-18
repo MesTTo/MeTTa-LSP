@@ -159,6 +159,7 @@ export default defineConfig({
           { text: "Overview", link: "/lsp/overview" },
           { text: "Editor setup", link: "/lsp/editors" },
           { text: "Command line", link: "/lsp/cli" },
+          { text: "Debugging", link: "/lsp/debugging" },
           { text: "Agent setup (MCP)", link: "/lsp/mcp" },
           { text: "Programmatic API", link: "/lsp/dsl" },
           { text: "Search & replace", link: "/lsp/search-replace" },

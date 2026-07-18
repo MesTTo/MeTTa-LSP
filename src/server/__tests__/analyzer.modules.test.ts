@@ -9,6 +9,7 @@
 import { describe, expect, it } from "vitest";
 import { DiagnosticSeverity } from "vscode-languageserver-types";
 import { Analyzer } from "../analyzer.js";
+import { BUILTIN_MODULE_NAMES } from "../builtinModules.js";
 import { InMemoryFileProvider } from "../fileProvider.js";
 
 const URI = "file:///ws/m.metta";
@@ -36,9 +37,39 @@ function hoverText(analyzer: Analyzer, line: number, character: number): string 
 }
 
 describe("built-in module awareness", () => {
+  it("tracks the eight MeTTa TS importable libraries", () => {
+    expect([...BUILTIN_MODULE_NAMES].sort()).toEqual(
+      expect.arrayContaining([
+        "combinatorics",
+        "datastructures",
+        "nars",
+        "patrick",
+        "pln",
+        "roman",
+        "spaces",
+        "vector",
+      ]),
+    );
+  });
+
   it("does not flag a module function when the file imports the module", () => {
     const text = '!(import! &self json)\n!(let $d (json-decode "{}") (json-encode $d))';
     expect(codes(text).filter((code) => String(code).startsWith("symbol."))).toEqual([]);
+  });
+
+  it("surfaces module exports in diagnostics, hover, and completion", () => {
+    const analyzer = analyzerWith("!(import! &self vector)\n!(dot (1 2) (3 4))");
+    const diagnostics = analyzer.validate(URI).map((diagnostic) => diagnostic.code);
+    expect(diagnostics).not.toContain("import.unresolved");
+    expect(diagnostics.filter((code) => String(code).startsWith("symbol."))).toEqual([]);
+    expect(hoverText(analyzer, 1, 3)).toContain("Dot product");
+
+    const completionAnalyzer = analyzerWith("!(import! &self vector)\n(");
+    const labels = new Set(
+      completionAnalyzer.completions(URI, { line: 1, character: 1 }).map((item) => item.label),
+    );
+    expect(labels.has("dot")).toBe(true);
+    expect(labels.has("random-normal-vector")).toBe(true);
   });
 
   it("resolves a built-in module import instead of reporting it unresolved", () => {
@@ -64,6 +95,14 @@ describe("built-in module awareness", () => {
       })
       .find((action) => action.title.includes("json"));
     expect(fix?.edit?.changes?.[URI]?.[0]?.newText).toContain("(import! &self json)");
+  });
+
+  it("hints when a module export needs its builtin-module import", () => {
+    const analyzer = analyzerWith("!(random-normal-vector 3)");
+    const diagnostics = analyzer.validate(URI);
+    const hint = diagnostics.find((d) => d.code === "symbol.needsImport");
+    expect(hint?.severity).toBe(DiagnosticSeverity.Hint);
+    expect(hint?.message).toContain("import! &self vector");
   });
 
   it("hovers a module function with its interpreter type and documentation", () => {

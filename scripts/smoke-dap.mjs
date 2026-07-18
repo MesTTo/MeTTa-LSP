@@ -64,6 +64,18 @@ async function currentExpression() {
   return response.body.stackFrames[0].name;
 }
 
+async function scopes() {
+  send("scopes", { frameId: 1 });
+  const response = await waitFor(isResponse("scopes"), "scopes");
+  return response.body.scopes;
+}
+
+async function variables(variablesReference) {
+  send("variables", { variablesReference });
+  const response = await waitFor(isResponse("variables"), "variables");
+  return response.body.variables;
+}
+
 function assert(condition, message) {
   if (!condition) {
     console.error(`dap smoke FAILED: ${message}`);
@@ -91,6 +103,13 @@ async function main() {
   assert(launched.success, "launch should succeed");
   await waitFor(isEvent("stopped"), "stopped at entry");
   assert((await currentExpression()) === "(double 21)", "entry expression should be (double 21)");
+  const traceScope = (await scopes()).find((scope) => scope.name === "Trace");
+  assert(traceScope !== undefined, "Trace scope should be present");
+  const traceVariables = await variables(traceScope.variablesReference);
+  assert(
+    traceVariables.some((variable) => variable.name === "reductions" && Number(variable.value) > 0),
+    "Trace scope should expose reduction count",
+  );
 
   send("next", { threadId: 1 });
   await waitFor(isEvent("stopped"), "stopped after step 1");

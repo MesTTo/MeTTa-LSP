@@ -75,6 +75,11 @@ describe("interpreter-derived builtin catalog", () => {
 
   it("keeps explicit overlays scoped to implemented syntax, prelude rules, and registered bridges", () => {
     expect(BUILTIN_BY_NAME.get("!")?.source).toBe("@metta-ts/core syntax");
+    expect(BUILTIN_BY_NAME.get("size-atom")).toMatchObject({
+      source: "@metta-ts/core grounded op overlay",
+      signatures: ["(-> Expression Number)"],
+      arity: 1,
+    });
     expect(BUILTIN_BY_NAME.get("include!")?.source).toBe("MeTTa LSP import alias");
     expect(BUILTIN_BY_NAME.get("unquote")?.source).toBe("@metta-ts/core prelude (untyped overlay)");
     expect(BUILTIN_BY_NAME.get("nop")?.source).toBe("@metta-ts/core prelude (untyped overlay)");
@@ -82,6 +87,19 @@ describe("interpreter-derived builtin catalog", () => {
     expect(BUILTIN_BY_NAME.has("sequential")).toBe(false);
     expect(BUILTIN_BY_NAME.has("print")).toBe(false);
     expect(BUILTIN_BY_NAME.get("!=")?.signatures).toStrictEqual(["(-> $t $t Bool)"]);
+  });
+
+  it("surfaces the 1.2.0 grounded list operation family", () => {
+    expect(BUILTIN_BY_NAME.get("size-atom")?.signatures).toStrictEqual(["(-> Expression Number)"]);
+    expect(BUILTIN_BY_NAME.get("map-atom")?.signatures).toStrictEqual([
+      "(-> Expression Variable Atom Expression)",
+    ]);
+    expect(BUILTIN_BY_NAME.get("filter-atom")?.signatures).toStrictEqual([
+      "(-> Expression Variable Atom Expression)",
+    ]);
+    expect(BUILTIN_BY_NAME.get("foldl-atom")?.signatures).toStrictEqual([
+      "(-> Expression Atom Variable Variable Atom %Undefined%)",
+    ]);
   });
 
   it("keeps semantic token groups tied to known stdlib, operator, or special-form symbols", () => {

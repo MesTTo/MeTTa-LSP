@@ -118,4 +118,11 @@ describe("executableQuery — the query visualise reduces with no prompt", () =>
     const { analyzer, uri } = analyzerFor("(= (f $x) $x)\n(: f (-> Number Number))");
     expect(analyzer.executableQuery(uri)).toBeNull();
   });
+
+  it("reads the runnable query under a cursor position", () => {
+    const { analyzer, uri } = analyzerFor("(= (f $x) $x)\n!(f 1)\n!(f 2)");
+    expect(analyzer.executableQueryAtPosition(uri, { line: 1, character: 2 })).toBe("(f 1)");
+    expect(analyzer.executableQueryAtPosition(uri, { line: 2, character: 2 })).toBe("(f 2)");
+    expect(analyzer.executableQueryAtPosition(uri, { line: 0, character: 3 })).toBeNull();
+  });
 });

@@ -2481,6 +2481,19 @@ Returns the sine of the input value in radians
 
 **Returns** `Number` — Result of the sine function
 
+### `size-atom` {#size-atom}
+
+```metta
+(-> Expression Number)
+```
+
+Returns the size of an expression
+
+**Parameters**
+- `%Undefined%` — Expression
+
+**Returns** `%Undefined%` — Size of the expression
+
 ### `sort` {#sort}
 
 ```metta

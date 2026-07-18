@@ -1,12 +1,14 @@
 // SPDX-FileCopyrightText: 2026 MesTTo
 // SPDX-License-Identifier: Apache-2.0
 //
-// The built-in modules @metta-ts/core exposes via `(import! &self <name>)` — json, catalog, fileio, and the
-// TS-native concurrency/curry. A file that imports one of these should see its declared symbols as known
-// (not "undefined function"), resolve the import, and get the symbols' interpreter types and docs. The names
-// and their declared symbols are read from core's own `builtinModules()`, so this stays in lockstep with the
-// interpreter instead of being a second hand-maintained list.
+// The built-in modules @metta-ts/core exposes via `(import! &self <name>)`. @metta-ts/libraries registers
+// the pure MeTTa standard-library modules as a side effect before `builtinModules()` is read.
+// A file that imports one of these should see its declared symbols as known (not "undefined function"),
+// resolve the import, and get the symbols' interpreter types and docs. The names and their declared symbols
+// are read from core's own `builtinModules()`, so this stays in lockstep with the interpreter instead of
+// being a second hand-maintained list.
 
+import "@metta-ts/libraries";
 import { type Atom, builtinModules } from "@metta-ts/core";
 
 // The head a module declaration introduces: `(: name …)` → name; `(= (name …) …)` or `(= name …)` → name.

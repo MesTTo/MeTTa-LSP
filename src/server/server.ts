@@ -13,6 +13,7 @@ import {
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { normalizeUri, uriToPath } from "../language-service/index.js";
+import { explainMettaCall } from "../runtime/debugTrace.js";
 import { evaluateGuarded, evaluateUnguarded } from "../runtime/guardedEvaluation.js";
 import { NodeFileProvider } from "../runtime/nodeFileProvider.js";
 import { createNodeSemanticLintJob } from "../runtime/nodeSemanticLintJob.js";
@@ -42,6 +43,9 @@ import {
   type TraceParams,
   TraceRequest,
   type TraceResultPayload,
+  type WhyParams,
+  WhyRequest,
+  type WhyResultPayload,
 } from "./shared/lspRequests.js";
 import type { ServerSettings } from "./types.js";
 
@@ -401,6 +405,65 @@ async function traceRequest(params: TraceParams): Promise<TraceResultPayload> {
   }
 }
 
+function whyQuery(uri: string, params: WhyParams): string {
+  if (params.query !== undefined && params.query.trim().length > 0) return params.query.trim();
+  if (params.range !== undefined) {
+    const selected = analyzer.executableQuery(uri, params.range);
+    if (selected !== null) return selected;
+  }
+  if (params.position !== undefined) {
+    const active = analyzer.executableQueryAtPosition(uri, params.position);
+    if (active !== null) return active;
+  }
+  return analyzer.executableQuery(uri) ?? "";
+}
+
+async function whyRequest(params: WhyParams): Promise<WhyResultPayload> {
+  const uri = normalizeUri(params.uri);
+  const index = analyzer.getDocument(uri) ?? analyzer.ensureIndexed(uri);
+  const query = whyQuery(uri, params);
+  if (query.length === 0) {
+    return {
+      ok: false,
+      query,
+      result: [],
+      grounded: {},
+      specialized: [],
+      overflow: [],
+      reductions: 0,
+      error: "No executable query in this file: add a !(...) form or a trailing call.",
+    };
+  }
+  try {
+    const explanation = await explainMettaCall(
+      index?.text ?? "",
+      query,
+      analyzer.importSourceMap(uri),
+      params.maxSteps,
+    );
+    return {
+      ok: true,
+      query,
+      result: explanation.result,
+      grounded: explanation.summary.grounded,
+      specialized: explanation.summary.specialized,
+      overflow: explanation.summary.overflow,
+      reductions: explanation.summary.reductions,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      query,
+      result: [],
+      grounded: {},
+      specialized: [],
+      overflow: [],
+      reductions: 0,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 // The advertised workspace commands. VS Code routes these through its own client handlers, but any other LSP
 // client invokes a codelens command as `workspace/executeCommand`, so the server executes them too instead
 // of the previous no-op.
@@ -432,6 +495,15 @@ connection.onExecuteCommand(async (params) => {
       result.ok
         ? `MeTTa trace: ${result.steps.length} step${result.steps.length === 1 ? "" : "s"}.`
         : `MeTTa trace failed: ${result.error ?? "unknown error"}`,
+    );
+    return result;
+  }
+  if (params.command === "metta.lsp.why" && arg.uri !== undefined) {
+    const result = await whyRequest({ uri: arg.uri, range: arg.range });
+    connection.window.showInformationMessage(
+      result.ok
+        ? `MeTTa why: ${result.reductions} reduction${result.reductions === 1 ? "" : "s"}.`
+        : `MeTTa why failed: ${result.error ?? "unknown error"}`,
     );
     return result;
   }
@@ -523,6 +595,7 @@ connection.onRequest("metta/run", async (params: { uri: string; range?: Range })
 });
 
 connection.onRequest(TraceRequest, traceRequest);
+connection.onRequest(WhyRequest, whyRequest);
 
 // The text of a generated stdlib reference (metta://stdlib/…), so the client content provider can render the
 // read-only document Go to Definition on a builtin opens.

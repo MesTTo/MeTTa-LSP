@@ -208,6 +208,7 @@ export const METTA_COLLECTION_FUNCTIONS = new Set([
   "decons-atom",
   "car-atom",
   "cdr-atom",
+  "size-atom",
   "length",
   "first",
   "last",
@@ -335,6 +336,19 @@ const CORE_SYNTAX_BUILTINS: BuiltinSpec[] = [
     documentation:
       "Function type constructor. The last argument is the return type; preceding arguments are parameters.",
     source: "@metta-ts/core syntax",
+  },
+];
+
+// Core registers these public grounded operations, but the published metadata does not currently enumerate
+// them through typed declarations, `pettaOpNames`, or `IMPURE_OPS`.
+const CORE_GROUNDED_OVERLAY_BUILTINS: BuiltinSpec[] = [
+  {
+    name: "size-atom",
+    kind: "function",
+    arity: 1,
+    signatures: ["(-> Expression Number)"],
+    documentation: "Returns the size of an expression.",
+    source: "@metta-ts/core grounded op overlay",
   },
 ];
 
@@ -600,6 +614,7 @@ const PROLOG_BRIDGE_BUILTINS: BuiltinSpec[] = [
 
 const BUILTIN_OVERLAYS: BuiltinSpec[] = [
   ...CORE_SYNTAX_BUILTINS,
+  ...CORE_GROUNDED_OVERLAY_BUILTINS,
   ...CATALOG_OVERLAY_BUILTINS,
   ...PYTHON_BRIDGE_BUILTINS,
   ...PROLOG_BRIDGE_BUILTINS,

@@ -2,11 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // Read-only standard-library discovery for the CLI. Global entries come from the same catalog that powers
-// LSP hover and completion. Import-gated entries come from core's builtinModules(), and all structured docs
-// come from the same interpreter get-doc adapter used by hover and generated reference pages.
+// LSP hover and completion. @metta-ts/libraries registers pure MeTTa modules before the import-gated entries
+// are read from core's builtinModules(), and all structured docs come from the same interpreter get-doc
+// adapter used by hover and generated reference pages.
 
+import "@metta-ts/libraries";
 import { type Atom, builtinModules, FuzzyMatcher, format } from "@metta-ts/core";
 import { CoreRuntime, type MettaDoc, type MettaDocParam } from "../language-service/index.js";
+import { builtinModuleSymbols } from "../server/builtinModules.js";
 import {
   allBuiltinDefinitions,
   BUILTIN_BY_NAME,
@@ -165,12 +168,15 @@ function moduleEntries(runtime: CoreRuntime): {
   for (const [module, atoms] of coreModules) {
     const context = atoms.map(format).join("\n");
     const declarations = declaredModuleTypes(atoms);
-    const exportNames = [...declarations.keys()].sort((left, right) => left.localeCompare(right));
+    const exportNames = [...builtinModuleSymbols(module)].sort((left, right) =>
+      left.localeCompare(right),
+    );
     const qualifiedExports: string[] = [];
     for (const name of exportNames) {
-      const typeResult = runtime.getType(context, name);
+      const declaredSignatures = declarations.get(name) ?? [];
+      const typeResult = declaredSignatures.length > 0 ? runtime.getType(context, name) : undefined;
       const signatures = unique(
-        typeResult.isOk() ? typeResult.value : (declarations.get(name) ?? []),
+        typeResult?.isOk() === true ? typeResult.value : declaredSignatures,
       );
       const doc = runtimeDoc(runtime, context, name);
       const description = doc?.description ?? "";

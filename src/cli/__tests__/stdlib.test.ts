@@ -49,6 +49,18 @@ describe("stdlib CLI catalog", () => {
 
   it("contains every builtin module export exactly once", () => {
     expect(catalog.modules.map((item) => item.name)).toEqual([...BUILTIN_MODULE_NAMES].sort());
+    expect(catalog.modules.map((item) => item.name)).toEqual(
+      expect.arrayContaining([
+        "combinatorics",
+        "datastructures",
+        "nars",
+        "patrick",
+        "pln",
+        "roman",
+        "spaces",
+        "vector",
+      ]),
+    );
     for (const item of catalog.modules) {
       const expected = [...builtinModuleSymbols(item.name)].sort((left, right) =>
         left.localeCompare(right),
@@ -113,6 +125,21 @@ describe("stdlib CLI catalog", () => {
     });
     expect(jsonEncode.description).toContain("encodes it to json-string");
     expect(entry(inspectStdlib("json-encode", catalog)).qualifiedName).toBe("json::json-encode");
+  });
+
+  it("inspects the MeTTa TS importable libraries", () => {
+    expect(module(inspectStdlib("vector", catalog)).exports).toEqual(
+      expect.arrayContaining(["vector::dot", "vector::random-normal-vector"]),
+    );
+    const dot = entry(inspectStdlib("vector::dot", catalog));
+    expect(dot).toMatchObject({
+      signatures: ["(-> Expression Expression Number)"],
+      module: "vector",
+      category: "core",
+    });
+    expect(dot.description).toContain("Dot product");
+    expect(module(inspectStdlib("nars", catalog)).exports).toContain("nars::Truth_Deduction");
+    expect(module(inspectStdlib("pln", catalog)).exports).toContain("pln::Truth_ModusPonens");
   });
 
   it("preserves overloaded module signatures", () => {

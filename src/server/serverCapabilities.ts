@@ -20,6 +20,7 @@ export const EXECUTE_COMMANDS = [
   "metta.lsp.evaluateGuarded",
   "metta.lsp.organizeImports",
   "metta.lsp.trace",
+  "metta.lsp.why",
   "metta.lsp.noop",
 ] as const;
 

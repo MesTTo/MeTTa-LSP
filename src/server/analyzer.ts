@@ -3512,6 +3512,23 @@ export class Analyzer {
         data: { origin: "builtin", name: typeName },
       });
     }
+    if (index) {
+      const importedModules = new Set(
+        index.imports
+          .filter((imp) => BUILTIN_MODULE_NAMES.has(imp.rawPath))
+          .map((imp) => imp.rawPath),
+      );
+      for (const moduleName of importedModules) {
+        for (const name of builtinModuleSymbols(moduleName)) {
+          push({
+            label: name,
+            kind: CompletionItemKind.Function,
+            detail: `builtin module ${moduleName}`,
+            data: { origin: "builtinModule", name, uri },
+          });
+        }
+      }
+    }
     for (const def of this.allVisibleDefinitions(uri, false)) {
       push({
         label: def.name,
@@ -3599,7 +3616,7 @@ export class Analyzer {
     return [TextEdit.insert({ line: insertLine, character: 0 }, text)];
   }
 
-  // A quick-fix edit that imports a built-in module (json/catalog/fileio). A bang form, so the module
+  // A quick-fix edit that imports a built-in module. A bang form, so the module
   // actually loads — declarationContext runs a built-in-module import for get-type/get-doc.
   private builtinModuleImportEdits(index: DocumentIndex, module: string): TextEdit[] {
     if (index.imports.some((imp) => imp.rawPath === module)) return [];
@@ -3871,8 +3888,23 @@ export class Analyzer {
               range,
             ),
           );
-    if (!span) return null;
-    return index.text.slice(span.start, span.end).replace(/^!\s*/, "");
+    return span === undefined ? null : this.executableQueryForSpan(index, span);
+  }
+
+  public executableQueryAtPosition(uri: string, position: Position): string | null {
+    const index = this.ensureIndexed(uri);
+    if (!index) return null;
+    const offset = offsetAt(position, index.parsed.lineOffsets);
+    const span = this.runnableFormSpans(index).find((s) => offset >= s.start && offset <= s.end);
+    return span === undefined ? null : this.executableQueryForSpan(index, span);
+  }
+
+  private executableQueryForSpan(
+    index: DocumentIndex,
+    span: { readonly start: number; readonly end: number },
+  ): string | null {
+    const query = index.text.slice(span.start, span.end).replace(/^!\s*/, "").trim();
+    return query.length === 0 ? null : query;
   }
 
   // Pseudocode mode: a code lens above each top-level form rendering it in mixfix notation, so a reader
@@ -4473,9 +4505,9 @@ function isLintConfigFile(uri: string): boolean {
   return path.slice(path.lastIndexOf("/") + 1) === "lint.metta";
 }
 
-// A synthetic definition for a symbol a built-in module declares (json/catalog/fileio). Its type and
-// documentation come from the interpreter (get-type/get-doc under the module's import); this record only
-// anchors hover, go-to-definition, and completion on it, marked builtin so the hover uses the interpreter doc.
+// A synthetic definition for a symbol a built-in module declares. Its type and documentation come from the
+// interpreter (get-type/get-doc under the module's import); this record only anchors hover, go-to-definition,
+// and completion on it, marked builtin so the hover uses the interpreter doc.
 function moduleSymbolDefinition(name: string, moduleName: string): DefinitionRecord {
   return {
     name,

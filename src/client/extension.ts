@@ -19,6 +19,9 @@ import {
   type TraceParams,
   TraceRequest,
   type TraceResultPayload,
+  type WhyParams,
+  WhyRequest,
+  type WhyResultPayload,
 } from "../server/shared/lspRequests.js";
 import { registerTestController } from "./testController.js";
 
@@ -26,6 +29,7 @@ let client: LanguageClient | undefined;
 let output: vscode.LogOutputChannel | undefined;
 let runOutput: vscode.OutputChannel | undefined;
 let traceOutput: vscode.OutputChannel | undefined;
+let whyOutput: vscode.OutputChannel | undefined;
 
 interface LspPosition {
   readonly line: number;
@@ -121,6 +125,31 @@ function renderTrace(result: TraceResultPayload): string {
   return lines.join("\n");
 }
 
+function renderWhy(result: WhyResultPayload): string {
+  const lines: string[] = [`; why ${result.query}`];
+  if (!result.ok) {
+    lines.push(`; error: ${result.error ?? "unknown error"}`);
+    return lines.join("\n");
+  }
+  lines.push(`; reductions: ${result.reductions}`);
+  lines.push("; result");
+  if (result.result.length === 0) lines.push("; (no results)");
+  else lines.push(...result.result);
+  lines.push("; grounded reducers");
+  const grounded = Object.entries(result.grounded).sort(([left], [right]) =>
+    left.localeCompare(right),
+  );
+  if (grounded.length === 0) lines.push("; (none)");
+  else for (const [name, count] of grounded) lines.push(`; ${name}: ${count}`);
+  lines.push("; higher-order specialization");
+  if (result.specialized.length === 0) lines.push("; (none)");
+  else for (const item of result.specialized) lines.push(`; ${item}`);
+  lines.push("; overflow cut point");
+  if (result.overflow.length === 0) lines.push("; (none)");
+  else for (const item of result.overflow) lines.push(`; ${item}`);
+  return lines.join("\n");
+}
+
 // The visualise webview shell: an empty stage the bundled MeTTaGrapher script (dist/webview/visualise.js)
 // fills. Strict CSP — only the nonced bundle runs, images allow data: URLs because the GIF exporter
 // rasterizes SVG frames through them, and styles are inline below, themed on VS Code's variables.
@@ -209,6 +238,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // shipped grammar; the log channel above keeps the LSP trace.
   runOutput = vscode.window.createOutputChannel("MeTTa Run", "metta");
   traceOutput = vscode.window.createOutputChannel("MeTTa Trace", "metta");
+  whyOutput = vscode.window.createOutputChannel("MeTTa Why", "metta");
   const serverOptions: ServerOptions = {
     run: { module: serverModule, transport: TransportKind.ipc },
     debug: {
@@ -236,6 +266,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     output,
     runOutput,
     traceOutput,
+    whyOutput,
     // Resolve the debugged file's imports (via the server) into the launch config, so a cross-file query
     // debugs against them. The debug adapter cannot resolve imports itself: it must not reach the server.
     vscode.debug.registerDebugConfigurationProvider("metta", {
@@ -319,6 +350,35 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         traceOutput?.show(true);
         if (!result.ok) {
           void vscode.window.showWarningMessage(`MeTTa trace: ${result.error ?? "trace failed"}`);
+        }
+      },
+    ),
+    vscode.commands.registerCommand(
+      "metta.why",
+      async (arg?: { uri?: string; range?: WhyParams["range"]; position?: LspPosition }) => {
+        const editor = vscode.window.activeTextEditor;
+        const uri = mettaUri(arg?.uri);
+        if (uri === undefined || !client) return;
+        const range =
+          arg?.range ??
+          (editor && !editor.selection.isEmpty ? lspRange(editor.selection) : undefined);
+        const position =
+          arg?.position ??
+          (editor
+            ? {
+                line: editor.selection.active.line,
+                character: editor.selection.active.character,
+              }
+            : undefined);
+        const result = await client.sendRequest<WhyResultPayload>(WhyRequest, {
+          uri,
+          range,
+          position,
+        });
+        whyOutput?.appendLine(renderWhy(result));
+        whyOutput?.show(true);
+        if (!result.ok) {
+          void vscode.window.showWarningMessage(`MeTTa why: ${result.error ?? "why failed"}`);
         }
       },
     ),
@@ -449,4 +509,5 @@ export async function deactivate(): Promise<void> {
   output = undefined;
   runOutput = undefined;
   traceOutput = undefined;
+  whyOutput = undefined;
 }

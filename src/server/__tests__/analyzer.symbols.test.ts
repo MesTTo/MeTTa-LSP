@@ -70,6 +70,7 @@ describe("symbols and completion", () => {
     );
     expect(labels.has("greet")).toBe(true);
     expect(labels.has("match")).toBe(true);
+    expect(labels.has("size-atom")).toBe(true);
   });
 
   it("filters completions by the typed prefix", () => {

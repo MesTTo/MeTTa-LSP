@@ -1,4 +1,4 @@
-import type { Range } from "vscode-languageserver-types";
+import type { Position, Range } from "vscode-languageserver-types";
 
 import type {
   GuardedEvaluationPolicy,
@@ -9,6 +9,7 @@ export const IndexStatsRequest = "metta/indexStats";
 export const SideEffectPolicyRequest = "metta/sideEffectPolicy";
 export const GuardedEvaluationRequest = "metta/evaluateGuarded";
 export const TraceRequest = "metta/trace";
+export const WhyRequest = "metta/why";
 export const LspToolRequest = "metta/lspTool";
 export const CapabilityRegistryRequest = "metta/capabilities";
 export const RuntimeCapabilitiesRequest = "metta/runtime/capabilities";
@@ -59,6 +60,25 @@ export interface TraceResultPayload {
   readonly steps: readonly (readonly string[])[];
   readonly final: readonly string[];
   readonly truncated: boolean;
+  readonly error?: string;
+}
+
+export interface WhyParams {
+  readonly uri: string;
+  readonly position?: Position;
+  readonly range?: Range;
+  readonly query?: string;
+  readonly maxSteps?: number;
+}
+
+export interface WhyResultPayload {
+  readonly ok: boolean;
+  readonly query: string;
+  readonly result: readonly string[];
+  readonly grounded: Readonly<Record<string, number>>;
+  readonly specialized: readonly string[];
+  readonly overflow: readonly string[];
+  readonly reductions: number;
   readonly error?: string;
 }
 

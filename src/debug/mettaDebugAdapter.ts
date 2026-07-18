@@ -29,6 +29,8 @@ interface LaunchArguments extends DebugProtocol.LaunchRequestArguments {
 }
 
 const THREAD_ID = 1;
+const REDUCTION_SCOPE = 1;
+const TRACE_SCOPE = 2;
 
 class MettaDebugSession extends DebugSession {
   private session: ReductionSession | undefined;
@@ -78,16 +80,61 @@ class MettaDebugSession extends DebugSession {
   }
 
   protected override scopesRequest(response: DebugProtocol.ScopesResponse): void {
-    response.body = { scopes: [new Scope("Reduction", 1, false)] };
+    response.body = {
+      scopes: [
+        new Scope("Reduction", REDUCTION_SCOPE, false),
+        new Scope("Trace", TRACE_SCOPE, false),
+      ],
+    };
     this.sendResponse(response);
   }
 
-  protected override variablesRequest(response: DebugProtocol.VariablesResponse): void {
+  protected override variablesRequest(
+    response: DebugProtocol.VariablesResponse,
+    args: DebugProtocol.VariablesArguments,
+  ): void {
     const state = this.session?.state();
+    if (args.variablesReference === TRACE_SCOPE) {
+      const grounded = Object.entries(state?.trace.grounded ?? {}).sort(([left], [right]) =>
+        left.localeCompare(right),
+      );
+      response.body = {
+        variables: [
+          {
+            name: "reductions",
+            value: String(state?.trace.reductions ?? 0),
+            variablesReference: 0,
+          },
+          { name: "events", value: String(state?.trace.eventCount ?? 0), variablesReference: 0 },
+          ...grounded.map(([name, count]) => ({
+            name: `grounded:${name}`,
+            value: String(count),
+            variablesReference: 0,
+          })),
+          ...(state?.trace.specialized ?? []).map((value, index) => ({
+            name: `specialized[${index}]`,
+            value,
+            variablesReference: 0,
+          })),
+          ...(state?.trace.overflow ?? []).map((value, index) => ({
+            name: `overflow[${index}]`,
+            value,
+            variablesReference: 0,
+          })),
+        ],
+      };
+      this.sendResponse(response);
+      return;
+    }
     response.body = {
       variables: [
         { name: "expression", value: state?.expression ?? "", variablesReference: 0 },
         { name: "step", value: String(state?.step ?? 0), variablesReference: 0 },
+        {
+          name: "overflowCutPoint",
+          value: state?.overflowCutPoint ?? "",
+          variablesReference: 0,
+        },
       ],
     };
     this.sendResponse(response);
@@ -115,6 +162,11 @@ class MettaDebugSession extends DebugSession {
   // breakpoint. A `(breakpoint! ...)` atom keeps the session stopped so the user can inspect it.
   private reportStop(reason: string): void {
     const state = this.session?.state();
+    if (state !== undefined && state.atOverflowCutPoint) {
+      this.sendEvent(new OutputEvent(`stack overflow cut-point: ${state.expression}\n`));
+      this.sendEvent(new StoppedEvent("exception", THREAD_ID));
+      return;
+    }
     if (state !== undefined && state.done && !state.atBreakpoint) {
       this.sendEvent(new OutputEvent(`normal form: ${state.expression}\n`));
       this.sendEvent(new TerminatedEvent());

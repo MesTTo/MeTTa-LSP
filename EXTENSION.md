@@ -62,10 +62,10 @@ language server in a Web Worker. It provides a persistent multi-file workspace,
 live diagnostics, completion, hover, navigation, rename, formatting, document
 symbols, and guarded evaluation without a backend service.
 
-The runtime is built on `@metta-ts/core`, so the server runs on Node without a
-WASM dependency. Editor analysis does not evaluate user code. Explicit run,
-trace, test, and visualise commands use the configured runtime path and the
-guarded worker where appropriate.
+The runtime is built on `@metta-ts/core` and `@metta-ts/debug`, so the server
+runs on Node without a WASM dependency. Editor analysis does not evaluate user
+code. Explicit run, trace, why, test, and visualise commands use the configured
+runtime path and the guarded worker where appropriate.
 
 The extension, CLI, stdio language server, MCP server, and docs tooling are
 designed for Linux, macOS, and Windows. Editor-specific setup differs, but every
@@ -85,7 +85,7 @@ code --install-extension MeTTaMesTTo.metta-ts-lsp
 You can also install a downloaded GitHub release asset:
 
 ```sh
-code --install-extension metta-ts-lsp-0.11.1.vsix
+code --install-extension metta-ts-lsp-0.15.0.vsix
 ```
 
 Build from this checkout when you want the CLI, MCP server, or another editor:
@@ -138,8 +138,8 @@ document links, folding ranges, selection ranges, semantic tokens, call
 hierarchy, inlay hints, code lens, code actions, organize imports, full
 formatting, range formatting, and on-type formatting.
 
-The VS Code extension adds status bar controls, settings quick-pick, run and
-trace buttons, Test Explorer integration for assert forms, and a launch
+The VS Code extension adds status bar controls, settings quick-pick, run, trace,
+and why commands, Test Explorer integration for assert forms, and a launch
 configuration for stepping through reductions with the debug adapter.
 
 Hover any symbol for a rust-analyzer-style card: the signature, the type, where
@@ -169,7 +169,7 @@ Suppressions are visible by design. Inline comments such as
 shows what they suppressed. Project suppressions live in `lint.metta` as data,
 using the same structural matcher as lint rules.
 
-### Run, test, trace, visualise
+### Run, test, trace, why, visualise
 
 Visualise steps a query through its reduction as an interactive graph. Play it,
 scrub it, or step one rewrite at a time, and switch between the graph and nested
@@ -185,7 +185,10 @@ output channel or CLI.
 
 Test discovery turns each top-level assert form into a Test Explorer entry with
 an inline run button in the gutter. Trace records each reduction step for a
-query, and visualise writes the interactive MeTTaGrapher view above.
+query. Why explains the runnable form under the cursor with the `@metta-ts/debug`
+engine trace: result atoms, grounded reducer counts, higher-order
+specialization, overflow cut points, and the reduction count. Visualise writes
+the interactive MeTTaGrapher view above.
 
 <img src="https://raw.githubusercontent.com/MesTTo/MeTTa-LSP/main/docs/images/07-testing.png" width="100%" alt="The Test Explorer listing 10-testing.metta and green run-test icons in the editor gutter beside each assert form" />
 
@@ -554,8 +557,8 @@ npm run package
 Publish future Marketplace updates through GitHub Actions:
 
 ```sh
-git tag v0.11.2
-git push origin v0.11.2
+git tag v0.15.0
+git push origin v0.15.0
 ```
 
 The `VS Code Marketplace` workflow builds the VSIX, uploads it to the GitHub

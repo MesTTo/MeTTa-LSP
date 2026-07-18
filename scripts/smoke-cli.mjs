@@ -47,6 +47,8 @@ if (listed.collection !== "stdlib" || listed.counts?.entries !== listed.entries?
   fail("list stdlib counts do not match its entries");
 if (!listed.modules?.some((module) => module.name === "json"))
   fail("list stdlib omitted the json module");
+if (!listed.modules?.some((module) => module.name === "vector"))
+  fail("list stdlib omitted the vector module");
 
 const plus = json(run(["inspect", "--json", "+"]).stdout, "inspect +");
 if (

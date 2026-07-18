@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.15.0 - 2026-07-19
+
+- Update the MeTTa TS runtime, browser, graph, Hyperon, Node, Python, Prolog,
+  libraries, and debugger packages to 1.3.0. Register `@metta-ts/libraries`
+  before reading `builtinModules()`, so the extracted `vector`, `roman`,
+  `combinatorics`, `patrick`, `datastructures`, `spaces`, `nars`, and `pln`
+  modules remain visible in diagnostics, hover, completion, CLI stdlib
+  inspection, and generated builtin docs.
+- Add the `MeTTa: Why Did This Reduce?` command backed by `@metta-ts/debug`.
+  It explains the runnable form under the cursor, or the file's last query, with
+  result atoms, grounded reducer counts, higher-order specialization, overflow
+  cut points, and reduction count.
+- Add a DAP `Trace` scope populated from the real engine trace while keeping the
+  grapher-based expression stepping. Continue now stops with a clear stack
+  overflow cut-point when the engine reports one.
+
+## 0.14.0 - 2026-07-19
+
+- Update the MeTTa TS runtime, browser, graph, Hyperon, Node, Python, and Prolog
+  packages to 1.2.0. The 1.2.0 runtime adds importable `vector`, `roman`,
+  `combinatorics`, `patrick`, `datastructures`, `spaces`, `nars`, and `pln`
+  libraries, linear grounded list operations (`size-atom`, `map-atom`,
+  `filter-atom`, and `foldl-atom`), an engine trace bus, and the `metta-debug`
+  CLI.
+
 ## 0.13.0 - 2026-07-18
 
 - Add `metta-lsp list stdlib` and `metta-lsp inspect` for the MeTTa-LSP default
