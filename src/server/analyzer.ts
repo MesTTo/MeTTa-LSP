@@ -313,6 +313,9 @@ const SEMANTIC_TOKEN_MODIFIER_INDEX = new Map<string, number>(
 );
 
 const ARG_LABELS = ["$x", "$y", "$z", "$a", "$b", "$c", "$space", "$pattern", "$template"];
+const DIAGNOSTIC_CONTEXT_DECLARATIONS = [
+  "(: @doc (-> Atom DocDescription DocReturnInformal DocInformal))",
+] as const;
 
 function rangeKey(range: Range): string {
   return `${range.start.line}:${range.start.character}:${range.end.line}:${range.end.character}`;
@@ -1137,7 +1140,7 @@ export class Analyzer {
     const syntaxEpoch = this.db.getRevision();
     const cached = this.contextCache.get(normalized);
     if (cached && cached.syntaxEpoch === syntaxEpoch) return cached.context;
-    const parts: string[] = [];
+    const parts: string[] = [...DIAGNOSTIC_CONTEXT_DECLARATIONS];
     for (const visibleUri of this.visibleUris(normalized)) {
       const index = this.documents.get(visibleUri);
       if (!index) continue;

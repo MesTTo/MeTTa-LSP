@@ -1,4 +1,5 @@
 import type {
+  CodeAction,
   CompletionItem,
   Diagnostic,
   DocumentSymbol,
@@ -424,6 +425,7 @@ export interface LspToolInput {
   readonly range?: Range;
   readonly query?: string;
   readonly newName?: string;
+  readonly applyCodeAction?: string;
   readonly includeDeclaration?: boolean;
   readonly evaluationPolicy?: Partial<RuntimeGuardSettings>;
   readonly wrapBareExpression?: boolean;
@@ -444,6 +446,9 @@ export interface LspToolResult {
   readonly rename?: WorkspaceEdit | null;
   readonly formatting?: readonly TextEdit[];
   readonly organizeImports?: readonly TextEdit[];
+  readonly codeActions?: readonly CodeAction[];
+  readonly applied?: { readonly files: readonly string[]; readonly changed: boolean };
+  readonly error?: string;
   readonly inlayHints?: readonly InlayHint[];
   readonly callHierarchy?: unknown;
   readonly semanticTokens?: SemanticTokens;

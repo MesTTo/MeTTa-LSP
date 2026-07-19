@@ -64,6 +64,10 @@ describe("interpreter-backed type + arity diagnostics", () => {
     expect(callCodes("(: inc (-> Number Number))\n(= (inc $x) (+ $x 1))\n!(inc 5)")).toEqual([]);
   });
 
+  it("does not flag the one-string @return doc form as an arity mismatch", () => {
+    expect(callCodes('(@doc foo (@desc "d") (@return "one string"))')).not.toContain("call.arity");
+  });
+
   it("does not flag an untyped user function's arity — the interpreter treats it as data", () => {
     // Without a (: f ...) type, `(f 1 2)` matches no rule and is left as data (Hyperon smart dispatch), not an
     // arity error, so neither does the LSP.

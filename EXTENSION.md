@@ -85,7 +85,7 @@ code --install-extension MeTTaMesTTo.metta-ts-lsp
 You can also install a downloaded GitHub release asset:
 
 ```sh
-code --install-extension metta-ts-lsp-0.15.0.vsix
+code --install-extension metta-ts-lsp-0.15.1.vsix
 ```
 
 Build from this checkout when you want the CLI, MCP server, or another editor:
@@ -557,8 +557,8 @@ npm run package
 Publish future Marketplace updates through GitHub Actions:
 
 ```sh
-git tag v0.15.0
-git push origin v0.15.0
+git tag v0.15.1
+git push origin v0.15.1
 ```
 
 The `VS Code Marketplace` workflow builds the VSIX, uploads it to the GitHub

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.15.1 - 2026-07-19
+
+- Update the MeTTa TS runtime, browser, graph, Hyperon, Node, Python, Prolog,
+  libraries, and debugger packages to 1.3.1.
+- Keep valid one-string `(@return "...")` documentation forms from producing a
+  `call.arity` warning.
+- Make the MCP edit tools write their edits to workspace files. Formatting,
+  range formatting, import organization, rename, and selected code actions now
+  return both the edit payload and an `applied` summary.
+
 ## 0.15.0 - 2026-07-19
 
 - Update the MeTTa TS runtime, browser, graph, Hyperon, Node, Python, Prolog,

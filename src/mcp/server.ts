@@ -35,6 +35,7 @@ import { NodePrologDiagnosticProvider } from "../server/nodePrologDiagnostics.js
 import { collectPrologBridgeDiagnostics } from "../server/prologDiagnosticsScheduler.js";
 import type { LspToolInput } from "../server/types.js";
 import { pathIsInsideWorkspace } from "../server/workspacePath.js";
+import { type AppliedEdits, applyDocumentEdits, applyWorkspaceEditToFiles } from "./applyEdits.js";
 import { StdioJsonReader } from "./stdioFraming.js";
 
 interface JsonRpcRequest {
@@ -156,6 +157,18 @@ const commonInputSchema = {
   },
 };
 
+const codeActionsInputSchema = {
+  ...commonInputSchema,
+  properties: {
+    ...commonInputSchema.properties,
+    applyCodeAction: {
+      type: "string",
+      description:
+        "Exact code action title to apply. Omit to list actions without modifying files.",
+    },
+  },
+};
+
 const commonOutputSchema = {
   type: "object",
   additionalProperties: true,
@@ -165,6 +178,15 @@ const commonOutputSchema = {
     locations: { type: "array", items: { type: "object", additionalProperties: true } },
     result: {},
     evaluation: { type: "object", additionalProperties: true },
+    applied: {
+      type: "object",
+      properties: {
+        files: { type: "array", items: { type: "string" } },
+        changed: { type: "boolean" },
+      },
+    },
+    codeActions: { type: "array", items: { type: "object", additionalProperties: true } },
+    error: { type: "string" },
   },
 };
 
@@ -231,7 +253,8 @@ const tools: ToolDefinition[] = [
   },
   {
     name: "lsp_rename",
-    description: "Return a WorkspaceEdit preview for renaming a symbol. The edit is not applied.",
+    description:
+      "Rename a symbol, write the changes to the files, and return the WorkspaceEdit and summary.",
     inputSchema: commonInputSchema,
   },
   {
@@ -246,17 +269,19 @@ const tools: ToolDefinition[] = [
   },
   {
     name: "lsp_format",
-    description: "Return full-document formatting edits. The edit is not applied.",
+    description:
+      "Format the document, write the result to the file, and return the edits and summary.",
     inputSchema: commonInputSchema,
   },
   {
     name: "lsp_format_range",
-    description: "Return range formatting edits. The edit is not applied.",
+    description: "Format a range, write the result to the file, and return the edits and summary.",
     inputSchema: commonInputSchema,
   },
   {
     name: "lsp_organize_imports",
-    description: "Return import organization edits. The edit is not applied.",
+    description:
+      "Organize imports, write the result to the file, and return the edits and summary.",
     inputSchema: commonInputSchema,
   },
   {
@@ -307,8 +332,9 @@ const tools: ToolDefinition[] = [
   },
   {
     name: "lsp_code_actions",
-    description: "Return code actions for a range. Edits are previews and are not applied.",
-    inputSchema: commonInputSchema,
+    description:
+      "List code actions for a range. Pass applyCodeAction=<title> to apply one action to the files.",
+    inputSchema: codeActionsInputSchema,
   },
   {
     name: "lsp_explain_form",
@@ -467,6 +493,31 @@ async function runWorkspaceSymbols(input: LspToolInput): Promise<unknown> {
 function activeWorkspaceRootPath(): string | undefined {
   const root = analyzer.getWorkspaceRoots()[0];
   return root ? (uriToPath(root) ?? undefined) : undefined;
+}
+
+function activeWorkspaceRootPaths(): string[] {
+  const roots = analyzer
+    .getWorkspaceRoots()
+    .map((root) => uriToPath(root))
+    .filter((root): root is string => root !== null);
+  return roots.length > 0 ? roots : [configuredWorkspaceRootPath];
+}
+
+function refreshAppliedFiles(applied: AppliedEdits): void {
+  for (const filePath of applied.files)
+    analyzer.updateDocument(pathToUri(filePath), readFileSync(filePath, "utf8"), null, false);
+}
+
+function applyDocumentEditsForTool(uri: string, edits: Parameters<typeof applyDocumentEdits>[1]) {
+  const applied = applyDocumentEdits(uri, edits, activeWorkspaceRootPaths());
+  refreshAppliedFiles(applied);
+  return applied;
+}
+
+function applyWorkspaceEditForTool(edit: Parameters<typeof applyWorkspaceEditToFiles>[0]) {
+  const applied = applyWorkspaceEditToFiles(edit, activeWorkspaceRootPaths());
+  refreshAppliedFiles(applied);
+  return applied;
 }
 
 function assertInsideWorkspaceRoot(filePath: string, rootPath: string | undefined): void {
@@ -686,22 +737,32 @@ async function callTool(name: string, rawInput: unknown): Promise<unknown> {
       );
       return { references: compactLocationResult(input, locations) };
     }
-    case "lsp_rename":
-      return {
-        rename: position && input.newName ? analyzer.rename(uri, position, input.newName) : null,
-      };
+    case "lsp_rename": {
+      const edit = position && input.newName ? analyzer.rename(uri, position, input.newName) : null;
+      if (!edit) return { rename: null };
+      return { rename: edit, applied: applyWorkspaceEditForTool(edit) };
+    }
     case "lsp_document_symbols": {
       const symbols = analyzer.documentSymbols(uri);
       return {
         documentSymbols: input.resultFormat === "lsp" ? symbols : compactDocumentSymbols(symbols),
       };
     }
-    case "lsp_format":
-      return { formatting: analyzer.formatDocument(uri) };
-    case "lsp_format_range":
-      return { formatting: analyzer.formatRange(uri, input.range ?? defaultRange(uri)) };
-    case "lsp_organize_imports":
-      return { organizeImports: analyzer.organizeImports(uri) };
+    case "lsp_format": {
+      const edits = analyzer.formatDocument(uri);
+      return { formatting: edits, applied: applyDocumentEditsForTool(uri, edits) };
+    }
+    case "lsp_format_range": {
+      const edits = analyzer.formatRange(uri, input.range ?? defaultRange(uri));
+      return { formatting: edits, applied: applyDocumentEditsForTool(uri, edits) };
+    }
+    case "lsp_organize_imports": {
+      const edits = analyzer.organizeImports(uri);
+      return {
+        organizeImports: edits,
+        applied: applyDocumentEditsForTool(uri, edits),
+      };
+    }
     case "lsp_inlay_hints":
       return { inlayHints: analyzer.inlayHints(uri, input.range ?? defaultRange(uri)) };
     case "lsp_call_hierarchy":
@@ -729,8 +790,25 @@ async function callTool(name: string, rawInput: unknown): Promise<unknown> {
     }
     case "lsp_signature_help":
       return { signatureHelp: atPosition(position, (p) => analyzer.signatureHelp(uri, p), null) };
-    case "lsp_code_actions":
-      return { codeActions: analyzer.codeActions(uri, input.range ?? defaultRange(uri)) };
+    case "lsp_code_actions": {
+      const codeActions = analyzer.codeActions(uri, input.range ?? defaultRange(uri));
+      if (input.applyCodeAction === undefined) return { codeActions };
+      const action = codeActions.find((candidate) => candidate.title === input.applyCodeAction);
+      if (action === undefined)
+        return {
+          codeActions,
+          error: `No code action titled '${input.applyCodeAction}' was found.`,
+        };
+      if (action.edit === undefined)
+        return {
+          codeActions,
+          error: `Code action '${input.applyCodeAction}' has no edit to apply.`,
+        };
+      return {
+        codeActions,
+        applied: applyWorkspaceEditForTool(action.edit),
+      };
+    }
     case "lsp_explain_form":
       return { explanation: atPosition(position, (p) => analyzer.explainForm(uri, p), null) };
     case "lsp_completion":

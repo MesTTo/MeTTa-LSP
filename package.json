@@ -2,7 +2,7 @@
   "name": "metta-ts-lsp",
   "displayName": "MeTTa LSP",
   "description": "A MeTTa language server, VS Code extension, CLI, MCP server, and documentation toolkit built on the pure-TypeScript @metta-ts/core interpreter.",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "publisher": "MeTTaMesTTo",
   "license": "Apache-2.0",
   "icon": "icon.png",
@@ -802,9 +802,9 @@
     "setup:omegaclaw": "node scripts/setup-omegaclaw.mjs"
   },
   "dependencies": {
-    "@metta-ts/core": "^1.3.0",
-    "@metta-ts/debug": "^1.3.0",
-    "@metta-ts/libraries": "^1.3.0",
+    "@metta-ts/core": "^1.3.1",
+    "@metta-ts/debug": "^1.3.1",
+    "@metta-ts/libraries": "^1.3.1",
     "@vscode/debugadapter": "^1.68.0",
     "@vscode/debugprotocol": "^1.68.0",
     "metta-ts-typescript-plugin": "file:./typescript-plugin",
@@ -820,12 +820,12 @@
     "vscode-uri": "^3.1.0"
   },
   "optionalDependencies": {
-    "@metta-ts/browser": "^1.3.0",
-    "@metta-ts/grapher": "^1.3.0",
-    "@metta-ts/hyperon": "^1.3.0",
-    "@metta-ts/node": "^1.3.0",
-    "@metta-ts/prolog": "^1.3.0",
-    "@metta-ts/py": "^1.3.0",
+    "@metta-ts/browser": "^1.3.1",
+    "@metta-ts/grapher": "^1.3.1",
+    "@metta-ts/hyperon": "^1.3.1",
+    "@metta-ts/node": "^1.3.1",
+    "@metta-ts/prolog": "^1.3.1",
+    "@metta-ts/py": "^1.3.1",
     "pythonia": "^1.2.6"
   },
   "devDependencies": {
