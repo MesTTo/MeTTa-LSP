@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.16.0 - 2026-07-20
+
+- Update the MeTTa TS runtime, browser, graph, Hyperon, Node, Python, Prolog,
+  libraries, and debugger packages to 1.5.0, picking up the unified `metta`
+  CLI from 1.4.0 and the 1.5.0 engine work: anchored-conjunction routing, the
+  ordered numeric range index, the direct top-level match, the compact static
+  fact base, and the trail-served compiled search. All engine paths are on by
+  default and byte-identical to the reference evaluator, so guarded evaluation,
+  diagnostics, hover, and the debugger behave as before, faster on large fact
+  bases. The generated builtin reference is unchanged (no new builtins).
+
 ## 0.15.1 - 2026-07-19
 
 - Update the MeTTa TS runtime, browser, graph, Hyperon, Node, Python, Prolog,
