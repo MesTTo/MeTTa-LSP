@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.17.0 - 2026-07-22
+
+- Update the runtime, browser, graph, Hyperon, Node, Python, Prolog, libraries,
+  and debugger packages to 2.0.3, moving onto the MeTTaScript 2.x engine. This
+  crosses the 2.0.0 rebrand (the `@metta-ts/*` packages are now re-export shims
+  over the canonical `@mettascript/*` scope), 2.0.1 evaluator allocation work,
+  2.0.2 deterministic recursion depth, and the 2.0.3 opt-in per-query work
+  budget. Guarded evaluation, diagnostics, hover, and the debugger behave as
+  before.
+- Recognize the canonical `@mettascript/hyperon` and `@mettascript/edsl` scopes
+  when confirming the origin of a registered host operation. The 2.0.0 rebrand
+  moved the real `registerOperation` declaration under `@mettascript/*`, so the
+  host-type service had stopped discovering TypeScript host bridges; both scopes
+  are now accepted, and host-operation hovers and generated docs work again.
+- Surface the new `mettascript-max-steps` pragma in the generated builtin
+  reference, matching the 2.0.3 work budget.
+- Keep the browser IDE's hyperpose parallel-evaluation worker from bundling to an
+  empty file. The 2.x `@metta-ts/browser` package declares `sideEffects: false`,
+  which let esbuild tree-shake away the worker's side-effect import; the browser
+  worker bundle now ignores that annotation so the worker ships its code.
+
 ## 0.16.0 - 2026-07-20
 
 - Update the MeTTa TS runtime, browser, graph, Hyperon, Node, Python, Prolog,

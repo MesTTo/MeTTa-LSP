@@ -157,7 +157,7 @@ Sequentially unifies a list of pairs, then evaluates a body
 
 ### `pragma!` {#pragma_21_}
 
-Changes the value of a global key, such as type-check, interpreter, or max-stack-depth
+Changes the value of a global key, such as type-check, interpreter, max-stack-depth, or mettascript-max-steps
 
 **Parameters**
 - `%Undefined%` — Key name

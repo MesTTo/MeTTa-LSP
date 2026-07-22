@@ -52,7 +52,10 @@ export async function bundleBrowserArtifacts({ client, serverDir, runtimeDir, mi
     bundle(
       "src/runtime/browserHyperposeWorker.ts",
       path.join(runtimeDir, "browserHyperposeWorker.js"),
-      { minify },
+      // The worker's only statement is a side-effect import of @metta-ts/browser/hyperpose-worker, but that
+      // package declares `sideEffects: false`, so esbuild tree-shakes the import and emits an empty worker.
+      // ignoreAnnotations keeps the import (and the worker code) in the bundle.
+      { minify, ignoreAnnotations: true },
     ),
   ]);
 }

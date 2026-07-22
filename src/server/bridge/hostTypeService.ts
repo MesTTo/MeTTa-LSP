@@ -47,7 +47,16 @@ const BLOCKED_SEGMENTS = new Set([
 const OP_METHODS = new Set(["registerOperation", "registerAsyncOperation", "op", "asyncOp"]);
 const ASYNC_OP_METHODS = new Set(["registerAsyncOperation", "asyncOp"]);
 const OP_IDENTIFIERS = new Set(["OperationAtom"]);
-const ORIGIN_MODULES = ["@metta-ts/hyperon", "@metta-ts/edsl"];
+// The rebrand publishes the engine under the canonical `@mettascript/*` scope and keeps `@metta-ts/*` as
+// re-export shims, so a `registerOperation` callee imported from either scope resolves to a declaration
+// under `@mettascript/*`. Both scopes are listed so the origin check accepts host bridges written against
+// either one.
+const ORIGIN_MODULES = [
+  "@mettascript/hyperon",
+  "@mettascript/edsl",
+  "@metta-ts/hyperon",
+  "@metta-ts/edsl",
+];
 
 const PROBE_FILE = "__metta_probe__.ts";
 const PROMISE_WRAPPER = /^Promise<(.+)>$/;
@@ -107,9 +116,10 @@ function matchOpSite(node: ts.Node): OpSite | null {
   return { name: first.text, fnArg: node.arguments[1], callee, async };
 }
 
-// Whether the callee resolves to a declaration in `@metta-ts/hyperon`/`@metta-ts/edsl`. An import alias is
-// followed to its real declaration; an unresolvable callee (untyped JS, missing types) falls back to
-// acceptance by name, while a callee that resolves to some OTHER module is rejected.
+// Whether the callee resolves to a declaration in one of the ORIGIN_MODULES (the engine's hyperon/edsl
+// packages, either scope). An import alias is followed to its real declaration; an unresolvable callee
+// (untyped JS, missing types) falls back to acceptance by name, while a callee that resolves to some OTHER
+// module is rejected.
 function originConfirmed(checker: ts.TypeChecker, callee: ts.Node): boolean {
   const nameNode = ts.isPropertyAccessExpression(callee) ? callee.name : callee;
   let symbol = checker.getSymbolAtLocation(nameNode);
