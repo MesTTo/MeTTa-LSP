@@ -268,19 +268,30 @@ export function formatMetta(src: string, options: FormatOptions = {}): string {
   // Wrap a node's layout with its comments. The trailing comment and its break-parent sit OUTSIDE the node's
   // own group, so they force the enclosing form to break (the next sibling drops to a new line) without
   // forcing this node itself to expand.
-  function docFor(node: SpannedNode): Doc {
+  // A node's form doc plus its trailing comment (which sits outside the node's own group), without any
+  // leading comments.
+  function formWithTrailing(node: SpannedNode): Doc {
     const inner = formDoc(node);
     const trail = trailing.get(node);
-    const withTrail =
-      trail === undefined ? inner : concat([inner, text(" "), text(trail), breakParent]);
-    const lead = leading.get(node) ?? [];
-    if (lead.length === 0) return withTrail;
-    return concat([...lead.flatMap((value) => [text(value), hardline]), withTrail]);
+    return trail === undefined ? inner : concat([inner, text(" "), text(trail), breakParent]);
+  }
+
+  // A node's leading comments, each on its own line (empty when it has none).
+  function leadingPrefix(node: SpannedNode): Doc[] {
+    return (leading.get(node) ?? []).flatMap((value) => [text(value), hardline]);
+  }
+
+  function docFor(node: SpannedNode): Doc {
+    const lead = leadingPrefix(node);
+    const body = formWithTrailing(node);
+    return lead.length === 0 ? body : concat([...lead, body]);
   }
 
   const nodeDoc = (node: SpannedNode): Doc => {
-    const doc = docFor(node);
-    return node.bang === true ? concat([text("!"), doc]) : doc;
+    if (node.bang !== true) return docFor(node);
+    // The bang binds to the form: keep a leading documentation comment above `!form` rather than letting the
+    // `!` strand it on a `!;; …` line, which is not a contiguous source comment and re-parses oddly.
+    return concat([...leadingPrefix(node), text("!"), formWithTrailing(node)]);
   };
 
   const out: string[] = [];

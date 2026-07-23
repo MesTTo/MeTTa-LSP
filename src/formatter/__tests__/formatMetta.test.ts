@@ -78,6 +78,16 @@ describe("formatMetta layout", () => {
     expect(fmt("; header\n(: a Type)")).toBe("; header\n(: a Type)");
   });
 
+  it("keeps a leading comment above a banged form, not stranded on the ! line", () => {
+    // The bang binds to the form. A `!;; comment` line is not a contiguous documentation comment and
+    // re-parses oddly, so the comment stays on its own line above `!form`.
+    const src = ";; Explanation of the query.\n!(assertEqualToResult expr expected)";
+    const out = fmt(src);
+    expect(out).toBe(";; Explanation of the query.\n!(assertEqualToResult expr expected)");
+    expect(out).not.toContain("!;;");
+    expect(fmt(out)).toBe(out); // idempotent
+  });
+
   it("keeps a trailing comment after a form that still fits on one line", () => {
     expect(fmt("(: a Type)   ; a note")).toBe("(: a Type) ; a note");
   });
