@@ -423,6 +423,11 @@
           "default": true,
           "description": "Report simple literal type mismatches against declared signatures."
         },
+        "metta.diagnostics.importResolution": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report imports that cannot be resolved, and top-level (import! ...) forms missing the leading ! that runs them."
+        },
         "metta.diagnostics.actionNotRun": {
           "type": "boolean",
           "default": true,

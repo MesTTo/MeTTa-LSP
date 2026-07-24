@@ -9,7 +9,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
-import { SEMANTIC_TOKEN_TYPES } from "../analyzer.js";
+import { DEFAULT_SETTINGS, SEMANTIC_TOKEN_TYPES } from "../analyzer.js";
 
 interface TokenType {
   readonly id: string;
@@ -101,5 +101,24 @@ describe("package.json setting contributions", () => {
       .filter((key) => !key.startsWith("__"));
     expect(toggleKeys).not.toHaveLength(0);
     expect(toggleKeys.filter((key) => !contributedSettings.has(key))).toStrictEqual([]);
+  });
+
+  // A setting the server resolves but the manifest never declares still works when written by hand, and is
+  // invisible in the settings UI, so nobody finds it. `metta.diagnostics.importResolution` sat that way.
+  // DEFAULT_SETTINGS is the shape configResolve fills, so every leaf of it is a real setting.
+  it("declares every setting the server resolves", () => {
+    const resolvable: string[] = [];
+    const walk = (value: Record<string, unknown>, prefix: readonly string[]): void => {
+      for (const [key, child] of Object.entries(value)) {
+        const keyPath = [...prefix, key];
+        // An array setting (workspace.exclude) is a leaf, not a nested section.
+        if (child !== null && typeof child === "object" && !Array.isArray(child))
+          walk(child as Record<string, unknown>, keyPath);
+        else resolvable.push(keyPath.join("."));
+      }
+    };
+    walk(DEFAULT_SETTINGS as unknown as Record<string, unknown>, []);
+    expect(resolvable).not.toHaveLength(0);
+    expect(resolvable.filter((key) => !contributedSettings.has(key))).toStrictEqual([]);
   });
 });
