@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.18.0 - 2026-07-24
+
+- Update the runtime, browser, graph, Hyperon, Node, Python, Prolog, libraries,
+  and debugger packages to 2.5.1, from 2.0.3. This picks up transitive,
+  deduplicated, cycle-safe imports (2.1.0), the reusable `resolveImportGraph`
+  primitive (2.2.0), deep recursion carried on the heap continuation (2.3.0 and
+  its 2.3.1 patch), the native constructor-dispatch fast path (2.4.0), tabling
+  for space-reading functions, `superpose` over an operator tuple as data, and
+  `Int`, `Integer`, `Double`, and `Float` accepted as `Number` (2.5.0). Guarded
+  evaluation, diagnostics, hover, and the debugger behave as before.
+- Pick up the 2.5.1 `metta check` accuracy fix in the bundled engine. Its static
+  checker stopped reporting false arity errors on the overloaded doc atoms
+  `@param` and `@return` and on operators reused as data in unevaluated
+  positions, and it now resolves `import!` targets so cross-file signatures are
+  known. The MeTTa LSP's own analyzer already avoided these through the
+  interpreter's `check-types`; the shared `metta` CLI now matches it.
+
 ## 0.17.0 - 2026-07-22
 
 - Update the runtime, browser, graph, Hyperon, Node, Python, Prolog, libraries,
