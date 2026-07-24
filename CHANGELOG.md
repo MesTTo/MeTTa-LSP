@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.18.1 - 2026-07-25
+
+- Contribute `metta.diagnostics.importResolution` in the extension manifest. It
+  gates the `import.unresolved` and `import.notRun` diagnostics and has always
+  been read, but it was never declared, so it did not appear in the settings UI
+  and could only be set by editing `settings.json` by hand. The manifest test
+  now walks the server's own settings shape and asserts every setting is
+  contributed, so an undeclared one fails the build rather than going unnoticed.
+
 ## 0.18.0 - 2026-07-25
 
 - Warn when a top-level call to an operator that exists for its effect is
