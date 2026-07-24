@@ -3763,45 +3763,50 @@ export class Analyzer {
     return [...prefixForms, selected].filter((part) => part.trim().length > 0).join("\n");
   }
 
-  public importSourceMap(uri: string): Record<string, string> {
-    const index = this.ensureIndexed(uri);
-    if (!index) return {};
+  // Walk the transitive import graph from `uri`, mapping each import name (as the importing module writes
+  // it: raw target, unquoted, and the file basename) to a value derived from the resolved target. Recursion
+  // is what the guarded-evaluation worker needs: it injects this map as core's import map, so an imported
+  // module's own `(import! &self mod)` only resolves if mod is present too. Cycle-safe via a visited set,
+  // matching the recursive resolution the Node runtime does with readImports.
+  private collectImportMap(
+    uri: string,
+    valueFor: (targetUri: string, targetPath: string | null) => string | undefined,
+    includeNonMetta: boolean,
+  ): Record<string, string> {
     const imports: Record<string, string> = {};
-    for (const imp of index.imports) {
-      if (!imp.resolvedUri) continue;
-      const targetPath = this.uriToPath(imp.resolvedUri);
-      if (targetPath !== null && !isMettaFile(targetPath)) continue;
-      const target = this.ensureIndexed(imp.resolvedUri);
-      if (!target) continue;
-      const raw = stripQuotes(imp.rawPath);
-      const names = new Set<string>([imp.rawPath, raw]);
-      if (targetPath) {
-        names.add(path.basename(targetPath));
-        names.add(path.basename(targetPath, path.extname(targetPath)));
+    const visited = new Set<string>();
+    const walk = (fromUri: string): void => {
+      const index = this.ensureIndexed(fromUri);
+      if (!index) return;
+      for (const imp of index.imports) {
+        if (!imp.resolvedUri) continue;
+        const targetPath = this.uriToPath(imp.resolvedUri);
+        if (!includeNonMetta && targetPath !== null && !isMettaFile(targetPath)) continue;
+        const value = valueFor(imp.resolvedUri, targetPath);
+        if (value === undefined) continue;
+        const raw = stripQuotes(imp.rawPath);
+        const names = new Set<string>([imp.rawPath, raw]);
+        if (targetPath) {
+          names.add(path.basename(targetPath));
+          names.add(path.basename(targetPath, path.extname(targetPath)));
+        }
+        for (const name of names) if (name.length > 0) imports[name] = value;
+        if (!visited.has(imp.resolvedUri)) {
+          visited.add(imp.resolvedUri);
+          walk(imp.resolvedUri);
+        }
       }
-      for (const name of names) {
-        if (name.length > 0) imports[name] = target.text;
-      }
-    }
+    };
+    walk(uri);
     return imports;
   }
 
+  public importSourceMap(uri: string): Record<string, string> {
+    return this.collectImportMap(uri, (targetUri) => this.ensureIndexed(targetUri)?.text, false);
+  }
+
   public importPathMap(uri: string): Record<string, string> {
-    const index = this.ensureIndexed(uri);
-    if (!index) return {};
-    const imports: Record<string, string> = {};
-    for (const imp of index.imports) {
-      if (!imp.resolvedUri) continue;
-      const targetPath = this.uriToPath(imp.resolvedUri);
-      if (targetPath === null) continue;
-      const raw = stripQuotes(imp.rawPath);
-      const names = new Set<string>([imp.rawPath, raw, path.basename(targetPath)]);
-      names.add(path.basename(targetPath, path.extname(targetPath)));
-      for (const name of names) {
-        if (name.length > 0) imports[name] = targetPath;
-      }
-    }
-    return imports;
+    return this.collectImportMap(uri, (_targetUri, targetPath) => targetPath ?? undefined, true);
   }
 
   public organizeImports(uri: string): TextEdit[] {

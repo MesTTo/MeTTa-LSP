@@ -6,8 +6,10 @@
 // file. The core round-trip tests prove the composed source actually evaluates — they exercise the real
 // pipeline (index → composition → @metta-ts/core with the workspace import map), not a lookalike.
 
-import { type Atom, format, parseAll, runProgram, standardTokenizer } from "@metta-ts/core";
+import * as core from "@metta-ts/core";
+import { format, type ImportMap, runProgram } from "@metta-ts/core";
 import { describe, expect, it } from "vitest";
+import { importGraphFromSources } from "../../runtime/workerShared.js";
 import { Analyzer } from "../analyzer.js";
 import { InMemoryFileProvider } from "../fileProvider.js";
 
@@ -25,19 +27,12 @@ function analyzerFor(main: string): { analyzer: Analyzer; uri: string } {
   return { analyzer, uri };
 }
 
-// The worker's exact imports conversion (evaluationWorker.ts): module name → parsed Atom[].
-function importsAsAtoms(map: Record<string, string>): Map<string, Atom[]> {
-  const converted = new Map<string, Atom[]>();
-  for (const [name, source] of Object.entries(map)) {
-    converted.set(
-      name,
-      parseAll(source, standardTokenizer()).map((top) => top.atom),
-    );
-  }
-  return converted;
+// The workers' own conversion, so these round-trips exercise the map Run actually evaluates against.
+function workerImports(source: string, map: Record<string, string>): ImportMap {
+  return importGraphFromSources(core, source, map);
 }
 
-function results(source: string, imports: Map<string, Atom[]>): string[] {
+function results(source: string, imports: ImportMap): string[] {
   return runProgram(source, 20_000, imports, { maxStackDepth: 512 }).flatMap((query) =>
     query.results.map((atom) => format(atom)),
   );
@@ -57,8 +52,7 @@ describe("evaluationSource — the source Run composes for a range", () => {
   it("evaluates to real results through core with the workspace import map", () => {
     const { analyzer, uri } = analyzerFor(main);
     const source = analyzer.evaluationSource(uri, callRange);
-    const imports = importsAsAtoms(analyzer.importSourceMap(uri));
-    expect(results(source, imports)).toContain("11");
+    expect(results(source, workerImports(source, analyzer.importSourceMap(uri)))).toContain("11");
   });
 
   it("evaluates quoted import paths through the workspace import map", () => {
@@ -67,8 +61,7 @@ describe("evaluationSource — the source Run composes for a range", () => {
     const quoted = '!(import! &self "lib.metta")\n(= (compute $n) (helper (* $n 2)))\n(compute 5)';
     const { analyzer, uri } = analyzerFor(quoted);
     const source = analyzer.evaluationSource(uri, callRange);
-    const imports = importsAsAtoms(analyzer.importSourceMap(uri));
-    expect(results(source, imports)).toContain("11");
+    expect(results(source, workerImports(source, analyzer.importSourceMap(uri)))).toContain("11");
   });
 
   it("keeps a selected definition unwrapped", () => {

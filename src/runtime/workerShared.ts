@@ -1,11 +1,12 @@
 // SPDX-FileCopyrightText: 2026 MesTTo
 // SPDX-License-Identifier: Apache-2.0
 //
-// Shared machinery for evaluation workers: capture core's output sinks under the byte cap, convert
-// caller-injected import sources to atom lists, and fold raw query results into the bounded wire shape. This
-// module is browser-safe; Node and browser workers attach their own message transport at the edge.
+// Shared machinery for evaluation workers: capture core's output sinks under the byte cap, resolve the
+// caller-injected import sources into the runtime's import graph, and fold raw query results into the
+// bounded wire shape. This module is browser-safe; Node and browser workers attach their own message
+// transport at the edge.
 
-import type { Atom, QueryResult } from "@metta-ts/core";
+import type { ImportMap, QueryResult, ResolveModule } from "@metta-ts/core";
 import type {
   GuardedEvaluationPolicy,
   GuardedEvaluationWorkerResponse,
@@ -55,19 +56,21 @@ export function captureOutput(core: Core, maxOutputChars: number): OutputCapture
   };
 }
 
-// The injected import map, parsed: module name → its atoms, the shape core's import! resolves.
-export function importsAsAtoms(
+// Build the recursive import map the runtime resolves against, from the injected module name → source map,
+// using core's own resolveImportGraph — the exact walk @metta-ts/node's readImports drives from the
+// filesystem. Each entry keeps its ImportModule structure (its definitions plus its own import! edges), so a
+// transitive `(import! &self mod)` inside an imported module is followed. A flat name → atoms map dropped
+// those edges, which left imported multi-file test suites running against unresolved cross-file helpers.
+export function importGraphFromSources(
   core: Core,
-  imports: Readonly<Record<string, string>>,
-): Map<string, Atom[]> {
-  const converted = new Map<string, Atom[]>();
-  for (const [name, source] of Object.entries(imports)) {
-    converted.set(
-      name,
-      core.parseAll(source, core.standardTokenizer()).map((top) => top.atom),
-    );
-  }
-  return converted;
+  entrySource: string,
+  sources: Readonly<Record<string, string>>,
+): ImportMap {
+  const resolveModule: ResolveModule = (name) =>
+    sources[name] === undefined
+      ? { id: name }
+      : { id: name, source: sources[name], contextId: name };
+  return core.resolveImportGraph(entrySource, resolveModule);
 }
 
 // Fold raw query results into the response, applying the policy's result caps.

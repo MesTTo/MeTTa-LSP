@@ -8,7 +8,7 @@ import type {
 import { serveBrowserWorker } from "./browserWorkerPort.js";
 import { relatedBrowserWorkerUrl } from "./browserWorkerUrl.js";
 import { evaluatorOptionsForPolicy } from "./guardedEvaluationShared.js";
-import { captureOutput, collectResponse, importsAsAtoms } from "./workerShared.js";
+import { captureOutput, collectResponse, importGraphFromSources } from "./workerShared.js";
 
 async function run(
   request: GuardedEvaluationWorkerRequest,
@@ -22,7 +22,7 @@ async function run(
       request.source,
       new Map(),
       request.policy.fuel,
-      importsAsAtoms(core, request.imports),
+      importGraphFromSources(core, request.source, request.imports),
       evaluatorOptionsForPolicy(request.policy),
       {
         hostEffects: false,

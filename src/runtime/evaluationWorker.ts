@@ -4,7 +4,7 @@ import type {
 } from "../server/guardedEvaluationTypes.js";
 import { evaluatorOptionsForPolicy } from "./guardedEvaluationShared.js";
 import { serveNodeWorker } from "./nodeWorkerPort.js";
-import { captureOutput, collectResponse, importsAsAtoms } from "./workerShared.js";
+import { captureOutput, collectResponse, importGraphFromSources } from "./workerShared.js";
 
 async function run(
   request: GuardedEvaluationWorkerRequest,
@@ -25,7 +25,7 @@ async function run(
       request.source,
       new Map(),
       request.policy.fuel,
-      importsAsAtoms(core, request.imports),
+      importGraphFromSources(core, request.source, request.imports),
       {
         ...evaluatorOptionsForPolicy(request.policy),
         parEvalImpl: node.makeParEvalImpl(request.policy.fuel, { hostEffects: false }),

@@ -386,6 +386,11 @@ async function main(): Promise<void> {
         uri,
         policy: analyzer.getSettings().runtime.guard,
         wrapBareExpression: false,
+        // Load the file's resolved imports so an imported multi-file suite brings its modules' definitions
+        // in, the same way `run` and the editor Test Explorer do. Without them a cross-file assert errors on
+        // an undefined helper instead of running.
+        imports: analyzer.importSourceMap(uri),
+        importPaths: analyzer.importPathMap(uri),
       });
       if (!evaluation.ok) {
         console.error(evaluation.error ?? (evaluation.blockers.join("; ") || "evaluation failed"));

@@ -652,7 +652,10 @@ async function runTests(uri: string, input: LspToolInput): Promise<unknown> {
     source,
     uri: index?.uri ?? uri,
     policy,
+    // Resolve imports so an imported multi-file suite runs against its modules' definitions, matching the
+    // `run` path and the CLI `test` command; without importPaths transitive imports stay unresolved.
     imports: analyzer.importSourceMap(uri),
+    importPaths: analyzer.importPathMap(uri),
     wrapBareExpression: false,
   });
   const results = classifyTestQueries(evaluation.queries);

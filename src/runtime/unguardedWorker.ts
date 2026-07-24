@@ -22,7 +22,7 @@ import { serveNodeWorker } from "./nodeWorkerPort.js";
 import {
   captureOutput,
   collectResponse,
-  importsAsAtoms,
+  importGraphFromSources,
   type OutputCapture,
 } from "./workerShared.js";
 
@@ -183,7 +183,7 @@ async function run(
     const node = await import("@metta-ts/node/source");
     if (cancellationRequested) throw cancellationError();
     output = captureOutput(core, request.policy.maxOutputChars);
-    const imports = importsAsAtoms(core, request.imports);
+    const imports = importGraphFromSources(core, request.source, request.imports);
     const options = {
       tabling: request.policy.tabling,
       maxStackDepth: request.policy.maxStackDepth,
