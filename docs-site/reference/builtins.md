@@ -1106,6 +1106,12 @@ Replaces the wrapped atom of a state with a new value
 
 **Returns** `(StateMonad $t)` — State with the replaced atom
 
+### `charsToString` {#charsToString}
+
+```metta
+(-> Expression String)
+```
+
 ### `collapse` {#collapse}
 
 ```metta
@@ -2549,6 +2555,12 @@ Parses a string of MeTTa source and returns its first atom
 - `String` — Source string
 
 **Returns** `Atom` — First parsed atom, or the empty expression if the string has no atoms
+
+### `stringToChars` {#stringToChars}
+
+```metta
+(-> String Expression)
+```
 
 ### `subtraction` {#subtraction}
 
