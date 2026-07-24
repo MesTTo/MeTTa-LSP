@@ -1,9 +1,24 @@
 # Changelog
 
-## 0.18.0 - 2026-07-24
+## 0.18.0 - 2026-07-25
 
+- Warn when a top-level call to an operator that exists for its effect is
+  missing the leading `!` that runs it (`action.notRun`), with a quick fix that
+  inserts the `!`. `import.notRun` already covered a bare `(import! …)`; this is
+  the same mistake for the assert family, `add-atom`, `remove-atom`, and
+  `println!`, where it is worse, because a stored assertion never checks
+  anything and so reads as a passing test. An operator qualifies when every
+  function type declared for it returns the unit type `(->)`, read from the
+  interpreter's own `get-type`, so an operator you declare `(-> … (->))`
+  yourself is covered too. Controlled by `metta.diagnostics.actionNotRun`.
+- Fix imported multi-file test suites under the CLI `test` command and the MCP
+  `lsp_run_tests` tool. The evaluation workers flattened each injected module to
+  a list of atoms, which dropped that module's own `import!` edges, so a helper
+  one hop further out never resolved and every assertion using it failed. The
+  workers now build core's `resolveImportGraph`, the analyzer's import maps walk
+  the graph transitively, and both entry points pass the map that `run` passes.
 - Update the runtime, browser, graph, Hyperon, Node, Python, Prolog, libraries,
-  and debugger packages to 2.5.1, from 2.0.3. This picks up transitive,
+  and debugger packages to 2.6.0, from 2.0.3. This picks up transitive,
   deduplicated, cycle-safe imports (2.1.0), the reusable `resolveImportGraph`
   primitive (2.2.0), deep recursion carried on the heap continuation (2.3.0 and
   its 2.3.1 patch), the native constructor-dispatch fast path (2.4.0), tabling
@@ -16,6 +31,10 @@
   positions, and it now resolves `import!` targets so cross-file signatures are
   known. The MeTTa LSP's own analyzer already avoided these through the
   interpreter's `check-types`; the shared `metta` CLI now matches it.
+- Pick up the 2.6.0 additions: `metta check` reports a stored action form the
+  same way `action.notRun` does, and the standard library gained
+  `stringToChars` and `charsToString`, the inverse pair for taking a symbol name
+  apart into characters and joining it back.
 
 ## 0.17.0 - 2026-07-22
 

@@ -807,9 +807,9 @@
     "setup:omegaclaw": "node scripts/setup-omegaclaw.mjs"
   },
   "dependencies": {
-    "@metta-ts/core": "^2.5.1",
-    "@metta-ts/debug": "^2.5.1",
-    "@metta-ts/libraries": "^2.5.1",
+    "@metta-ts/core": "^2.6.0",
+    "@metta-ts/debug": "^2.6.0",
+    "@metta-ts/libraries": "^2.6.0",
     "@vscode/debugadapter": "^1.68.0",
     "@vscode/debugprotocol": "^1.68.0",
     "metta-ts-typescript-plugin": "file:./typescript-plugin",
@@ -825,12 +825,12 @@
     "vscode-uri": "^3.1.0"
   },
   "optionalDependencies": {
-    "@metta-ts/browser": "^2.5.1",
-    "@metta-ts/grapher": "^2.5.1",
-    "@metta-ts/hyperon": "^2.5.1",
-    "@metta-ts/node": "^2.5.1",
-    "@metta-ts/prolog": "^2.5.1",
-    "@metta-ts/py": "^2.5.1",
+    "@metta-ts/browser": "^2.6.0",
+    "@metta-ts/grapher": "^2.6.0",
+    "@metta-ts/hyperon": "^2.6.0",
+    "@metta-ts/node": "^2.6.0",
+    "@metta-ts/prolog": "^2.6.0",
+    "@metta-ts/py": "^2.6.0",
     "pythonia": "^1.2.6"
   },
   "devDependencies": {
