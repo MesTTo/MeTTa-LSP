@@ -59,6 +59,7 @@ function buildDiagnosticsSettings(diagnostics: Record<string, unknown>): Diagnos
     arity: diagnostics.arity !== false,
     typeMismatch: diagnostics.typeMismatch !== false,
     importResolution: diagnostics.importResolution !== false,
+    actionNotRun: diagnostics.actionNotRun !== false,
     lint: diagnostics.lint !== false,
     prolog: diagnostics.prolog !== false,
     semanticLint: diagnostics.semanticLint === true,

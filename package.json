@@ -423,6 +423,11 @@
           "default": true,
           "description": "Report simple literal type mismatches against declared signatures."
         },
+        "metta.diagnostics.actionNotRun": {
+          "type": "boolean",
+          "default": true,
+          "description": "Warn when a top-level call to an effect-only operator (an assert, add-atom, println!) is missing the leading ! that runs it, so it is stored as inert data."
+        },
         "metta.diagnostics.lint": {
           "type": "boolean",
           "default": true,

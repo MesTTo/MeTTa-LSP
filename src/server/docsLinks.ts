@@ -16,6 +16,7 @@ export const DOCUMENTED_DIAGNOSTIC_CODES: ReadonlySet<string> = new Set([
   "definition.duplicate",
   "import.unresolved",
   "import.notRun",
+  "action.notRun",
   "space.unbound",
   "symbol.possibleTypo",
   "symbol.needsImport",

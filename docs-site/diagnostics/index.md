@@ -13,6 +13,7 @@ message.
 | [`definition.duplicate`](/diagnostics/definition.duplicate) | Duplicate definition |
 | [`import.unresolved`](/diagnostics/import.unresolved) | Import target could not be resolved |
 | [`import.notRun`](/diagnostics/import.notRun) | Import form is not run |
+| [`action.notRun`](/diagnostics/action.notRun) | Action form is not run |
 | [`space.unbound`](/diagnostics/space.unbound) | Unbound atom-space symbol |
 | [`symbol.possibleTypo`](/diagnostics/symbol.possibleTypo) | Possible typo in a call head (hint) |
 | [`symbol.needsImport`](/diagnostics/symbol.needsImport) | A known symbol that needs importing (hint) |

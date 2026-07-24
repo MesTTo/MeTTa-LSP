@@ -83,6 +83,7 @@ describe("diagnosticDocsUrl", () => {
   it("catalogues exactly the analyzer's own semantic codes", () => {
     expect([...DOCUMENTED_DIAGNOSTIC_CODES].sort()).toStrictEqual(
       [
+        "action.notRun",
         "call.arity",
         "call.typeMismatch",
         "definition.duplicate",

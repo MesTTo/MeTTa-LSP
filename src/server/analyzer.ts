@@ -167,6 +167,7 @@ export const DEFAULT_SETTINGS: ServerSettings = {
     arity: true,
     typeMismatch: true,
     importResolution: true,
+    actionNotRun: true,
     lint: true,
     prolog: true,
     semanticLint: false,
@@ -1234,6 +1235,24 @@ export class Analyzer {
       });
     }
     return verdicts;
+  }
+
+  // Does every function type declared for `name` return the unit type `(->)`? That is how the standard
+  // library marks an op that exists only for its effect: the assert family, add-atom/remove-atom, println!.
+  // The answer comes from the interpreter's own get-type, so an op the user declares `(-> … (->))` counts on
+  // the same footing. An op that also carries a non-arrow type can legitimately be stored as data, so a
+  // single non-arrow overload disqualifies it, matching the analyzer's tuple-type fallback.
+  private returnsUnit(uri: string, name: string): boolean {
+    const type = this.liveType(uri, name);
+    if (type === null) return false;
+    const overloads = type.split(" | ");
+    const signatures = overloads
+      .map((one) => signatureFromCoreType(name, one))
+      .filter((signature) => signature !== undefined);
+    return (
+      signatures.length === overloads.length &&
+      signatures.every((signature) => signature.returns === "(->)")
+    );
   }
 
   // The parameter counts a typed function accepts, parsed from get-type of its head (an overloaded function
@@ -2541,6 +2560,27 @@ export class Analyzer {
           diagnosticMessage.unresolvedPrologFile(issue.rawPath),
           DiagnosticSeverity.Warning,
           "prolog.unresolved",
+        );
+      }
+    }
+
+    if (settings.actionNotRun) {
+      // The same mistake import.notRun catches, for every other op that exists for its effect. A top-level
+      // form runs only with a leading !, so an unbanged (assertEqualToResult …) or (add-atom …) is stored as
+      // data: the assertion never checks, the add-atom never adds, and nothing says so. import! is untyped
+      // and keeps its own diagnostic, whose message names the module that stays undefined.
+      for (const top of index.parsed.root.children) {
+        if (top.kind !== "list") continue;
+        if (index.parsed.topLevelBangs.get(top.offsetStart) !== false) continue;
+        const head = semanticChildren(top)[0];
+        if (head === undefined || head.kind !== "symbol" || isImportHead(head.text)) continue;
+        if (!this.returnsUnit(index.uri, head.text)) continue;
+        add(
+          top.range,
+          diagnosticMessage.unbangedAction(head.text),
+          DiagnosticSeverity.Warning,
+          "action.notRun",
+          { name: head.text },
         );
       }
     }
@@ -4142,6 +4182,15 @@ export class Analyzer {
         // Insert the leading ! so the import runs; the bang binds across whitespace, so the line start is safe.
         actions.push({
           title: codeActionTitle.runImport(),
+          kind: CodeActionKind.QuickFix,
+          diagnostics: [diagnostic],
+          isPreferred: true,
+          edit: { changes: { [index.uri]: [TextEdit.insert(diagnostic.range.start, "!")] } },
+        });
+      } else if (diagnostic.code === "action.notRun") {
+        const name = (diagnostic.data as { name?: string } | undefined)?.name ?? "call";
+        actions.push({
+          title: codeActionTitle.runAction(name),
           kind: CodeActionKind.QuickFix,
           diagnostics: [diagnostic],
           isPreferred: true,

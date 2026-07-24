@@ -190,6 +190,8 @@ export interface DiagnosticSettings {
   readonly arity: boolean;
   readonly typeMismatch: boolean;
   readonly importResolution: boolean;
+  // A top-level call to an op that exists for its effect, written without the leading `!` that runs it.
+  readonly actionNotRun: boolean;
   readonly lint: boolean;
   // Static Prolog interop diagnostics for referenced `.pl` files. The analyzer does not evaluate MeTTa or
   // consult Prolog; a host provider may parse Prolog source when one is attached.

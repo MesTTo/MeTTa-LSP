@@ -14,6 +14,11 @@ export const diagnosticMessage = {
   unbangedImport: (rawPath: string): string =>
     `This import does not run: without a leading !, a top-level (import! …) is inert data, so ${rawPath}'s symbols stay undefined at runtime. Prefix it with ! to run it.`,
 
+  // An op declared to return the unit type (->) exists for its effect. Stored as data it produces nothing a
+  // query can match, so the assertion never checks and the add-atom never adds, with nothing reported.
+  unbangedAction: (name: string): string =>
+    `This ${name} does not run: without a leading !, a top-level form is inert data, and ${name} exists for its effect, so nothing happens at runtime. Prefix it with ! to run it.`,
+
   duplicateDefinition: (kind: string, name: string, arity: number | undefined): string =>
     `Duplicate ${kind} definition '${name}' with arity ${arity ?? "unknown"}.`,
 
@@ -114,6 +119,8 @@ export const codeActionTitle = {
   importBuiltinModule: (module: string): string => `Import the built-in '${module}' module`,
 
   runImport: (): string => "Add ! to run this import",
+
+  runAction: (name: string): string => `Add ! to run this ${name}`,
 
   addTypeDeclaration: (name: string): string =>
     `Add type declaration for '${name}' (typed functions interpret faster)`,
