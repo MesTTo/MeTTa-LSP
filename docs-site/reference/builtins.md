@@ -43,13 +43,17 @@ Defines a reduction rule for expressions
 
 ### `bind!` {#bind_21_}
 
+```metta
+(-> Atom %Undefined% (->))
+```
+
 Registers a token replaced by an atom during parsing of the rest of the program
 
 **Parameters**
-- `%Undefined%` — Token name
+- `Atom` — Token name
 - `%Undefined%` — Atom associated with the token after reduction
 
-**Returns** `%Undefined%` — Unit atom
+**Returns** `(->)` — Unit atom
 
 ### `case` {#case}
 
@@ -97,13 +101,17 @@ Replaces itself by one of the arguments depending on the condition
 
 ### `import!` {#import_21_}
 
+```metta
+(-> Atom Atom (->))
+```
+
 Imports a module by relative path, binding it to a token; &self imports into the current space
 
 **Parameters**
-- `%Undefined%` — Symbol turned into the token for the imported space
-- `%Undefined%` — Module name or relative path
+- `Atom` — Symbol turned into the token for the imported space
+- `Atom` — Module name or relative path
 
-**Returns** `%Undefined%` — Unit atom
+**Returns** `(->)` — Unit atom
 
 ### `include` {#include}
 
@@ -157,7 +165,7 @@ Sequentially unifies a list of pairs, then evaluates a body
 
 ### `pragma!` {#pragma_21_}
 
-Changes the value of a global key, such as type-check, interpreter, max-stack-depth, or mettascript-max-steps
+Changes the value of a global key, such as type-check, interpreter, max-stack-depth, mettascript-max-steps, or log-level
 
 **Parameters**
 - `%Undefined%` — Key name
@@ -1791,6 +1799,19 @@ Returns the logarithm of a number in a base
 
 **Returns** `Number` — Logarithm
 
+### `log-enabled?` {#log-enabled_3f_}
+
+```metta
+(-> Symbol Bool)
+```
+
+Whether the current log level admits this one, for a caller that wants its own sink and still wants the guard to cost only a comparison
+
+**Parameters**
+- `Symbol` — Level: error, warn, info, debug, or trace
+
+**Returns** `Bool` — True when the level is admitted
+
 ### `log-math` {#log-math}
 
 ```metta
@@ -1804,6 +1825,20 @@ Returns the logarithm of a number given a base
 - `Number` — Input number
 
 **Returns** `Number` — Result of the logarithm function
+
+### `log!` {#log_21_}
+
+```metta
+(-> Symbol Atom (->))
+```
+
+Prints the payload tagged with its level, but only when (pragma! log-level ...) admits that level. The payload is not reduced otherwise, so a log call in a hot path costs nothing until logging is turned on
+
+**Parameters**
+- `Symbol` — Level: error, warn, info, debug, or trace
+- `Atom` — Payload atom, reduced only when the level is admitted
+
+**Returns** `(->)` — Unit atom
 
 ### `map-atom` {#map-atom}
 

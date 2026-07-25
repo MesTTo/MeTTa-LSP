@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.19.0 - 2026-07-26
+
+- Update the runtime, browser, graph, Hyperon, Node, Python, Prolog, libraries,
+  and debugger packages to 2.7.0. This adds leveled logging you can leave in the
+  code: `(pragma! log-level <off|error|warn|info|debug|trace>)` sets the enabled
+  severity, `(log! <level> <payload>)` emits only what that level admits, and
+  `(log-enabled? <level>)` guards a caller's own sink. Logging is off until a
+  program sets the pragma, and an unadmitted call never reduces its payload, so
+  a log call left in a hot function costs a comparison rather than the message
+  it would have built. Log output goes through `println!`, so Run and the
+  guarded evaluator capture it like any other output.
+- Report a top-level `bind!` or `import!` that is missing the leading `!` that
+  runs it. 2.7.0 gives both the unit return type they always had, which is what
+  the `unevaluated-action` check reads, so a bare `(bind! &s (new-space))` no
+  longer leaves the token unbound in silence. The LSP's own `import.notRun`
+  already covered the import case in the editor; this brings the shared `metta`
+  CLI in line.
+- Regenerate the builtin reference for the two new operations.
+
 ## 0.18.1 - 2026-07-25
 
 - Contribute `metta.diagnostics.importResolution` in the extension manifest. It
