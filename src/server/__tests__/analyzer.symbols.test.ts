@@ -4,6 +4,7 @@
 // Characterization of the symbol, completion, and signature-help features, locking the behavior on the
 // core-backed parse layer.
 
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { Analyzer } from "../analyzer.js";
 import { InMemoryFileProvider } from "../fileProvider.js";
@@ -59,6 +60,31 @@ describe("symbols and completion", () => {
     expect(names).toHaveLength(2);
     expect(names).toContain("greet");
     expect(names).not.toContain("other-square");
+  });
+
+  it("skips files over the automatic workspace scan byte limit", async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.integer({ min: 1, max: 1024 }), async (maxFileBytes) => {
+        const files = new InMemoryFileProvider("/ws");
+        files.writeFile("/ws/within.metta", "a".repeat(maxFileBytes));
+        files.writeFile("/ws/over.metta", "a".repeat(maxFileBytes + 1));
+        const analyzer = new Analyzer(files);
+        analyzer.updateSettings({
+          workspace: {
+            ...analyzer.getSettings().workspace,
+            maxFileBytes,
+          },
+        });
+        analyzer.setWorkspaceRoots(["file:///ws"]);
+
+        await analyzer.scanWorkspace();
+
+        expect(analyzer.getDocument("file:///ws/within.metta")).toBeDefined();
+        expect(analyzer.getDocument("file:///ws/over.metta")).toBeUndefined();
+        expect(analyzer.ensureIndexed("file:///ws/over.metta")).toBeDefined();
+      }),
+      { numRuns: 100 },
+    );
   });
 
   it("offers completions that include workspace definitions and builtins", () => {

@@ -110,6 +110,7 @@ export interface FsListFilesParams {
   readonly extensions: readonly string[];
   readonly exclude: readonly string[];
   readonly maxFiles: number;
+  readonly maxFileBytes: number;
 }
 
 export interface FsListFilesResult {

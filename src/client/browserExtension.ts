@@ -65,9 +65,14 @@ async function mapWithLimit<T, R>(
   return results;
 }
 
-async function readWorkspaceFile(uriText: string): Promise<FsReadFileResult> {
+async function readWorkspaceFile(
+  uriText: string,
+  maxFileBytes = Number.POSITIVE_INFINITY,
+): Promise<FsReadFileResult> {
   try {
     const uri = vscode.Uri.parse(uriText);
+    const stat = await vscode.workspace.fs.stat(uri);
+    if (stat.size > maxFileBytes) return { uri: uriText, text: null };
     const bytes = await vscode.workspace.fs.readFile(uri);
     return { uri: uriText, text: decoder.decode(bytes) };
   } catch {
@@ -89,7 +94,9 @@ async function listWorkspaceFiles(params: FsListFilesParams): Promise<FsListFile
     .filter((uri) => uriIsUnderRoots(uri, params.roots))
     .filter((uri) => !isExcluded(uri.path))
     .slice(0, maxFiles);
-  const reads = await mapWithLimit(filtered, 16, (uri) => readWorkspaceFile(uri.toString()));
+  const reads = await mapWithLimit(filtered, 16, (uri) =>
+    readWorkspaceFile(uri.toString(), params.maxFileBytes),
+  );
   return {
     files: reads
       .filter((file): file is { readonly uri: string; readonly text: string } => file.text !== null)

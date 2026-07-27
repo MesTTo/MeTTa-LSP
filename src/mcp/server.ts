@@ -85,7 +85,16 @@ analyzer.setWorkspaceRoots([pathToUri(configuredWorkspaceRootPath)]);
 // The cross-language host bridge resolves TypeScript host signatures for grounded atoms; lazy, so it costs
 // nothing until a host-type request reaches into the workspace's TypeScript.
 analyzer.setHostBridge(new HostTypeService(configuredWorkspaceRootPath));
-void analyzer.scanWorkspace();
+let initialWorkspaceScan: Promise<void> | undefined;
+
+function ensureInitialWorkspaceScan(): Promise<void> {
+  initialWorkspaceScan ??= new Promise((resolve, reject) => {
+    setImmediate(() => {
+      analyzer.scanWorkspace().then(resolve, reject);
+    });
+  });
+  return initialWorkspaceScan;
+}
 
 const commonInputSchema = {
   type: "object",
@@ -457,6 +466,7 @@ async function applyWorkspaceRoot(input: LspToolInput): Promise<string | undefin
     await analyzer.scanWorkspace();
     return uriToPath(root) ?? undefined;
   }
+  await ensureInitialWorkspaceScan();
   const root = analyzer.getWorkspaceRoots()[0];
   return root ? (uriToPath(root) ?? undefined) : undefined;
 }

@@ -39,20 +39,23 @@ describe("extractMettaSection", () => {
 
 describe("configurationToSettings", () => {
   it("maps contributed settings into server settings", () => {
-    expect(
-      configurationToSettings({
-        diagnostics: { semanticLint: true, prolog: false },
-        completion: { includeSnippets: false },
-        workspace: { maxFiles: 12, exclude: ["node_modules", "tmp"] },
-        runtime: { guard: { timeoutMs: 123, experimental: { flatAtomspace: true } } },
-        prolog: { executable: "scryer-prolog", timeoutMs: 10 },
-      }),
-    ).toMatchObject({
+    const workspace = {
+      maxFiles: 12,
+      maxFileBytes: 3456,
+      exclude: ["node_modules", "tmp"],
+    };
+    const expected = {
       diagnostics: { semanticLint: true, prolog: false },
       completion: { includeSnippets: false },
-      workspace: { maxFiles: 12, exclude: ["node_modules", "tmp"] },
+      workspace,
       runtime: { guard: { timeoutMs: 123, experimental: { flatAtomspace: true } } },
       prolog: { executable: "scryer-prolog", timeoutMs: 100 },
-    });
+    };
+    expect(
+      configurationToSettings({
+        ...expected,
+        prolog: { ...expected.prolog, timeoutMs: 10 },
+      }),
+    ).toMatchObject(expected);
   });
 });

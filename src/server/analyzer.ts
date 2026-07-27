@@ -177,6 +177,7 @@ export const DEFAULT_SETTINGS: ServerSettings = {
   completion: { autoImports: true, includeSnippets: true },
   workspace: {
     maxFiles: 4000,
+    maxFileBytes: 5 * 1024 * 1024,
     exclude: ["node_modules", ".git", "dist", "out", ".venv", "__pycache__", ".metta-lsp-cache"],
   },
   runtime: {
@@ -1491,7 +1492,7 @@ export class Analyzer {
           for (const entry of entries) stack.push(path.join(current, entry));
           continue;
         }
-        if (!stat.isFile || !isMettaFile(current)) continue;
+        if (!stat.isFile || !isMettaFile(current) || stat.size > settings.maxFileBytes) continue;
         const uri = this.pathToUri(current);
         if (this.openDocuments.has(uri)) continue;
         const snapshot = this.fileSnapshots.get(uri);

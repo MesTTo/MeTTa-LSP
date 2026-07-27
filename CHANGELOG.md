@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.19.1 - 2026-07-28
+
+- Defer the MCP workspace scan until the first analysis request, and skip files
+  larger than the configurable `metta.workspace.maxFileBytes` threshold during
+  automatic indexing. Large generated `.metta` datasets can no longer exhaust
+  the Node heap before an MCP client receives its handshake. Open documents
+  remain available for explicit analysis.
+
 ## 0.19.0 - 2026-07-26
 
 - Update the runtime, browser, graph, Hyperon, Node, Python, Prolog, libraries,

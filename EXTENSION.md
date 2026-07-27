@@ -486,9 +486,14 @@ Common settings:
   "metta.inlayHints.enabled": true,
   "metta.pseudocode.enabled": false,
   "metta.diagnostics.semanticLint": false,
-  "metta.workspace.maxFiles": 4000
+  "metta.workspace.maxFiles": 4000,
+  "metta.workspace.maxFileBytes": 5242880
 }
 ```
+
+Automatic workspace scans skip source files larger than 5 MiB. Open documents
+are still indexed, so you can inspect a large generated file without making
+every language-server or MCP startup parse it.
 
 The docs site has copyable setup snippets for VS Code, Neovim, Helix, Emacs,
 and Sublime Text at

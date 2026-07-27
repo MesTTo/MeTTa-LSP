@@ -146,6 +146,7 @@ async function hydrateWorkspace(): Promise<void> {
       extensions: [".metta", ".pl"],
       exclude: settings.workspace.exclude,
       maxFiles: settings.workspace.maxFiles,
+      maxFileBytes: settings.workspace.maxFileBytes,
     });
     for (const file of result.files) files.cacheFile(normalizeUri(file.uri), file.text);
     await analyzer.scanWorkspace();

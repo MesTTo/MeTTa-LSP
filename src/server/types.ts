@@ -215,6 +215,7 @@ export interface CompletionSettings {
 
 export interface WorkspaceSettings {
   readonly maxFiles: number;
+  readonly maxFileBytes: number;
   readonly exclude: readonly string[];
 }
 

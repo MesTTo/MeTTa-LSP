@@ -70,6 +70,7 @@ function buildDiagnosticsSettings(diagnostics: Record<string, unknown>): Diagnos
 function buildWorkspaceSettings(workspace: Record<string, unknown>): WorkspaceSettings {
   return {
     maxFiles: numberOr(workspace.maxFiles, DEFAULT_SETTINGS.workspace.maxFiles),
+    maxFileBytes: numberOr(workspace.maxFileBytes, DEFAULT_SETTINGS.workspace.maxFileBytes),
     exclude: Array.isArray(workspace.exclude)
       ? workspace.exclude.filter((item): item is string => typeof item === "string")
       : DEFAULT_SETTINGS.workspace.exclude,
