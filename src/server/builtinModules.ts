@@ -9,28 +9,10 @@
 // being a second hand-maintained list.
 
 import "@metta-ts/libraries";
-import { type Atom, builtinModules } from "@metta-ts/core";
+import type { Atom } from "@metta-ts/core";
+import { builtinModuleSymbolMap } from "../language-service/index.js";
 
-// The head a module declaration introduces: `(: name …)` → name; `(= (name …) …)` or `(= name …)` → name.
-function declaredHead(atom: Atom): string | undefined {
-  if (atom.kind !== "expr" || atom.items.length < 2) return undefined;
-  const head = atom.items[0];
-  const lhs = atom.items[1];
-  if (head?.kind !== "sym") return undefined;
-  if (head.name === ":") return lhs?.kind === "sym" ? lhs.name : undefined;
-  if (head.name === "=") {
-    if (lhs?.kind === "sym") return lhs.name;
-    if (lhs?.kind === "expr") return lhs.items[0]?.kind === "sym" ? lhs.items[0].name : undefined;
-  }
-  return undefined;
-}
-
-const MODULE_SYMBOLS: ReadonlyMap<string, ReadonlySet<string>> = new Map(
-  [...builtinModules()].map(([name, atoms]) => [
-    name,
-    new Set(atoms.map(declaredHead).filter((symbol): symbol is string => symbol !== undefined)),
-  ]),
-);
+const MODULE_SYMBOLS: ReadonlyMap<string, ReadonlySet<string>> = new Map(builtinModuleSymbolMap());
 
 // The names importable as built-in modules via `(import! &self <name>)`.
 export const BUILTIN_MODULE_NAMES: ReadonlySet<string> = new Set(MODULE_SYMBOLS.keys());

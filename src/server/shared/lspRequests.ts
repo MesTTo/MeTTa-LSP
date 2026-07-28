@@ -1,4 +1,9 @@
 import type { Position, Range } from "vscode-languageserver-types";
+import type {
+  DeduplicateOptions,
+  DeduplicateResult,
+  SimplifyDocumentResult,
+} from "../../language-service/index.js";
 
 import type {
   GuardedEvaluationPolicy,
@@ -10,6 +15,8 @@ export const SideEffectPolicyRequest = "metta/sideEffectPolicy";
 export const GuardedEvaluationRequest = "metta/evaluateGuarded";
 export const TraceRequest = "metta/trace";
 export const WhyRequest = "metta/why";
+export const SimplifyRequest = "metta/simplify";
+export const DeduplicateRequest = "metta/deduplicate";
 export const LspToolRequest = "metta/lspTool";
 export const CapabilityRegistryRequest = "metta/capabilities";
 export const RuntimeCapabilitiesRequest = "metta/runtime/capabilities";
@@ -70,6 +77,19 @@ export interface WhyParams {
   readonly query?: string;
   readonly maxSteps?: number;
 }
+
+export interface SimplifyParams {
+  readonly uri: string;
+  readonly range?: Range;
+}
+
+export type SimplifyResultPayload = SimplifyDocumentResult;
+
+export interface DeduplicateParams extends DeduplicateOptions {
+  readonly uri: string;
+}
+
+export type DeduplicateResultPayload = DeduplicateResult;
 
 export interface WhyResultPayload {
   readonly ok: boolean;

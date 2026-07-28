@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Position } from "vscode-languageserver-types";
+import { type Position, TextEdit } from "vscode-languageserver-types";
 import {
   classifyTestQueries,
   normalizeUri,
@@ -154,6 +154,18 @@ const commonInputSchema = {
     },
     newName: { type: "string" },
     includeDeclaration: { type: "boolean" },
+    apply: {
+      type: "boolean",
+      description: "Apply the returned simplification edit. Defaults to false.",
+    },
+    minAtoms: {
+      type: "number",
+      description: "Minimum MeTTa atom count for a semantic clone.",
+    },
+    minLines: {
+      type: "number",
+      description: "Minimum source line count for a semantic clone.",
+    },
     evaluationPolicy: {
       type: "object",
       description:
@@ -346,6 +358,18 @@ const tools: ToolDefinition[] = [
     inputSchema: codeActionsInputSchema,
   },
   {
+    name: "lsp_simplify",
+    description:
+      "Simplify the selected executable MeTTa expression by equality saturation, returning a replayable proof. Pass apply=true to write the verified edit.",
+    inputSchema: commonInputSchema,
+  },
+  {
+    name: "lsp_deduplicate",
+    description:
+      "Find exact and alpha-equivalent MeTTa expression clones in a document, preserving pattern, type, quoted, declaration, and executable roles.",
+    inputSchema: commonInputSchema,
+  },
+  {
     name: "lsp_explain_form",
     description: "Explain the current MeTTa form structurally without evaluating it.",
     inputSchema: commonInputSchema,
@@ -422,6 +446,16 @@ const tools: ToolDefinition[] = [
     inputSchema: commonInputSchema,
   },
   {
+    name: "metta_simplify",
+    description: "Agent-friendly alias for lsp_simplify.",
+    inputSchema: commonInputSchema,
+  },
+  {
+    name: "metta_deduplicate",
+    description: "Agent-friendly alias for lsp_deduplicate.",
+    inputSchema: commonInputSchema,
+  },
+  {
     name: "lsp_evaluate",
     description:
       "Explicitly evaluate MeTTa under the guarded stateless runtime: worker isolation, fuel/time/output limits, and denied external effects by default.",
@@ -451,6 +485,8 @@ const TOOL_ALIASES: Record<string, string> = {
   metta_eval: "lsp_guarded_evaluate",
   metta_capabilities: "lsp_capabilities",
   metta_explain_expression: "lsp_explain",
+  metta_simplify: "lsp_simplify",
+  metta_deduplicate: "lsp_deduplicate",
 };
 
 function toolLimit(limit: number | undefined, defaultLimit: number): number {
@@ -822,6 +858,25 @@ async function callTool(name: string, rawInput: unknown): Promise<unknown> {
         applied: applyWorkspaceEditForTool(action.edit),
       };
     }
+    case "lsp_simplify": {
+      const result = analyzer.simplify(uri, input.range);
+      const index = analyzer.getDocument(uri) ?? analyzer.ensureIndexed(uri);
+      const edits =
+        index && result.text !== index.text
+          ? [TextEdit.replace(index.parsed.root.range, result.text)]
+          : [];
+      return {
+        simplification: result,
+        ...(input.apply === true ? { applied: applyDocumentEditsForTool(uri, edits) } : {}),
+      };
+    }
+    case "lsp_deduplicate":
+      return {
+        deduplication: analyzer.deduplicate(uri, {
+          minAtoms: input.minAtoms,
+          minLines: input.minLines,
+        }),
+      };
     case "lsp_explain_form":
       return { explanation: atPosition(position, (p) => analyzer.explainForm(uri, p), null) };
     case "lsp_completion":

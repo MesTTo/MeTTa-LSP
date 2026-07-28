@@ -5,6 +5,11 @@ definition, find references, hover, document and workspace symbols, go to implem
 hierarchy, through one `lsp` tool with an `operation` discriminator. It is the stdio process
 `node dist/mcp/server.js`, and it takes its workspace from the client's working directory.
 
+`lsp_simplify` returns an equality-saturation edit with a replayed MeTTa proof.
+Set `apply: true` to write it. `lsp_deduplicate` finds exact and
+alpha-equivalent expression clones without changing files. The
+`metta_simplify` and `metta_deduplicate` names are agent-facing aliases.
+
 <img src="/assets/animations/divider-candy.svg" alt="" class="candy-divider" />
 
 ## One command

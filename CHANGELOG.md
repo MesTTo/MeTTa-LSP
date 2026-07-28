@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.20.0 - 2026-07-29
+
+- Add MeTTa-aware semantic clone detection through the `deduplicate` CLI,
+  `metta/deduplicate` LSP request, analyzer API, and
+  `lsp_deduplicate`/`metta_deduplicate` MCP tools. It groups expression atoms
+  with interpreter alpha-equivalence, preserves semantic roles, suppresses
+  fully nested groups, reports percentages, and supports CI thresholds.
+- Add proof-replayed equality-saturation simplification through the `simplify`
+  CLI, `metta/simplify` LSP request, `metta.lsp.simplify` command,
+  `refactor.rewrite` code action, `MeTTa: Simplify with Verified Reduction`
+  editor command, analyzer API, and
+  `lsp_simplify`/`metta_simplify` MCP tools. MeTTa evaluates each admitted
+  equality and replays the original and extracted result lists in the visible
+  declaration context before an edit is returned. Effectful and
+  nondeterministic reductions are left unchanged.
+- Derive global grounded operations from the installed MeTTaScript evaluator
+  table as well as its narrower metadata sets. The LSP now recognizes both
+  `get-metatype` and `get-mettatype`, matching MeTTaScript 2.7, and no longer
+  suggests replacing one valid spelling with the other.
+
 ## 0.19.1 - 2026-07-28
 
 - Defer the MCP workspace scan until the first analysis request, and skip files

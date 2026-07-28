@@ -7,9 +7,9 @@
 // honest (a derived entry's signature is the interpreter's, verbatim). Built-in module functions stay out of
 // the global catalog on purpose; they are import-gated, covered by analyzer.modules.test.ts.
 
-import { pettaOpNames } from "@metta-ts/core";
+import { stdTable } from "@metta-ts/core";
 import { describe, expect, it } from "vitest";
-import { coreBuiltinTypes } from "../../language-service/index.js";
+import { builtinModuleExportNames, coreBuiltinTypes } from "../../language-service/index.js";
 import {
   BUILTIN_BY_NAME,
   BUILTINS,
@@ -47,8 +47,17 @@ describe("interpreter-derived builtin catalog", () => {
   });
 
   it("covers every grounded operation the interpreter registers", () => {
-    const missing = [...pettaOpNames].filter((name) => !BUILTIN_BY_NAME.has(name));
+    const moduleExports = builtinModuleExportNames();
+    const missing = [...stdTable().keys()].filter(
+      (name) =>
+        !moduleExports.has(name) && !BUILTIN_BY_NAME.has(name) && !LSP_INTERNAL_CORE_OPS.has(name),
+    );
     expect(missing).toStrictEqual([]);
+  });
+
+  it("recognizes both metatype spellings accepted by MeTTaScript", () => {
+    expect(BUILTIN_BY_NAME.has("get-metatype")).toBe(true);
+    expect(BUILTIN_BY_NAME.has("get-mettatype")).toBe(true);
   });
 
   it("gives each interpreter-derived entry the interpreter's own signature, verbatim", () => {

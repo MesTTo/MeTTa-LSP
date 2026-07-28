@@ -18,6 +18,8 @@ const required = [
   "lsp_completion",
   "lsp_signature_help",
   "lsp_code_actions",
+  "lsp_simplify",
+  "lsp_deduplicate",
   "lsp_semantic_tokens",
   "lsp_inlay_hints",
   "lsp_folding_ranges",

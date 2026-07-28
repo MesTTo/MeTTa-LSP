@@ -19,6 +19,7 @@ import { SEMANTIC_TOKEN_MODIFIERS, SEMANTIC_TOKEN_TYPES } from "./analyzer.js";
 export const EXECUTE_COMMANDS = [
   "metta.lsp.evaluateGuarded",
   "metta.lsp.organizeImports",
+  "metta.lsp.simplify",
   "metta.lsp.trace",
   "metta.lsp.why",
   "metta.lsp.noop",

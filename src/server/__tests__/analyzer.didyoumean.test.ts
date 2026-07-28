@@ -51,4 +51,11 @@ describe("did-you-mean hint on a near-miss head", () => {
       .filter((code) => String(code).startsWith("symbol."));
     expect(symbolHints).toEqual([]);
   });
+
+  it("does not flag either metatype spelling accepted by the runtime", () => {
+    const diagnostics = analyzerWith("!(get-metatype (a b))\n!(get-mettatype (a b))").validate(URI);
+    expect(
+      diagnostics.filter((diagnostic) => String(diagnostic.code).startsWith("symbol.")),
+    ).toEqual([]);
+  });
 });

@@ -16,6 +16,9 @@ import {
   type IndexStatsResult,
   SideEffectPolicyRequest,
   type SideEffectPolicyResult,
+  type SimplifyParams,
+  SimplifyRequest,
+  type SimplifyResultPayload,
   type TraceParams,
   TraceRequest,
   type TraceResultPayload,
@@ -320,6 +323,52 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
     vscode.commands.registerCommand("metta.organizeImports", async () => {
       await vscode.commands.executeCommand("editor.action.organizeImports");
+    }),
+    vscode.commands.registerCommand("metta.simplify", async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== "metta" || !client) return;
+      const document = editor.document;
+      const version = document.version;
+      const params: SimplifyParams = {
+        uri: document.uri.toString(),
+        range: editor.selection.isEmpty ? undefined : lspRange(editor.selection),
+      };
+      const result = await client.sendRequest<SimplifyResultPayload>(SimplifyRequest, params);
+      if (document.version !== version) {
+        void vscode.window.showWarningMessage(
+          "MeTTa source changed while simplification was running. Run the command again.",
+        );
+        return;
+      }
+      if (!result.complete) {
+        const reason =
+          result.issues[0]?.message ?? "The selected expression could not be simplified.";
+        void vscode.window.showWarningMessage(`MeTTa simplify: ${reason}`);
+        return;
+      }
+      if (result.edits.length === 0) {
+        void vscode.window.showInformationMessage("MeTTa simplify: no verified reduction found.");
+        return;
+      }
+      const edit = new vscode.WorkspaceEdit();
+      for (const replacement of result.edits) {
+        edit.replace(
+          document.uri,
+          new vscode.Range(
+            document.positionAt(replacement.start),
+            document.positionAt(replacement.end),
+          ),
+          replacement.after,
+        );
+      }
+      const applied = await vscode.workspace.applyEdit(edit);
+      if (applied) {
+        void vscode.window.showInformationMessage(
+          `MeTTa simplify applied ${result.edits.length} verified ${result.edits.length === 1 ? "reduction" : "reductions"}.`,
+        );
+      } else {
+        void vscode.window.showWarningMessage("MeTTa simplify edit was not applied.");
+      }
     }),
     vscode.commands.registerCommand(
       "metta.run",

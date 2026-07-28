@@ -48,6 +48,8 @@ agents.
 | `lint <file> [--json] [--fix]` | Runs syntactic lint rules and optionally applies fixes. |
 | `search <file> "<pattern>" [--json]` | Runs the structural pattern matcher. |
 | `replace <file> "<pattern>" "<template>" [--write]` | Previews or applies structural rewrites. |
+| `deduplicate <path...> [--json] [--min-atoms N] [--min-lines N] [--threshold PERCENT] [--ignore GLOB]` | Finds exact and alpha-equivalent MeTTa expression clones. |
+| `simplify <file> [--json] [--proof] [--write]` | Previews or writes proof-replayed equality-saturation simplifications. |
 | `test <file> [--json] [--tap] [--junit]` | Runs top-level assert forms under the guarded runtime. |
 | `run <file> [--unguarded]` | Evaluates top-level bang queries. Use `--unguarded` only for trusted host interop. |
 | `trace <file> "<query>" [--json] [--max N]` | Shows each reduction step for a query. |
@@ -128,6 +130,30 @@ metta-lsp replace examples/09-formatting.metta '(if True $T $E)' '$T'
 ```
 
 Add `--write` only when you want to update the file.
+
+## Deduplicate and Simplify
+
+Find repeated MeTTa expressions after comment, layout, and consistent variable
+renaming differences:
+
+```bash
+metta-lsp deduplicate src tests --min-atoms 8
+metta-lsp deduplicate . --json --threshold 5
+```
+
+Preview a semantic simplification, inspect its replay proof, or write it:
+
+```bash
+metta-lsp simplify program.metta
+metta-lsp simplify program.metta --proof
+metta-lsp simplify program.metta --write
+```
+
+The simplifier uses the visible MeTTa declarations, rejects effects and
+nondeterministic reductions, and replays the original and extracted terms
+before returning an edit. See [Semantic refactoring](./semantic-refactoring)
+for the equivalence rules, exit codes, proof format, LSP requests, and MCP
+tools.
 
 ## Trace and Visualise
 

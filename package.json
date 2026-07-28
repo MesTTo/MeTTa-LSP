@@ -2,7 +2,7 @@
   "name": "metta-ts-lsp",
   "displayName": "MeTTa LSP",
   "description": "A MeTTa language server, VS Code extension, CLI, MCP server, and documentation toolkit built on the pure-TypeScript @metta-ts/core interpreter.",
-  "version": "0.19.1",
+  "version": "0.20.0",
   "publisher": "MeTTaMesTTo",
   "license": "Apache-2.0",
   "icon": "icon.png",
@@ -48,6 +48,7 @@
     "onCommand:metta.showIndexStats",
     "onCommand:metta.showSideEffectPolicy",
     "onCommand:metta.organizeImports",
+    "onCommand:metta.simplify",
     "onCommand:metta.evaluateGuarded",
     "onCommand:metta.visualise",
     "onCommand:metta.explainForm",
@@ -645,6 +646,10 @@
         "title": "MeTTa: Organize Imports"
       },
       {
+        "command": "metta.simplify",
+        "title": "MeTTa: Simplify with Verified Reduction"
+      },
+      {
         "command": "metta.run",
         "title": "MeTTa: Run",
         "icon": "$(play)"
@@ -727,6 +732,10 @@
           "when": "editorLangId == metta"
         },
         {
+          "command": "metta.simplify",
+          "when": "editorLangId == metta"
+        },
+        {
           "command": "metta.evaluateGuarded",
           "when": "editorLangId == metta"
         },
@@ -766,6 +775,11 @@
           "command": "metta.why",
           "when": "resourceLangId == metta",
           "group": "navigation"
+        },
+        {
+          "command": "metta.simplify",
+          "when": "resourceLangId == metta",
+          "group": "1_modification"
         }
       ]
     }

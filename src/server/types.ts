@@ -429,6 +429,9 @@ export interface LspToolInput {
   readonly query?: string;
   readonly newName?: string;
   readonly applyCodeAction?: string;
+  readonly apply?: boolean;
+  readonly minAtoms?: number;
+  readonly minLines?: number;
   readonly includeDeclaration?: boolean;
   readonly evaluationPolicy?: Partial<RuntimeGuardSettings>;
   readonly wrapBareExpression?: boolean;

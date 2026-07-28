@@ -227,6 +227,12 @@ The structural search command treats MeTTa forms as data. `$X` captures one atom
 and `$$$Rest` captures a sequence. Regex constraints can refine captures in
 `lint.metta`, and `replace` can preview or write structural rewrites.
 
+`deduplicate` finds repeated expression atoms after layout, comments, and
+consistent logic-variable renaming are removed from the comparison. `simplify`
+uses equality saturation and the visible MeTTa rules, then replays the original
+and extracted result lists before it returns an edit. The same operations are
+available as LSP requests, editor code actions, analyzer APIs, and MCP tools.
+
 The docs generator builds a MeTTa API reference from workspace modules and host
 operations. Hovers, CLI output, generated reference pages, and the browser docs
 site all share the same rendering code for MeTTa docs.
@@ -298,6 +304,8 @@ npm link
 | `lint <file> [--json] [--fix]` | Runs syntactic lint rules and optionally applies fixes. |
 | `search <file> "<pattern>" [--json]` | Runs the structural pattern matcher. |
 | `replace <file> "<pattern>" "<template>" [--write]` | Previews or applies structural rewrites. |
+| `deduplicate <path...> [--json] [--min-atoms N] [--threshold PERCENT]` | Finds exact and alpha-equivalent MeTTa expression clones. |
+| `simplify <file> [--json] [--proof] [--write]` | Previews or writes proof-replayed equality-saturation simplifications. |
 | `test <file> [--json] [--tap] [--junit]` | Runs top-level assert forms under the guarded runtime. |
 | `run <file> [--unguarded]` | Evaluates top-level bang queries. Use `--unguarded` only for trusted host interop. |
 | `trace <file> "<query>" [--json] [--max N]` | Shows each reduction step for a query. |

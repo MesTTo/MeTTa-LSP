@@ -12,6 +12,7 @@ import { MettaDoc } from "../dsl/index.js";
 import {
   classifyTestQueries,
   pathToUri,
+  simplifyDocument,
   structuralReplace,
   structuralSearch,
   summarize,
@@ -25,7 +26,8 @@ import { Analyzer } from "../server/analyzer.js";
 import { HostTypeService } from "../server/bridge/hostTypeService.js";
 import { CAPABILITIES, CAPABILITY_IDS, capabilitySummary } from "../server/capabilities.js";
 import { NodePrologDiagnosticProvider } from "../server/nodePrologDiagnostics.js";
-import { flagValue, positionalArgs } from "./args.js";
+import { flagValue, flagValues, positionalArgs } from "./args.js";
+import { deduplicatePaths, renderDeduplicate } from "./deduplicate.js";
 import { startRepl } from "./repl.js";
 import {
   inspectStdlib,
@@ -42,7 +44,7 @@ process.stdout.on("error", (error: NodeJS.ErrnoException) => {
   throw error;
 });
 
-const HELP = `metta-lsp <command> [args]\n\nCommands:\n  capabilities\n  list stdlib [--json]\n  inspect <name> [--json]\n  check <file> [--json] [--show-suppressed]\n  symbols <file> [--json]\n  hover <file> <line> <character> [--json]\n  def <file> <line> <character> [--json]\n  host-type <file> <line> <character> [--json]\n  explain <file> <line> <character> [--json]\n  refs <file> <line> <character> [--json]\n  fmt <file> [--check]\n  lint <file> [--json] [--fix]\n  search <file> "<pattern>" [--json]\n  replace <file> "<pattern>" "<template>" [--write]\n  test <file> [--json] [--tap] [--junit]\n  run <file> [--unguarded]\n  trace <file> "<query>" [--json] [--max N]\n  visualise <file> "<query>" [--out file.html] [--block]\n  doc [workspace] [--json] [--build] [--serve] [--open] [--port N] [--base PATH]\n      [--module-roots PATHS] [--host-roots PATHS]\n  repl [file]\n  lsp --stdio\n  mcp --stdio\n\nMost commands take --json for machine-readable output.`;
+const HELP = `metta-lsp <command> [args]\n\nCommands:\n  capabilities\n  list stdlib [--json]\n  inspect <name> [--json]\n  check <file> [--json] [--show-suppressed]\n  symbols <file> [--json]\n  hover <file> <line> <character> [--json]\n  def <file> <line> <character> [--json]\n  host-type <file> <line> <character> [--json]\n  explain <file> <line> <character> [--json]\n  refs <file> <line> <character> [--json]\n  fmt <file> [--check]\n  lint <file> [--json] [--fix]\n  search <file> "<pattern>" [--json]\n  replace <file> "<pattern>" "<template>" [--write]\n  deduplicate <path...> [--json] [--min-atoms N] [--min-lines N] [--threshold PERCENT]\n      [--ignore GLOB] [--max-files N] [--max-file-bytes N]\n  simplify <file> [--json] [--proof] [--write] [--fuel N] [--max-iterations N]\n      [--max-nodes N]\n  test <file> [--json] [--tap] [--junit]\n  run <file> [--unguarded]\n  trace <file> "<query>" [--json] [--max N]\n  visualise <file> "<query>" [--out file.html] [--block]\n  doc [workspace] [--json] [--build] [--serve] [--open] [--port N] [--base PATH]\n      [--module-roots PATHS] [--host-roots PATHS]\n  repl [file]\n  lsp --stdio\n  mcp --stdio\n\nMost commands take --json for machine-readable output.`;
 
 function usage(): never {
   console.error(HELP);
@@ -94,6 +96,21 @@ function makeAnalyzer(file?: string) {
 function print(value: unknown, json: boolean): void {
   if (json) console.log(JSON.stringify(value, null, 2));
   else console.log(typeof value === "string" ? value : JSON.stringify(value, null, 2));
+}
+
+function numericFlag(args: readonly string[], flag: string): number | undefined {
+  const raw = flagValue(args, flag);
+  if (raw === undefined) return undefined;
+  const value = Number(raw);
+  if (!Number.isFinite(value)) throw new Error(`${flag} requires a finite number, got '${raw}'`);
+  return value;
+}
+
+function positiveIntegerFlag(args: readonly string[], flag: string): number | undefined {
+  const value = numericFlag(args, flag);
+  if (value !== undefined && (!Number.isInteger(value) || value < 1))
+    throw new Error(`${flag} requires a positive integer, got '${String(value)}'`);
+  return value;
 }
 
 function cliPackageRoot(): string {
@@ -251,6 +268,27 @@ async function main(): Promise<void> {
     else console.log(renderStdlibInspection(lookup.value));
     return;
   }
+  if (command === "deduplicate") {
+    if (operands.length === 0) usage();
+    const threshold = numericFlag(args, "--threshold");
+    if (threshold !== undefined && (threshold < 0 || threshold > 100))
+      throw new Error("--threshold must be between 0 and 100");
+    const result = deduplicatePaths(operands, {
+      minAtoms: positiveIntegerFlag(args, "--min-atoms"),
+      minLines: positiveIntegerFlag(args, "--min-lines"),
+      maxFiles: positiveIntegerFlag(args, "--max-files"),
+      maxFileBytes: positiveIntegerFlag(args, "--max-file-bytes"),
+      ignore: flagValues(args, "--ignore"),
+    });
+    if (json) print(result, true);
+    else console.log(renderDeduplicate(result));
+    process.exitCode = !result.complete
+      ? 2
+      : threshold !== undefined && result.stats.duplicateAtomPercent > threshold
+        ? 1
+        : 0;
+    return;
+  }
   const file = operands[0];
   if (!file) usage();
   // Structural search and replace treat code as data: they match a MeTTa pattern over the file's forms and
@@ -377,6 +415,30 @@ async function main(): Promise<void> {
         semantic.some((diagnostic) => diagnostic.severity === 1)
           ? 1
           : 0;
+      return;
+    }
+    case "simplify": {
+      const source = fs.readFileSync(file, "utf8");
+      const result = simplifyDocument(source, {
+        context: analyzer.declarationContextForDocs(uri),
+        fuel: positiveIntegerFlag(args, "--fuel"),
+        maxIterations: positiveIntegerFlag(args, "--max-iterations"),
+        maxNodes: positiveIntegerFlag(args, "--max-nodes"),
+      });
+      const write = args.includes("--write");
+      const written = result.complete && write && result.text !== source;
+      if (written) fs.writeFileSync(file, result.text);
+      if (json || args.includes("--proof")) print({ ...result, written }, true);
+      else {
+        for (const issue of result.issues)
+          console.error(`${file}:${issue.start}: ${issue.code}: ${issue.message}`);
+        if (write && result.complete)
+          console.log(
+            `simplified ${result.edits.length} expression${result.edits.length === 1 ? "" : "s"} in ${file}`,
+          );
+        else if (!write) process.stdout.write(result.text);
+      }
+      process.exitCode = result.complete ? 0 : 2;
       return;
     }
     case "test": {

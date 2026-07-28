@@ -1,5 +1,11 @@
 import type { Connection } from "vscode-languageserver";
 import type { Analyzer } from "./analyzer.js";
+import {
+  type DeduplicateParams,
+  DeduplicateRequest,
+  type SimplifyParams,
+  SimplifyRequest,
+} from "./shared/lspRequests.js";
 import type { CompletionSettings, HoverSettings } from "./types.js";
 
 interface AnalyzerHandlerOptions {
@@ -74,5 +80,14 @@ export function registerAnalyzerHandlers(
     analyzer
       .outgoingCalls(params.item)
       .map((call) => ({ to: call.to, fromRanges: call.fromRanges })),
+  );
+  connection.onRequest(SimplifyRequest, (params: SimplifyParams) =>
+    analyzer.simplify(params.uri, params.range),
+  );
+  connection.onRequest(DeduplicateRequest, (params: DeduplicateParams) =>
+    analyzer.deduplicate(params.uri, {
+      minAtoms: params.minAtoms,
+      minLines: params.minLines,
+    }),
   );
 }

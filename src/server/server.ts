@@ -489,6 +489,21 @@ connection.onExecuteCommand(async (params) => {
     if (edits.length > 0) await connection.workspace.applyEdit({ changes: { [uri]: edits } });
     return null;
   }
+  if (params.command === "metta.lsp.simplify" && arg.uri !== undefined) {
+    const uri = normalizeUri(arg.uri);
+    const result = analyzer.simplify(uri, arg.range);
+    const index = analyzer.getDocument(uri) ?? analyzer.ensureIndexed(uri);
+    if (index && result.text !== index.text)
+      await connection.workspace.applyEdit({
+        changes: {
+          [uri]: [{ range: index.parsed.root.range, newText: result.text }],
+        },
+      });
+    connection.window.showInformationMessage(
+      `MeTTa simplify: ${result.edits.length} verified rewrite${result.edits.length === 1 ? "" : "s"}.`,
+    );
+    return result;
+  }
   if (params.command === "metta.lsp.trace" && arg.uri !== undefined) {
     const result = await traceRequest({ uri: arg.uri, range: arg.range });
     connection.window.showInformationMessage(

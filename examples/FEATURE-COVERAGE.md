@@ -24,6 +24,8 @@ bridge or TypeScript plugin examples.
 | `lsp_folding_ranges` | [`14-editor-surfaces.metta`](14-editor-surfaces.metta) |
 | `lsp_inlay_hints` | [`12-completion-and-hints.metta`](12-completion-and-hints.metta) |
 | `lsp_code_actions` | [`05-lint-and-suppression/demo.metta`](05-lint-and-suppression/demo.metta), [`06-type-suggestions.metta`](06-type-suggestions.metta) |
+| `lsp_simplify` | [`math.metta`](math.metta), [`mcp-smoke.jsonl`](mcp-smoke.jsonl) |
+| `lsp_deduplicate` | [`08-navigation.metta`](08-navigation.metta), [`mcp-smoke.jsonl`](mcp-smoke.jsonl) |
 | `lsp_lint` | [`05-lint-and-suppression/demo.metta`](05-lint-and-suppression/demo.metta), [`05-lint-and-suppression/lint.metta`](05-lint-and-suppression/lint.metta) |
 | `lsp_organize_imports` | [`14-editor-surfaces.metta`](14-editor-surfaces.metta) |
 | `lsp_implementation` | [`14-editor-surfaces.metta`](14-editor-surfaces.metta) |
@@ -49,6 +51,7 @@ Other extension surfaces:
 | Feature | Example |
 | --- | --- |
 | VS Code commands and settings quick-pick | [`15-guarded-and-agent-surfaces.metta`](15-guarded-and-agent-surfaces.metta) |
+| Verified simplify command and code action | [`math.metta`](math.metta) |
 | Debug adapter | [`16-debugging.metta`](16-debugging.metta) |
 | Prolog parser diagnostics | [`17-prolog-diagnostics/main.metta`](17-prolog-diagnostics/main.metta) |
 | TypeScript language-service plugin | [`19-typescript-plugin/sample.ts`](19-typescript-plugin/sample.ts) |

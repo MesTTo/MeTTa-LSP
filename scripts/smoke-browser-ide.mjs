@@ -14,6 +14,7 @@ const mathUri = `${rootUri}/math.metta`;
 const lintUri = `${rootUri}/lint-case.metta`;
 const dynamicUri = `${rootUri}/dynamic.metta`;
 const laterUri = `${rootUri}/later.metta`;
+const refactorUri = `${rootUri}/refactor.metta`;
 const mainSource = `!(import! &self "math.metta")
 
 (: answer (-> Number))
@@ -29,6 +30,9 @@ const dynamicSource = `!(import! &self "later.metta")
 !(later)`;
 const laterSource = `(: later (-> Number))
 (= (later) 7)`;
+const refactorSource = `!(+ 1 2)
+!(f $x $x)
+!(f $value $value)`;
 const semanticTokenTypes = [
   "function",
   "macro",
@@ -96,6 +100,7 @@ const workspace = new Map([
   [mathUri, mathSource],
   [lintUri, lintSource],
   [dynamicUri, dynamicSource],
+  [refactorUri, refactorSource],
 ]);
 const harness = createBrowserLspHarness(workspace, {
   rootUri,
@@ -130,6 +135,7 @@ try {
   );
   await harness.open(mainUri, mainSource);
   await harness.open(mathUri, mathSource);
+  await harness.open(refactorUri, refactorSource);
   const diagnostics = await resolvedMainDiagnostics;
   assert.ok(
     diagnostics.some((diagnostic) => diagnostic.code === "call.arity"),
@@ -226,6 +232,24 @@ try {
   assert.ok(
     Array.isArray(semanticTokens?.data) && semanticTokens.data.length > 0,
     "Expected semantic tokens",
+  );
+
+  const simplification = await harness.request("metta/simplify", { uri: refactorUri });
+  assert.equal(simplification.complete, true);
+  assert.equal(simplification.edits.length, 1);
+  assert.equal(simplification.edits[0].after, "3");
+  assert.equal(simplification.edits[0].proof.verified, true);
+
+  const deduplication = await harness.request("metta/deduplicate", {
+    uri: refactorUri,
+    minAtoms: 3,
+  });
+  assert.equal(deduplication.complete, true);
+  assert.ok(
+    deduplication.clones.some(
+      (clone) => clone.kind === "alpha-equivalent" && clone.role === "executable",
+    ),
+    "Expected an alpha-equivalent executable clone from the browser LSP",
   );
 
   const rename = await harness.request("textDocument/rename", {

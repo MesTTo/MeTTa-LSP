@@ -41,6 +41,9 @@ import {
   CoreRuntime,
   coreBuiltinTypes,
   createWorkspaceExcludeMatcher,
+  type DeduplicateOptions,
+  type DeduplicateResult,
+  deduplicate,
   pathToUri as defaultPathToUri,
   uriToPath as defaultUriToPath,
   type FileId,
@@ -61,8 +64,10 @@ import {
   RuntimeCache,
   runSemanticLint,
   type SemanticViolation,
+  type SimplifyDocumentResult,
   type SuppressRule,
   type SyntaxEpoch,
+  simplifyDocument,
   type TypeCheckError,
   toMixfix,
 } from "../language-service/index.js";
@@ -4083,6 +4088,40 @@ export class Analyzer {
     return { range: cloneRange(form.range), text, kind };
   }
 
+  public simplify(uri: string, range?: Range): SimplifyDocumentResult {
+    const index = this.ensureIndexed(uri);
+    if (!index)
+      return {
+        complete: false,
+        text: "",
+        edits: [],
+        issues: [
+          {
+            code: "invalid-selection",
+            message: `Document ${normalizeUri(uri)} is not indexed.`,
+            start: 0,
+            end: 0,
+          },
+        ],
+      };
+    const offsets =
+      range === undefined
+        ? undefined
+        : {
+            start: offsetAt(range.start, index.parsed.lineOffsets, index.text.length),
+            end: offsetAt(range.end, index.parsed.lineOffsets, index.text.length),
+          };
+    return simplifyDocument(index.text, {
+      context: this.declarationContext(index.uri),
+      range: offsets,
+    });
+  }
+
+  public deduplicate(uri: string, options: DeduplicateOptions = {}): DeduplicateResult {
+    const index = this.ensureIndexed(uri);
+    return deduplicate(index ? [{ uri: index.uri, text: index.text }] : [], options);
+  }
+
   public codeActions(uri: string, range: Range): CodeAction[] {
     const index = this.ensureIndexed(uri);
     if (!index) return [];
@@ -4093,6 +4132,25 @@ export class Analyzer {
         title: codeActionTitle.organizeImports,
         kind: CodeActionKind.SourceOrganizeImports,
         edit: { changes: { [index.uri]: importEdits } },
+      });
+    }
+    const simplification = this.simplify(uri, range);
+    for (const edit of simplification.edits) {
+      actions.push({
+        title: codeActionTitle.simplify,
+        kind: CodeActionKind.RefactorRewrite,
+        isPreferred: true,
+        edit: {
+          changes: {
+            [index.uri]: [
+              TextEdit.replace(
+                rangeFromOffsets(edit.start, edit.end, index.parsed.lineOffsets),
+                edit.after,
+              ),
+            ],
+          },
+        },
+        data: { proof: edit.proof },
       });
     }
     // Lint autofixes: a rule finding with a rewrite that overlaps the requested range becomes a QuickFix.

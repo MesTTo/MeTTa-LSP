@@ -636,6 +636,14 @@ Greater than or equal. Checks whether the first argument is greater than or equa
 
 **Returns** `Bool` — True if the first argument is greater than or equal to the second, False otherwise
 
+### `_assert-results-are-alpha-equal` {#_5f_assert-results-are-alpha-equal}
+
+### `_assert-results-are-alpha-equal-msg` {#_5f_assert-results-are-alpha-equal-msg}
+
+### `_assert-results-are-equal` {#_5f_assert-results-are-equal}
+
+### `_assert-results-are-equal-msg` {#_5f_assert-results-are-equal-msg}
+
 ### `@desc` {#_40_desc}
 
 ```metta
@@ -707,6 +715,16 @@ Wraps a return description
 ```
 
 Wraps a type annotation in formal documentation
+
+### `=alpha` {#_3d_alpha}
+
+Checks alpha equality of two expressions
+
+**Parameters**
+- `%Undefined%` — First expression
+- `%Undefined%` — Second expression
+
+**Returns** `%Undefined%` — True if both expressions are alpha equal, False otherwise
 
 ### `abs-math` {#abs-math}
 
@@ -1443,6 +1461,15 @@ Returns documentation for an atom or function
 
 **Returns** `%Undefined%` — Documentation for the atom or function
 
+### `get-metatype` {#get-metatype}
+
+Returns the metatype of the input atom
+
+**Parameters**
+- `%Undefined%` — Atom to get the metatype for
+
+**Returns** `%Undefined%` — The metatype of the input atom
+
 ### `get-mettatype` {#get-mettatype}
 
 ```metta
@@ -1570,6 +1597,18 @@ Deconstructs a non-empty expression into head and tail and evaluates a template,
 
 **Returns** `%Undefined%` — The template with head and tail, or the default
 
+### `if-equal` {#if-equal}
+
+Checks whether the first two arguments are equal and evaluates the third if so, the fourth otherwise
+
+**Parameters**
+- `%Undefined%` — First argument
+- `%Undefined%` — Second argument
+- `%Undefined%` — Evaluated if equal
+- `%Undefined%` — Evaluated if not equal
+
+**Returns** `%Undefined%` — The evaluated third or fourth argument
+
 ### `if-error` {#if-error}
 
 ```metta
@@ -1607,6 +1646,16 @@ Consult a `.pl` file and install MeTTa wrappers for the named Prolog predicates.
 
 Error description used when a function is called with the wrong number of arguments
 
+### `index-atom` {#index-atom}
+
+Returns the atom at the given index of an expression, or an error if out of bounds
+
+**Parameters**
+- `%Undefined%` — Expression
+- `%Undefined%` — Index
+
+**Returns** `%Undefined%` — Atom at the index, or an error
+
 ### `interpret-tuple` {#interpret-tuple}
 
 ```metta
@@ -1626,6 +1675,16 @@ Returns the intersection of two nondeterministic inputs
 - `Atom` — Another nondeterministic set of values
 
 **Returns** `%Undefined%` — Intersection of the sets
+
+### `intersection-atom` {#intersection-atom}
+
+Returns the intersection of two tuples
+
+**Parameters**
+- `%Undefined%` — List of values
+- `%Undefined%` — List of values
+
+**Returns** `%Undefined%` — Intersection of the tuples
 
 ### `is-alpha-member` {#is-alpha-member}
 
@@ -2548,6 +2607,17 @@ Sorts an expression by standard atom order and removes duplicate atoms
 
 **Returns** `Expression` — Sorted expression with duplicates removed
 
+### `sort-atom` {#sort-atom}
+
+### `sort-strings` {#sort-strings}
+
+Sorts an expression of strings in alphabetical order
+
+**Parameters**
+- `%Undefined%` — List of strings
+
+**Returns** `%Undefined%` — Sorted list of strings
+
 ### `SpaceType` {#SpaceType}
 
 Type of atomspace references
@@ -2610,6 +2680,16 @@ Returns the subtraction of two nondeterministic inputs
 - `Atom` — Another nondeterministic set of values
 
 **Returns** `%Undefined%` — Subtraction of the sets
+
+### `subtraction-atom` {#subtraction-atom}
+
+Returns the subtraction of two tuples
+
+**Parameters**
+- `%Undefined%` — List of values
+- `%Undefined%` — List of values
+
+**Returns** `%Undefined%` — Subtraction of the tuples
 
 ### `superpose` {#superpose}
 
@@ -2683,6 +2763,8 @@ Returns the tangent of the input value in radians
 - `Number` — Angle in radians
 
 **Returns** `Number` — Result of the tangent function
+
+### `test` {#test}
 
 ### `trace!` {#trace_21_}
 
@@ -2764,6 +2846,16 @@ Returns the union of two nondeterministic inputs
 
 **Returns** `%Undefined%` — Union of the sets
 
+### `union-atom` {#union-atom}
+
+Returns the union of two tuples
+
+**Parameters**
+- `%Undefined%` — List of values
+- `%Undefined%` — List of values
+
+**Returns** `%Undefined%` — Union of the tuples
+
 ### `unique` {#unique}
 
 ```metta
@@ -2774,6 +2866,15 @@ Returns only the unique values from a nondeterministic input
 
 **Parameters**
 - `Atom` — Nondeterministic set of values
+
+**Returns** `%Undefined%` — Unique values
+
+### `unique-atom` {#unique-atom}
+
+Returns only the unique values from a tuple
+
+**Parameters**
+- `%Undefined%` — List of values
 
 **Returns** `%Undefined%` — Unique values
 

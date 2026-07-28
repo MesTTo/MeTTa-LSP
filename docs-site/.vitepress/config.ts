@@ -163,6 +163,7 @@ export default defineConfig({
           { text: "Agent setup (MCP)", link: "/lsp/mcp" },
           { text: "Programmatic API", link: "/lsp/dsl" },
           { text: "Search & replace", link: "/lsp/search-replace" },
+          { text: "Semantic refactoring", link: "/lsp/semantic-refactoring" },
           { text: "Suppressing diagnostics", link: "/lsp/suppression" },
           { text: "Lint rules", link: "/lsp/rules" },
           { text: "Mixfix pseudocode", link: "/lsp/mixfix" },

@@ -128,4 +128,6 @@ export const codeActionTitle = {
   applyLintFix: (ruleId: string): string => `${ruleId}: apply fix`,
 
   organizeImports: "Organize MeTTa imports",
+
+  simplify: "Simplify expression with verified MeTTa reduction",
 } as const;

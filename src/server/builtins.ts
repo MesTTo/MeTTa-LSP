@@ -1,7 +1,7 @@
-import { IMPURE_OPS, pettaOpNames } from "@metta-ts/core";
+import { IMPURE_OPS, pettaOpNames, stdTable } from "@metta-ts/core";
 import type { Range } from "vscode-languageserver-types";
 
-import { coreBuiltinTypes } from "../language-service/index.js";
+import { builtinModuleExportNames, coreBuiltinTypes } from "../language-service/index.js";
 import type { BuiltinSpec, DefinitionKind, DefinitionRecord, TypeSignature } from "./types.js";
 
 const ZERO_RANGE: Range = { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } };
@@ -155,6 +155,7 @@ export const METTA_TYPE_FORMS = new Set([
   "->",
   "get-type",
   "get-type-space",
+  "get-metatype",
   "get-mettatype",
   "type-cast",
   "type-cast-error-or-bad-type",
@@ -649,12 +650,16 @@ const EDITOR_OVERLAY = new Map<string, string>([
   ["bind!", "(bind! &${1:space} ${2:(new-space)})"],
 ]);
 
-// Every name @metta-ts/core declares a type for or registers as a grounded operation. This is the
-// enumeration the LSP catalog is built from, so the catalog covers exactly the running system's builtins.
+// Every global name the installed interpreter accepts. stdTable() is the runtime registry and includes
+// aliases that pettaOpNames does not enumerate, such as get-metatype. Module exports stay import-gated.
 function interpreterBuiltinNames(): Set<string> {
   const names = new Set<string>(coreBuiltinTypes().keys());
+  const moduleExports = builtinModuleExportNames();
   for (const name of pettaOpNames) names.add(name);
   for (const name of IMPURE_OPS) names.add(name);
+  for (const name of stdTable().keys()) {
+    if (!moduleExports.has(name)) names.add(name);
+  }
   // Built-in module exports (json/catalog/fileio) are deliberately absent: they are known only in a file
   // that imports the module, handled by the module-awareness layer, not always-on globals.
   // `check-types` is a grounded op added to core solely to back the LSP's own type/arity diagnostics; it is

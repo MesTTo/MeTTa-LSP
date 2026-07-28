@@ -15,8 +15,17 @@ interface TokenType {
   readonly id: string;
   readonly superType?: string;
 }
+interface CommandContribution {
+  readonly command: string;
+}
 interface Manifest {
+  readonly activationEvents?: readonly string[];
   readonly contributes?: {
+    readonly commands?: readonly CommandContribution[];
+    readonly menus?: {
+      readonly commandPalette?: readonly CommandContribution[];
+      readonly "editor/context"?: readonly CommandContribution[];
+    };
     readonly semanticTokenTypes?: readonly TokenType[];
     readonly configuration?: {
       readonly properties?: Record<string, unknown>;
@@ -120,5 +129,20 @@ describe("package.json setting contributions", () => {
     walk(DEFAULT_SETTINGS as unknown as Record<string, unknown>, []);
     expect(resolvable).not.toHaveLength(0);
     expect(resolvable.filter((key) => !contributedSettings.has(key))).toStrictEqual([]);
+  });
+});
+
+describe("package.json semantic refactoring contributions", () => {
+  it("exposes the simplify command from activation through editor menus", () => {
+    expect(manifest.activationEvents).toContain("onCommand:metta.simplify");
+    expect(manifest.contributes?.commands?.map((entry) => entry.command)).toContain(
+      "metta.simplify",
+    );
+    expect(manifest.contributes?.menus?.commandPalette?.map((entry) => entry.command)).toContain(
+      "metta.simplify",
+    );
+    expect(
+      manifest.contributes?.menus?.["editor/context"]?.map((entry) => entry.command),
+    ).toContain("metta.simplify");
   });
 });

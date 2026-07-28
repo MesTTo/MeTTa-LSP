@@ -1,7 +1,9 @@
 export * from "./builtinCatalog.js";
+export * from "./builtinModuleCatalog.js";
 export * from "./capabilities.js";
 export * from "./config.js";
 export * from "./coreRuntime.js";
+export * from "./deduplicate.js";
 export * from "./engine/fileId.js";
 export * from "./engine/incrementalDb.js";
 export * from "./engine/runtimeCache.js";
@@ -11,4 +13,5 @@ export * from "./lint/index.js";
 export * from "./mixfix.js";
 export * from "./pathFilters.js";
 export * from "./search.js";
+export * from "./simplify.js";
 export * from "./testRunner.js";

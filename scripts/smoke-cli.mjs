@@ -6,11 +6,14 @@
 // closed-pipe behavior. Unit tests own catalog details; this script proves the compiled entry point wires them.
 
 import { spawn, spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const cli = join(root, "dist", "cli", "cli.js");
+const temporaryRoot = mkdtempSync(join(root, "ai-tmp-smoke-cli-"));
+process.on("exit", () => rmSync(temporaryRoot, { recursive: true, force: true }));
 
 function fail(message) {
   process.stderr.write(`smoke-cli: FAIL: ${message}\n`);
@@ -39,8 +42,13 @@ function json(text, label) {
 }
 
 const help = run(["--help"]).stdout;
-if (!help.includes("list stdlib [--json]") || !help.includes("inspect <name> [--json]"))
-  fail("help does not advertise stdlib discovery");
+if (
+  !help.includes("list stdlib [--json]") ||
+  !help.includes("inspect <name> [--json]") ||
+  !help.includes("deduplicate <path...>") ||
+  !help.includes("simplify <file>")
+)
+  fail("help does not advertise stdlib discovery and semantic refactoring");
 
 const listed = json(run(["list", "--json", "stdlib"]).stdout, "list stdlib");
 if (listed.collection !== "stdlib" || listed.counts?.entries !== listed.entries?.length)
@@ -71,6 +79,39 @@ if (
 const docs = json(run(["doc", "examples", "--json"]).stdout, "doc examples");
 if (docs.modules < 1 || docs.symbols < 1) fail("doc examples did not index the workspace root");
 
+const deduplication = json(
+  run(["deduplicate", "examples", "--json", "--min-atoms", "4", "--threshold", "100"]).stdout,
+  "deduplicate examples",
+);
+if (
+  deduplication.complete !== true ||
+  deduplication.stats?.files < 1 ||
+  !Array.isArray(deduplication.clones)
+)
+  fail("deduplicate did not return a complete semantic clone report");
+run(["deduplicate", "examples", "--min-atoms", "4", "--threshold", "0"], 1);
+const invalidMinimum = run(["deduplicate", "examples", "--min-atoms", "0"], 1);
+if (!invalidMinimum.stderr.includes("--min-atoms requires a positive integer"))
+  fail("deduplicate accepted an invalid minimum atom count");
+
+const simplification = json(
+  run(["simplify", "examples/math.metta", "--json"]).stdout,
+  "simplify examples/math.metta",
+);
+if (
+  simplification.complete !== true ||
+  simplification.edits?.length !== 1 ||
+  simplification.edits[0]?.after !== "84" ||
+  simplification.edits[0]?.proof?.verified !== true
+)
+  fail("simplify did not return the verified main-query reduction");
+
+const writable = join(temporaryRoot, "write.metta");
+writeFileSync(writable, "(= (answer) (+ 1 2))\n");
+const written = json(run(["simplify", writable, "--json", "--write"]).stdout, "simplify --write");
+if (written.written !== true || readFileSync(writable, "utf8") !== "(= (answer) 3)\n")
+  fail("simplify --write did not apply its verified edit");
+
 await new Promise((resolve, reject) => {
   const child = spawn(process.execPath, [cli, "list", "stdlib"], {
     cwd: root,
@@ -93,5 +134,5 @@ await new Promise((resolve, reject) => {
 }).catch((error) => fail(error instanceof Error ? error.message : String(error)));
 
 process.stderr.write(
-  "smoke-cli: ok - help, stdlib list/inspect, errors, docs root, and closed pipe pass\n",
+  "smoke-cli: ok - help, stdlib, docs, deduplicate, simplify, errors, and closed pipe pass\n",
 );

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { describe, expect, it } from "vitest";
-import { flagValue, positionalArgs } from "../args.js";
+import { flagValue, flagValues, positionalArgs } from "../args.js";
 
 describe("CLI arguments", () => {
   it("keeps operands independent of boolean flag position", () => {
@@ -22,5 +22,11 @@ describe("CLI arguments", () => {
   it("reads separate and inline flag values", () => {
     expect(flagValue(["--port", "6000"], "--port")).toBe("6000");
     expect(flagValue(["--port=6001"], "--port")).toBe("6001");
+  });
+
+  it("reads repeated flag values", () => {
+    expect(
+      flagValues(["--ignore", "**/fixtures/**", "--ignore=**/generated/**"], "--ignore"),
+    ).toStrictEqual(["**/fixtures/**", "**/generated/**"]);
   });
 });
