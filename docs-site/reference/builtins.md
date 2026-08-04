@@ -636,6 +636,20 @@ Greater than or equal. Checks whether the first argument is greater than or equa
 
 **Returns** `Bool` — True if the first argument is greater than or equal to the second, False otherwise
 
+### `|->` {#_7c_-_3e_}
+
+```metta
+(-> Expression Atom Atom)
+```
+
+Lambda abstraction. Applying it unifies each parameter pattern with the matching argument and evaluates the body; a parameter that does not unify yields no result. Unapplied it is a value, so it can be bound, passed and matched on
+
+**Parameters**
+- `Expression` — Parameter patterns, as one expression
+- `Atom` — Body, carried unevaluated
+
+**Returns** `Atom` — The lambda value
+
 ### `_assert-results-are-alpha-equal` {#_5f_assert-results-are-alpha-equal}
 
 ### `_assert-results-are-alpha-equal-msg` {#_5f_assert-results-are-alpha-equal-msg}
@@ -809,6 +823,20 @@ Reduces the atoms of an expression and adds the results to a space
 - `%Undefined%` — Expression to reduce and add
 
 **Returns** `(->)` — Unit atom
+
+### `all-true` {#all-true}
+
+```metta
+(-> Atom %Undefined% Bool)
+```
+
+True when applying a check to every element of an expression answers True. This is what forall runs once its generator has been collected, and it works on an expression you already have
+
+**Parameters**
+- `Atom` — Check applied to each element
+- `%Undefined%` — Expression of elements to test
+
+**Returns** `Bool` — True if every element passes, False as soon as one does not
 
 ### `alpha-unique-atom` {#alpha-unique-atom}
 
@@ -1212,6 +1240,16 @@ Joins any number of arguments into one String. A String contributes its contents
 
 **Returns** `%Undefined%` — The concatenation, as a String
 
+### `cons` {#cons}
+
+Prepends an atom to an expression. PeTTa's spelling of cons-atom
+
+**Parameters**
+- `%Undefined%` — Head atom
+- `%Undefined%` — Expression to prepend it to
+
+**Returns** `%Undefined%` — The expression with the head in front
+
 ### `cons-atom` {#cons-atom}
 
 ```metta
@@ -1388,6 +1426,16 @@ Keeps the atoms of a list that satisfy a predicate
 
 **Returns** `Expression` — Filtered list
 
+### `find` {#find}
+
+Whether a pattern matches anything in a space, as a Bool. Cheaper than collecting the matches when only their existence matters
+
+**Parameters**
+- `%Undefined%` — Space to search
+- `%Undefined%` — Pattern to look for
+
+**Returns** `%Undefined%` — True if the pattern matches at least one atom, False otherwise
+
 ### `first` {#first}
 
 ```metta
@@ -1427,6 +1475,42 @@ Returns the largest integer less than or equal to the input value
 
 **Returns** `Number` — Integer less than or equal to the input
 
+### `fold-over` {#fold-over}
+
+```metta
+(-> Atom %Undefined% Atom %Undefined%)
+```
+
+### `foldall` {#foldall}
+
+```metta
+(-> Atom Atom Atom %Undefined%)
+```
+
+Folds an aggregator over ALL nondeterministic results of a generator. The generator runs once and its results are collected, so this turns a nondeterministic computation into a single value
+
+**Parameters**
+- `Atom` — Aggregator of the accumulator and one result
+- `Atom` — Generator, passed unevaluated
+- `Atom` — Starting accumulator
+
+**Returns** `%Undefined%` — The accumulator after every result
+
+### `foldl` {#foldl}
+
+```metta
+(-> Atom %Undefined% %Undefined% %Undefined%)
+```
+
+Folds a function over an expression from the left, applying it to an element and the accumulator in that order
+
+**Parameters**
+- `Atom` — Function of an element and the accumulator
+- `%Undefined%` — Expression to fold over
+- `%Undefined%` — Starting accumulator
+
+**Returns** `%Undefined%` — The accumulator after the last element
+
 ### `foldl-atom` {#foldl-atom}
 
 ```metta
@@ -1457,6 +1541,20 @@ Applies a function to each atom in an expression
 - `Atom` — Function to apply
 
 **Returns** `(->)` — Unit atom
+
+### `forall` {#forall}
+
+```metta
+(-> Atom Atom Bool)
+```
+
+True when every nondeterministic result of a generator passes a check. The generator runs once and every result is tested; a False stops the walk
+
+**Parameters**
+- `Atom` — Generator, passed unevaluated
+- `Atom` — Check applied to each result
+
+**Returns** `Bool` — True if every result passes, False as soon as one does not
 
 ### `fork-space` {#fork-space}
 
@@ -1506,6 +1604,48 @@ Returns documentation for an atom or function
 
 **Parameters**
 - `Atom` — Atom or function name to document
+
+**Returns** `%Undefined%` — Documentation for the atom or function
+
+### `get-doc-atom` {#get-doc-atom}
+
+Gets documentation for a non-function atom
+
+**Parameters**
+- `%Undefined%` — Space to search for documentation
+- `%Undefined%` — Atom name to document
+
+**Returns** `%Undefined%` — Documentation for the atom
+
+### `get-doc-function` {#get-doc-function}
+
+Gets documentation for a function, or default documentation if none exists
+
+**Parameters**
+- `%Undefined%` — Space to search for documentation
+- `%Undefined%` — Function name to document
+- `%Undefined%` — Type notation for the function
+
+**Returns** `%Undefined%` — Documentation for the function
+
+### `get-doc-params` {#get-doc-params}
+
+Builds a function's parameter and return documentation, each augmented with its type
+
+**Parameters**
+- `%Undefined%` — List of parameter descriptions
+- `%Undefined%` — Return description
+- `%Undefined%` — Type notation without the leading arrow
+
+**Returns** `%Undefined%` — United list of parameters and return, each with its type
+
+### `get-doc-single-atom` {#get-doc-single-atom}
+
+Gets documentation for either a function or an atom, dispatching on which it is
+
+**Parameters**
+- `%Undefined%` — Space to search for documentation
+- `%Undefined%` — Atom or function name to document
 
 **Returns** `%Undefined%` — Documentation for the atom or function
 
@@ -1579,6 +1719,15 @@ Returns an error because git modules are not supported in @metta-ts
 - `Atom` — Git module URL
 
 **Returns** `(->)` — Unsupported-module error
+
+### `help-param!` {#help-param_21_}
+
+Prints a single parameter's documentation, used by help!
+
+**Parameters**
+- `%Undefined%` — Parameter to print
+
+**Returns** `%Undefined%` — Unit atom
 
 ### `help-space!` {#help-space_21_}
 
@@ -1865,7 +2014,23 @@ Checks whether the input value is NaN
 
 **Returns** `Bool` — True or False
 
+### `iterate` {#iterate}
+
+Applies a step function to a state a fixed number of times, counting an index up. Each round evaluates the step on the index and the state to get the next state
+
+**Parameters**
+- `%Undefined%` — Starting index
+- `%Undefined%` — Number of rounds left
+- `%Undefined%` — Starting state
+- `%Undefined%` — Step function of the index and the state
+
+**Returns** `%Undefined%` — The state after the last round
+
 ### `lambda-alpha` {#lambda-alpha}
+
+```metta
+(-> Atom Atom)
+```
 
 Gives a lambda a private copy of its variables, renaming capture-avoidingly: it stops at any nested lambda that rebinds a name, so an inner parameter shadowing an outer one keeps its own identity. Used by every lambda application; sealed cannot do this because it renames names rather than binders
 
@@ -1983,6 +2148,20 @@ Evaluates a template for each atom in a list
 
 **Returns** `Expression` — List of results
 
+### `maplist` {#maplist}
+
+```metta
+(-> Atom Atom %Undefined%)
+```
+
+Applies a function to every element of an expression. The function is a symbol or a lambda, and it is applied rather than substituted, so it may be nondeterministic
+
+**Parameters**
+- `Atom` — Function to apply
+- `Atom` — Expression to map over
+
+**Returns** `%Undefined%` — An expression of the results, in the same order
+
 ### `match` {#match}
 
 ```metta
@@ -1997,6 +2176,16 @@ Searches a space (first argument) for atoms matching a pattern (second argument)
 - `Atom` — Output template, typically containing variables from the pattern
 
 **Returns** `%Undefined%` — The template with matched variables filled, or Empty
+
+### `match-count` {#match-count}
+
+How many atoms in a space a pattern matches. The matches are counted as they are produced rather than collected, so the whole result set is never held at once
+
+**Parameters**
+- `%Undefined%` — Space to search
+- `%Undefined%` — Pattern to look for
+
+**Returns** `%Undefined%` — The number of matches, as a Number
 
 ### `match-type-or` {#match-type-or}
 
@@ -2351,6 +2540,24 @@ Prints a line of text to the console
 
 **Returns** `(->)` — Unit atom
 
+### `prog1` {#prog1}
+
+Evaluates every argument in order and answers the first. The mirror of progn: the later arguments run for their effects and their values are dropped
+
+**Parameters**
+- `%Undefined%` — The atoms to evaluate in order
+
+**Returns** `%Undefined%` — The value of the first argument
+
+### `progn` {#progn}
+
+Evaluates every argument in order and answers the last. Arguments evaluate applicatively, so the earlier ones run for their effects
+
+**Parameters**
+- `%Undefined%` — The atoms to evaluate in order
+
+**Returns** `%Undefined%` — The value of the last argument
+
 ### `prolog-asserta` {#prolog-asserta}
 
 ```metta
@@ -2516,6 +2723,15 @@ Returns a random integer in the half-open interval from the lower bound to the u
 - `Number` — Upper bound
 
 **Returns** `Number` — Random integer
+
+### `reduce` {#reduce}
+
+Evaluates its argument to a normal form. Its parameter type is the evaluated one, so the operation itself is the identity; it exists because PeTTa spells full evaluation this way, where Hyperon's eval is a single step
+
+**Parameters**
+- `%Undefined%` — Atom to evaluate
+
+**Returns** `%Undefined%` — The fully evaluated atom
 
 ### `remove-atom` {#remove-atom}
 
@@ -2914,6 +3130,15 @@ Casts an atom to a type using a space as context
 ```metta
 (-> Atom Expression Atom)
 ```
+
+### `undefined-doc-function-type` {#undefined-doc-function-type}
+
+Builds a placeholder type list for a function with no type notation
+
+**Parameters**
+- `%Undefined%` — List of parameters for the function
+
+**Returns** `%Undefined%` — A list of %Undefined% types sized to the parameters
 
 ### `unify` {#unify}
 

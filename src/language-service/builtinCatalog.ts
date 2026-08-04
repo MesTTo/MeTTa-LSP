@@ -5,7 +5,16 @@
 // metadata. This matches the evaluator without exposing intrinsic types as ordinary &self data. Pure: only
 // @metta-ts/core.
 
-import { type Atom, emptyEnv, format, preludeAtoms, stdlibAtoms, stdTable } from "@metta-ts/core";
+import {
+  type Atom,
+  emptyEnv,
+  format,
+  pettaStdlibAtoms,
+  preludeAtoms,
+  stdlibAtoms,
+  stdlibDocAtoms,
+  stdTable,
+} from "@metta-ts/core";
 
 export interface CoreBuiltinType {
   readonly name: string;
@@ -35,9 +44,15 @@ function addType(catalog: Map<string, CoreBuiltinType>, name: string, typeAtom: 
 
 // Name -> declared type. Source declarations retain prelude/stdlib order and precedence. Operation-owned
 // types are appended from the same metadata the evaluator loads.
+//
+// All three source modules are read, not two. The runner loads prelude, stdlib AND the PeTTa-compat stdlib
+// into every program, so leaving the third out hid everything declared there: the lambda `|->`, foldall,
+// maplist, foldl, forall, cons, find, match-count, iterate, progn, prog1, reduce and all-true. They were
+// callable but had no declared type here, which cost more than hover text — VARIABLE_ARG_POSITIONS is
+// derived from this map, so a Variable-typed slot in one of them was never linted either.
 export function coreBuiltinTypes(): ReadonlyMap<string, CoreBuiltinType> {
   const catalog = new Map<string, CoreBuiltinType>();
-  const atoms = [...preludeAtoms(), ...stdlibAtoms()];
+  const atoms = [...preludeAtoms(), ...stdlibAtoms(), ...pettaStdlibAtoms()];
   for (const atom of atoms) {
     if (atom.kind !== "expr") continue;
     const head = atom.items[0];
@@ -52,4 +67,24 @@ export function coreBuiltinTypes(): ReadonlyMap<string, CoreBuiltinType> {
     for (const typeAtom of typeAtoms) addType(catalog, name, typeAtom);
   }
   return catalog;
+}
+
+// Every name the standard library documents. A type catalog can only see what carries a `(: name <type>)`
+// declaration, and a MeTTa function defined with `=` alone carries none — `progn`, `prog1`, `iterate`,
+// `find`, `match-count`, `cons` and `reduce` are all defined that way, so nothing here knew they existed
+// even though every program can call them.
+//
+// Documentation is the source that does know. Since MeTTaScript 3.1.2 documents every operation it offers,
+// `@doc` is the interpreter's own statement of its public surface, and it is the right one to read: the
+// stdlib helpers it leaves undocumented are the ones a caller has no business writing.
+export function documentedBuiltinNames(): ReadonlySet<string> {
+  const names = new Set<string>();
+  for (const atom of stdlibDocAtoms()) {
+    if (atom.kind !== "expr" || atom.items.length < 2) continue;
+    const head = atom.items[0];
+    const subject = atom.items[1];
+    if (head === undefined || head.kind !== "sym" || head.name !== "@doc") continue;
+    if (subject !== undefined && subject.kind === "sym") names.add(subject.name);
+  }
+  return names;
 }

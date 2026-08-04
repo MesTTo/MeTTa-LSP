@@ -1,7 +1,11 @@
 import { IMPURE_OPS, pettaOpNames, stdTable } from "@metta-ts/core";
 import type { Range } from "vscode-languageserver-types";
 
-import { builtinModuleExportNames, coreBuiltinTypes } from "../language-service/index.js";
+import {
+  builtinModuleExportNames,
+  coreBuiltinTypes,
+  documentedBuiltinNames,
+} from "../language-service/index.js";
 import type { BuiltinSpec, DefinitionKind, DefinitionRecord, TypeSignature } from "./types.js";
 
 const ZERO_RANGE: Range = { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } };
@@ -124,6 +128,8 @@ export const METTA_BINDING_FORMS = new Set([
   "function",
   "return",
   "lambda",
+  // The lambda abstraction the interpreter actually has. Its parameter patterns bind in its body.
+  "|->",
 ]);
 
 export const METTA_PATTERN_FORMS = new Set([
@@ -655,6 +661,11 @@ const EDITOR_OVERLAY = new Map<string, string>([
 function interpreterBuiltinNames(): Set<string> {
   const names = new Set<string>(coreBuiltinTypes().keys());
   const moduleExports = builtinModuleExportNames();
+  // A documented name the type catalog cannot see: a MeTTa function defined with `=` and no `(: ...)`
+  // declaration. Module exports stay import-gated here as everywhere else.
+  for (const name of documentedBuiltinNames()) {
+    if (!moduleExports.has(name)) names.add(name);
+  }
   for (const name of pettaOpNames) names.add(name);
   for (const name of IMPURE_OPS) names.add(name);
   for (const name of stdTable().keys()) {
