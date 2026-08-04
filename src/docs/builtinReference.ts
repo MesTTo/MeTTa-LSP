@@ -58,6 +58,19 @@ function orderEntries(entries: readonly BuiltinEntry[]): BuiltinEntry[] {
   });
 }
 
+// VitePress compiles every page as a Vue template, so a bare `<name>` in prose is read as an HTML tag and
+// fails the build with "Element is missing end tag". Documentation is arbitrary text written for a MeTTa
+// reader, not for a Vue compiler — `lambda-alpha` describes its argument as `(|-> (<patterns>) <body>)` —
+// so the page escapes what it renders rather than constraining what a doc may say. Hover does not need this
+// and does not get it. Text inside a code span is left alone: no HTML is parsed there, and escaping it
+// would print the entity instead of the bracket.
+function escapeForVue(text: string): string {
+  return text
+    .split(/(`[^`]*`)/)
+    .map((part, index) => (index % 2 === 1 ? part : part.replaceAll("<", "&lt;")))
+    .join("");
+}
+
 function renderEntry({ def, doc }: BuiltinEntry): string {
   const slug = anchor(def.name);
   const parts: string[] = [`### \`${def.name}\` {#${slug}}`];
@@ -68,11 +81,11 @@ function renderEntry({ def, doc }: BuiltinEntry): string {
   // A hand-authored @doc description wins over the catalog blurb; otherwise the catalog's own documentation.
   const description =
     doc?.description && doc.description.length > 0 ? doc.description : def.documentation;
-  if (description !== undefined && description.length > 0) parts.push(description);
+  if (description !== undefined && description.length > 0) parts.push(escapeForVue(description));
   if (def.deprecated === true) parts.push("_Deprecated._");
 
   // The same parameter/return rendering the hover uses, so a documented symbol reads identically in both.
-  if (doc !== null) parts.push(...docDetailSections(doc));
+  if (doc !== null) parts.push(...docDetailSections(doc).map(escapeForVue));
   return parts.join("\n\n");
 }
 

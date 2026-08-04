@@ -2035,7 +2035,7 @@ Applies a step function to a state a fixed number of times, counting an index up
 Gives a lambda a private copy of its variables, renaming capture-avoidingly: it stops at any nested lambda that rebinds a name, so an inner parameter shadowing an outer one keeps its own identity. Used by every lambda application; sealed cannot do this because it renames names rather than binders
 
 **Parameters**
-- `Atom` — A (|-> (<patterns>) <body>) lambda
+- `Atom` — A (|-> (&lt;patterns>) &lt;body>) lambda
 
 **Returns** `Atom` — The same lambda with its variables made fresh
 

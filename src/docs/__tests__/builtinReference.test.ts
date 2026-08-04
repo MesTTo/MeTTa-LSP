@@ -1,9 +1,10 @@
 // SPDX-FileCopyrightText: 2026 MesTTo
 // SPDX-License-Identifier: Apache-2.0
 //
-// The builtins reference page is generated, not hand-maintained. These tests hold the two invariants that
-// keeps true: every builtin is anchored to the same slug the hover's "Open docs" link jumps to, and the
-// committed page is byte-identical to a fresh render from the catalog and get-doc (so it can never drift).
+// The builtins reference page is generated, not hand-maintained. These tests hold the invariants that keeps
+// true: every builtin is anchored to the same slug the hover's "Open docs" link jumps to, the committed page
+// is byte-identical to a fresh render from the catalog and get-doc (so it can never drift), and nothing in
+// it reads as an HTML tag to the Vue compiler VitePress builds each page with.
 
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -31,6 +32,24 @@ function generatedEntries(): BuiltinEntry[] {
 }
 
 describe("builtins reference generation", () => {
+  it("renders no prose the Vue compiler would read as an HTML tag", () => {
+    // VitePress compiles each page as a Vue template, so a bare `<name>` outside a code span fails the
+    // whole docs build with "Element is missing end tag" — which is how it failed once, on lambda-alpha
+    // describing its argument as `(|-> (<patterns>) <body>)`. Documentation is prose written for a MeTTa
+    // reader; the renderer escapes it rather than the docs being written around a compiler.
+    const page = renderBuiltinReference(generatedEntries());
+    const offenders = page
+      .split("\n")
+      .filter((line) => !line.startsWith("```"))
+      .flatMap((line) =>
+        line
+          .split(/(`[^`]*`)/)
+          .filter((_part, index) => index % 2 === 0)
+          .flatMap((part) => [...part.matchAll(/<[a-zA-Z][a-zA-Z0-9_-]*>/g)].map((m) => m[0])),
+      );
+    expect(offenders).toEqual([]);
+  });
+
   it("anchors every builtin to the slug the hover docs link uses", () => {
     const defs = allBuiltinDefinitions();
     const page = renderBuiltinReference(defs.map((def) => ({ def, doc: null })));
