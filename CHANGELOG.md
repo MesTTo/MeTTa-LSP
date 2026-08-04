@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.21.0 - 2026-08-04
+
+- Track MeTTaScript 3.1.2. All six optional engine packages moved with the three
+  runtime ones; leaving them behind kept a second copy of the interpreter in the
+  tree and made every `Atom` type mismatch itself. `builtinModules()` entries are
+  an `ImportEntry` now, either a bare atom list or a record carrying those atoms
+  in `defs`, and both readers go through one helper.
+- Recognize the whole standard library instead of two thirds of it. The builtin
+  catalog read the prelude and the stdlib but not the PeTTa-compat stdlib, which
+  the runner loads into every program, so the lambda `|->`, `foldall`, `maplist`,
+  `foldl`, `forall` and `all-true` were invisible: no hover, no completion, and
+  no variable-slot lint, since those positions are derived from the same map.
+- Recognize the operations that carry no type declaration. A MeTTa function
+  defined with `=` alone declares no type, so `progn`, `prog1`, `iterate`,
+  `find`, `match-count`, `cons` and `reduce` were unknown even though every
+  program can call them. MeTTaScript 3.1.2 documents every operation it offers,
+  which makes `@doc` the interpreter's own statement of its public surface, and
+  the stdlib helpers it leaves undocumented are the ones a caller has no business
+  writing. The catalog goes from 256 names to 269, and the generated builtin
+  reference from 280 entries to 300, 215 of them enriched by `get-doc`.
+- Add `|->` to the binding forms, which listed a `lambda` the interpreter does
+  not have and not the lambda it does.
+- Stop reporting a symbol in a `Variable`-typed slot twice. MeTTaScript 3.0.0
+  enforces meta-typed parameters, so `check-types` now returns a `BadArgType`
+  where the variable-slot lint already reported the same argument; the generic
+  message is suppressed for those positions and the one that names the fix
+  stays.
+
 ## 0.20.0 - 2026-07-29
 
 - Add MeTTa-aware semantic clone detection through the `deduplicate` CLI,
