@@ -8,7 +8,12 @@
 
 import "@metta-ts/libraries";
 import { type Atom, builtinModules, FuzzyMatcher, format } from "@metta-ts/core";
-import { CoreRuntime, type MettaDoc, type MettaDocParam } from "../language-service/index.js";
+import {
+  CoreRuntime,
+  type MettaDoc,
+  type MettaDocParam,
+  moduleDefinitions,
+} from "../language-service/index.js";
 import { builtinModuleSymbols } from "../server/builtinModules.js";
 import {
   allBuiltinDefinitions,
@@ -165,7 +170,8 @@ function moduleEntries(runtime: CoreRuntime): {
   const entries: StdlibEntry[] = [];
   const modules: StdlibModule[] = [];
   const coreModules = [...builtinModules()].sort(([left], [right]) => left.localeCompare(right));
-  for (const [module, atoms] of coreModules) {
+  for (const [module, entry] of coreModules) {
+    const atoms = moduleDefinitions(entry);
     const context = atoms.map(format).join("\n");
     const declarations = declaredModuleTypes(atoms);
     const exportNames = [...builtinModuleSymbols(module)].sort((left, right) =>

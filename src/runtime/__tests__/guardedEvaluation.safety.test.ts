@@ -143,7 +143,9 @@ describe("guarded evaluation — core alone is inherently side-effect-safe", () 
   it("evaluates idiomatic MeTTa the old deny-list wrongly blocked", () => {
     expect(evalResults("!(superpose (1 2 3))")).toStrictEqual(["1", "2", "3"]);
     expect(evalResults("!(let $x 1 (+ $x 1))")).toStrictEqual(["2"]);
-    expect(evalResults("!(collapse (superpose (1 2)))")).toStrictEqual(["(, 1 2)"]);
+    // Hyperon 0.2.10 answers `(1 2)` here, a plain expression rather than a comma tuple; the interpreter
+    // matches it since the collapse conformance fix.
+    expect(evalResults("!(collapse (superpose (1 2)))")).toStrictEqual(["(1 2)"]);
     expect(evalResults("!(case 1 ((1 yes) (2 no)))")).toStrictEqual(["yes"]);
   });
 
@@ -160,8 +162,12 @@ describe("guarded evaluation — core alone is inherently side-effect-safe", () 
   });
 
   it("cannot read the filesystem: import! resolves only injected sources, never disk", () => {
-    // Empty imports map and no fs in core, so import! of an unindexed path yields unit, not file contents.
-    expect(evalResults('!(import! &self "/etc/passwd")')).toStrictEqual(["()"]);
+    // Empty imports map and no fs in core, so import! of an unindexed path cannot resolve. It now says so
+    // rather than answering unit, which is the same safety property stated out loud: the result is an
+    // error about resolution, never the file's contents.
+    expect(evalResults('!(import! &self "/etc/passwd")')).toStrictEqual([
+      '(Error (import! &self "/etc/passwd") "Failed to resolve module /etc/passwd")',
+    ]);
   });
 
   it("bounds a nonterminating program by fuel instead of hanging", () => {

@@ -2715,6 +2715,16 @@ export class Analyzer {
           // is never checked here, exactly as the interpreter never type-checks it.
           const callSource = index.text.slice(call.node.offsetStart, call.node.offsetEnd);
           const verdict = typeVerdicts.get(callSource) ?? null;
+          // Argument positions the variable-slot lint below will claim: a plain symbol where the
+          // interpreter types the parameter `Variable`. Since MeTTaScript 3.0.0 started enforcing
+          // meta-typed parameters, check-types reports that same argument as a BadArgType, so both
+          // would fire on one mistake. The variable-slot message names the fix ("did you mean '$x'?"),
+          // so it wins and the generic type mismatch is suppressed for those positions only.
+          const variableSlots = settings.typeMismatch
+            ? [...(VARIABLE_ARG_POSITIONS.get(name) ?? [])].filter(
+                (position) => call.args[position]?.kind === "symbol",
+              )
+            : [];
           if (verdict?.kind === "arity" && settings.arity) {
             const arities = this.expectedArities(index.uri, name);
             add(
@@ -2728,7 +2738,11 @@ export class Analyzer {
               DiagnosticSeverity.Warning,
               "call.arity",
             );
-          } else if (verdict?.kind === "badArg" && settings.typeMismatch) {
+          } else if (
+            verdict?.kind === "badArg" &&
+            settings.typeMismatch &&
+            !variableSlots.includes(verdict.index - 1)
+          ) {
             add(
               call.args[verdict.index - 1]?.range ?? call.nameRange,
               diagnosticMessage.typeMismatch(name, verdict.index, verdict.expected, verdict.actual),
@@ -2744,21 +2758,20 @@ export class Analyzer {
             );
           }
           // A parameter typed Variable binds a $-variable; a plain symbol there does not reduce at run time
-          // (verified against Hyperon and metta-ts). check-types is permissive for an untyped symbol, so this
-          // is flagged separately, matching MeTTaTron's variable-format feedback.
-          if (settings.typeMismatch) {
-            for (const position of VARIABLE_ARG_POSITIONS.get(name) ?? []) {
-              const arg = call.args[position];
-              if (arg?.kind !== "symbol") continue;
-              const suggestion = variableFormatSuggestion(arg.text);
-              add(
-                arg.range,
-                diagnosticMessage.variableSlot(name, position + 1, suggestion),
-                DiagnosticSeverity.Warning,
-                "call.variableSlot",
-                suggestion !== undefined ? { suggestion, name: arg.text } : undefined,
-              );
-            }
+          // (verified against Hyperon and metta-ts). check-types reports it too now that meta-typed
+          // parameters are enforced, but only as a generic BadArgType, so it is suppressed above in favour
+          // of this one, which names the fix the way MeTTaTron's variable-format feedback does.
+          for (const position of variableSlots) {
+            const arg = call.args[position];
+            if (arg?.kind !== "symbol") continue;
+            const suggestion = variableFormatSuggestion(arg.text);
+            add(
+              arg.range,
+              diagnosticMessage.variableSlot(name, position + 1, suggestion),
+              DiagnosticSeverity.Warning,
+              "call.variableSlot",
+              suggestion !== undefined ? { suggestion, name: arg.text } : undefined,
+            );
           }
         }
       }

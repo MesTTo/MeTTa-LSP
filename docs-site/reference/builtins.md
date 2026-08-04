@@ -644,6 +644,8 @@ Greater than or equal. Checks whether the first argument is greater than or equa
 
 ### `_assert-results-are-equal-msg` {#_5f_assert-results-are-equal-msg}
 
+### `_fuzz-eval-case` {#_5f_fuzz-eval-case}
+
 ### `@desc` {#_40_desc}
 
 ```metta
@@ -810,6 +812,13 @@ Reduces the atoms of an expression and adds the results to a space
 
 ### `alpha-unique-atom` {#alpha-unique-atom}
 
+Removes elements that repeat an earlier one up to alpha-equivalence, so two expressions differing only in variable names count as one. First occurrence wins and the surviving order is kept
+
+**Parameters**
+- `%Undefined%` — Expression to deduplicate
+
+**Returns** `%Undefined%` — The expression without its alpha-equivalent repeats
+
 ### `and` {#and}
 
 ```metta
@@ -856,6 +865,13 @@ Returns the arcsine of the input value
 ```metta
 (-> Atom (->))
 ```
+
+Evaluates an atom and succeeds quietly when it answers True
+
+**Parameters**
+- `Atom` — Atom to evaluate
+
+**Returns** `(->)` — Unit if the atom evaluates to True, otherwise an Error naming the atom
 
 ### `assertAlphaEqual` {#assertAlphaEqual}
 
@@ -1018,6 +1034,13 @@ Returns the arctangent of the input value
 
 ### `atom_concat` {#atom_5f_concat}
 
+Joins any number of arguments into one Symbol. A symbol contributes its name, a String its contents, and anything else its printed form. The symbol-producing counterpart of concat
+
+**Parameters**
+- `%Undefined%` — The values to join
+
+**Returns** `%Undefined%` — The concatenation, as a Symbol
+
 ### `atom-subst` {#atom-subst}
 
 ```metta
@@ -1138,6 +1161,13 @@ Replaces the wrapped atom of a state with a new value
 (-> Expression String)
 ```
 
+Joins an expression of single-character symbols back into a String. Every element has to be a one-character symbol, which is exactly what stringToChars produces; anything else is an error rather than a plausible-looking string
+
+**Parameters**
+- `Expression` — Expression of one-character symbols
+
+**Returns** `String` — The characters as a String
+
 ### `collapse` {#collapse}
 
 ```metta
@@ -1166,7 +1196,21 @@ Evaluates the atom and returns all alternative evaluations as atom-and-bindings 
 
 ### `collapse-extract` {#collapse-extract}
 
+Keeps the atoms out of collapse-bind's result, which is an expression of atom-and-bindings pairs, discarding the bindings. Order and multiplicity are preserved
+
+**Parameters**
+- `%Undefined%` — Expression of atom-and-bindings pairs
+
+**Returns** `%Undefined%` — An expression of just the atoms, or the empty expression for no results
+
 ### `concat` {#concat}
+
+Joins any number of arguments into one String. A String contributes its contents and anything else its printed form
+
+**Parameters**
+- `%Undefined%` — The values to join
+
+**Returns** `%Undefined%` — The concatenation, as a String
 
 ### `cons-atom` {#cons-atom}
 
@@ -1262,6 +1306,10 @@ Splits a non-empty expression into its head and tail
 ### `DocType` {#DocType}
 
 ### `empty` {#empty}
+
+Answers no results at all, which removes this branch from a nondeterministic evaluation. It is what a failed let reduces to, and what a pattern that does not match yields
+
+**Returns** `%Undefined%` — Nothing
 
 ### `ErrorDescription` {#ErrorDescription}
 
@@ -1463,12 +1511,16 @@ Returns documentation for an atom or function
 
 ### `get-metatype` {#get-metatype}
 
+```metta
+(-> Atom Atom)
+```
+
 Returns the metatype of the input atom
 
 **Parameters**
-- `%Undefined%` — Atom to get the metatype for
+- `Atom` — Atom to get the metatype for
 
-**Returns** `%Undefined%` — The metatype of the input atom
+**Returns** `Atom` — The metatype of the input atom
 
 ### `get-mettatype` {#get-mettatype}
 
@@ -1625,6 +1677,14 @@ Checks whether the first argument is an error and returns the second if so, the 
 **Returns** `%Undefined%` — The second or third argument
 
 ### `implies` {#implies}
+
+Logical implication over two Bools: False only when the first is True and the second is False
+
+**Parameters**
+- `%Undefined%` — Antecedent
+- `%Undefined%` — Consequent
+
+**Returns** `%Undefined%` — False if the first is True and the second False, otherwise True
 
 ### `import_prolog_function` {#import_5f_prolog_5f_function}
 
@@ -1804,6 +1864,15 @@ Checks whether the input value is NaN
 - `Number` — Number
 
 **Returns** `Bool` — True or False
+
+### `lambda-alpha` {#lambda-alpha}
+
+Gives a lambda a private copy of its variables, renaming capture-avoidingly: it stops at any nested lambda that rebinds a name, so an inner parameter shadowing an outer one keeps its own identity. Used by every lambda application; sealed cannot do this because it renames names rather than binders
+
+**Parameters**
+- `Atom` — A (|-> (<patterns>) <body>) lambda
+
+**Returns** `Atom` — The same lambda with its variables made fresh
 
 ### `last` {#last}
 
@@ -2216,6 +2285,14 @@ Parses a string of MeTTa source and returns its first atom
 (-> Atom Expression Atom)
 ```
 
+The closure an under-applied function becomes. Applying it to the remaining arguments rebuilds the fuller call and evaluates that, so a function can be applied a few arguments at a time
+
+**Parameters**
+- `Atom` — The function that was under-applied
+- `Expression` — The arguments it has been given so far
+
+**Returns** `Atom` — A closure that takes the rest of the arguments
+
 ### `pow-math` {#pow-math}
 
 ```metta
@@ -2609,6 +2686,13 @@ Sorts an expression by standard atom order and removes duplicate atoms
 
 ### `sort-atom` {#sort-atom}
 
+Sorts the elements of an expression by their printed form
+
+**Parameters**
+- `%Undefined%` — Expression to sort
+
+**Returns** `%Undefined%` — The same elements in sorted order
+
 ### `sort-strings` {#sort-strings}
 
 Sorts an expression of strings in alphabetical order
@@ -2666,6 +2750,13 @@ Parses a string of MeTTa source and returns its first atom
 ```metta
 (-> String Expression)
 ```
+
+Splits a String into an expression of single-character symbols. Astral characters stay whole, so a surrogate pair is one element rather than two
+
+**Parameters**
+- `String` — String to split
+
+**Returns** `Expression` — An expression of one-character symbols
 
 ### `subtraction` {#subtraction}
 
@@ -2765,6 +2856,14 @@ Returns the tangent of the input value in radians
 **Returns** `Number` — Result of the tangent function
 
 ### `test` {#test}
+
+Compares two atoms up to alpha-equivalence, prints what it got beside what it should have got with a tick or a cross, and reduces to unit when they agree
+
+**Parameters**
+- `%Undefined%` — Actual atom
+- `%Undefined%` — Expected atom
+
+**Returns** `%Undefined%` — Unit if the two are alpha-equivalent, otherwise an Error carrying test-failed
 
 ### `trace!` {#trace_21_}
 
