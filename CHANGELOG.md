@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.22.0 - 2026-08-05
+
+- Track MeTTaScript 3.3.2. The engine releases carry three wrong-answer fixes
+  (a collapsed count counted match solutions instead of results, a conjunction
+  deduplicated distinct facts sharing a projected row, and a named-space fast
+  path could answer with a stored atom in place of the asked-for one), the
+  variable-headed match index, and honest step accounting.
+- The `metta trace`, `metta debug`, and grapher-backed reduction features work
+  again. MeTTaScript 3.2.0's embeddable `<metta-grapher>` element made merely
+  importing `@metta-ts/grapher` throw `HTMLElement is not defined` under Node,
+  so every optional-package feature that reaches for it reported the packages
+  as missing even though they were installed. Fixed engine-side in 3.3.1; the
+  language server needed no change of its own, which is the point of reporting
+  it here: twelve of this repository's tests failed on 3.3.0 and pass on 3.3.1
+  unchanged.
+- The generated builtin reference is byte-identical under the new engine: 300
+  builtins, 215 enriched via get-doc, so no completion, hover, or lint surface
+  moved in this upgrade.
+
 ## 0.21.0 - 2026-08-04
 
 - Track MeTTaScript 3.1.2. All six optional engine packages moved with the three
