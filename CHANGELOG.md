@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.22.1 - 2026-08-05
+
+- Track MeTTaScript 3.4.0, the one-substrate semantic release: a symbol never
+  reduces through `=` equations (the interpreter's equation query fires only
+  for expressions, matching Hyperon), and an undeclared argument now passes
+  any parameter type, meta-type names included. `(= foo bar)` is knowledge
+  about `foo`, retrievable by `match` and applied only by an explicit
+  `(eval foo)`.
+- No LSP code changed. The full battery is green on the new engine: every
+  test file plus the whole smoke chain (trace, debug, grapher reductions,
+  DAP, both MCP servers, the TypeScript plugin, and the browser IDE workers),
+  and the builtin catalog regenerates byte-identically, so hovers and
+  completions are unaffected.
+
 ## 0.22.0 - 2026-08-05
 
 - Track MeTTaScript 3.3.2. The engine releases carry three wrong-answer fixes
